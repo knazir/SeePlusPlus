@@ -1,4 +1,6 @@
 # see++
+<img src="https://github.com/StanfordCS194/Ashley-Taylor-Kashif-Nazir-Lucy-Wang-Maria-Yang/blob/master/misc/Screen Shot 2018-04-06 at 5.55.35 PM.png"/>
+
 <img src="https://github.com/StanfordCS194/Ashley-Taylor-Kashif-Nazir-Lucy-Wang-Maria-Yang/blob/master/misc/ashley.jpg" width="200" height="200" /> <img src="https://github.com/StanfordCS194/Ashley-Taylor-Kashif-Nazir-Lucy-Wang-Maria-Yang/blob/master/misc/maria.jpeg" width="200" height="200" /> <img src="https://github.com/StanfordCS194/Ashley-Taylor-Kashif-Nazir-Lucy-Wang-Maria-Yang/blob/master/misc/kashif.jpg" width="200" height="200" /> <img src="https://github.com/StanfordCS194/Ashley-Taylor-Kashif-Nazir-Lucy-Wang-Maria-Yang/blob/master/misc/lucy.jpeg" width="200" height="200" />
 
 # Ashley Taylor & Maria Yang  &  Kashif Nazir  &    Lucy Wang
