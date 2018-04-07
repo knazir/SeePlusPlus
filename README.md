@@ -1,9 +1,9 @@
 
 <img src="https://github.com/StanfordCS194/Ashley-Taylor-Kashif-Nazir-Lucy-Wang-Maria-Yang/blob/master/misc/logo.png"/>
 
-<img src="https://github.com/StanfordCS194/Ashley-Taylor-Kashif-Nazir-Lucy-Wang-Maria-Yang/blob/master/misc/ashley.jpg" width="200" height="200" /> <img src="https://github.com/StanfordCS194/Ashley-Taylor-Kashif-Nazir-Lucy-Wang-Maria-Yang/blob/master/misc/maria.jpeg" width="200" height="200" /> <img src="https://github.com/StanfordCS194/Ashley-Taylor-Kashif-Nazir-Lucy-Wang-Maria-Yang/blob/master/misc/kashif.jpg" width="200" height="200" /> <img src="https://github.com/StanfordCS194/Ashley-Taylor-Kashif-Nazir-Lucy-Wang-Maria-Yang/blob/master/misc/lucy.jpeg" width="200" height="200" />
+<img src="https://github.com/StanfordCS194/Ashley-Taylor-Kashif-Nazir-Lucy-Wang-Maria-Yang/blob/master/misc/ashley.jpg" width="100" height="100" /> <img src="https://github.com/StanfordCS194/Ashley-Taylor-Kashif-Nazir-Lucy-Wang-Maria-Yang/blob/master/misc/maria.jpeg" width="100" height="100" /> <img src="https://github.com/StanfordCS194/Ashley-Taylor-Kashif-Nazir-Lucy-Wang-Maria-Yang/blob/master/misc/kashif.jpg" width="100" height="100" /> <img src="https://github.com/StanfordCS194/Ashley-Taylor-Kashif-Nazir-Lucy-Wang-Maria-Yang/blob/master/misc/lucy.jpeg" width="100" height="100" />
 
-# Ashley Taylor & Maria Yang  &  Kashif Nazir  &    Lucy Wang
+By Ashley Taylor, Maria Yang, Kashif Nazir, and Lucy Wang
 
 ## Project Description
 Every quarter, CS106B students dread learning recursion and pointers, arguably the two hardest concepts in CS106B. We're excited to develop See++, a C++ memory visualization tool, to help students better understand how code affects memory. See++ will let students watch their code execute line by line, updating local variables as well as heap memory, helping them understand pointers in much greater detail.
