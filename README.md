@@ -1,14 +1,10 @@
 
 <img src="https://github.com/StanfordCS194/Ashley-Taylor-Kashif-Nazir-Lucy-Wang-Maria-Yang/blob/master/misc/logo.png"/>
 
-<img src="https://github.com/StanfordCS194/Ashley-Taylor-Kashif-Nazir-Lucy-Wang-Maria-Yang/blob/master/misc/ashley.jpg" width="100" height="100" /> <img src="https://github.com/StanfordCS194/Ashley-Taylor-Kashif-Nazir-Lucy-Wang-Maria-Yang/blob/master/misc/maria.jpeg" width="100" height="100" /> <img src="https://github.com/StanfordCS194/Ashley-Taylor-Kashif-Nazir-Lucy-Wang-Maria-Yang/blob/master/misc/kashif.jpg" width="100" height="100" /> <img src="https://github.com/StanfordCS194/Ashley-Taylor-Kashif-Nazir-Lucy-Wang-Maria-Yang/blob/master/misc/lucy.jpeg" width="100" height="100" />
-
-By Ashley Taylor, Maria Yang, Kashif Nazir, and Lucy Wang
-
 ## Project Description
 Every quarter, CS106B students dread learning recursion and pointers, arguably the two hardest concepts in CS106B. We're excited to develop see++, a C++ memory visualization tool, to help students better understand how code affects memory. see++ will let students watch their code execute line by line, updating local variables as well as heap memory, helping them understand pointers in much greater detail.
 
-A mock prototype of the types of memory diagrams see++ will generate is available [here](https://drive.google.com/open?id=1WHp0F-IZ2xwAXuoHmd8ebmyjwxNuq7zXH3J81VJcCoI). Ultimately, see++ help students understand pointers, the stack, and the heap in more detail and even debug their own code that manipulates linked lists and trees.
+A mock prototype of the types of memory diagrams see++ will generate is available [here](https://drive.google.com/open?id=1WHp0F-IZ2xwAXuoHmd8ebmyjwxNuq7zXH3J81VJcCoI). Ultimately, see++ will help students understand pointers, the stack, and the heap in more detail and even debug their own code that manipulates linked lists and trees.
 
 ## Team Skills Matrix
 | Member        | Skills        | Personal Traits | Desired Growth | Weaknesses | Hat |
@@ -21,3 +17,8 @@ A mock prototype of the types of memory diagrams see++ will generate is availabl
 ## Team Communication
 
 Our internal communication is largely through Facebook Messenger. However, we are maintaining a Google Drive with our weekly blog posts and other team materials, which is available to view [here](https://drive.google.com/open?id=1bVMzrTyTeiJjy37oXOonQ54kb6bK7iqm). Others may communicate with our team through email.
+
+## Brought To You By:
+<img src="https://github.com/StanfordCS194/Ashley-Taylor-Kashif-Nazir-Lucy-Wang-Maria-Yang/blob/master/misc/ashley.jpg" width="100" height="100" /> <img src="https://github.com/StanfordCS194/Ashley-Taylor-Kashif-Nazir-Lucy-Wang-Maria-Yang/blob/master/misc/maria.jpeg" width="100" height="100" /> <img src="https://github.com/StanfordCS194/Ashley-Taylor-Kashif-Nazir-Lucy-Wang-Maria-Yang/blob/master/misc/kashif.jpg" width="100" height="100" /> <img src="https://github.com/StanfordCS194/Ashley-Taylor-Kashif-Nazir-Lucy-Wang-Maria-Yang/blob/master/misc/lucy.jpeg" width="100" height="100" />
+
+Ashley Taylor, Maria Yang, Kashif Nazir, and Lucy Wang
