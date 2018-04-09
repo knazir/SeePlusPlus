@@ -18,6 +18,9 @@ A mock prototype of the types of memory diagrams see++ will generate is availabl
 
 Our internal communication is largely through Facebook Messenger. However, we are maintaining a Google Drive with our weekly blog posts and other team materials, which is available to view [here](https://drive.google.com/open?id=1bVMzrTyTeiJjy37oXOonQ54kb6bK7iqm). Others may communicate with our team through email.
 
+### Weekly Blog
+* [Brainstorming and Project Development](https://docs.google.com/document/d/1G1kXY8zTfOtH4nB7pxNJIQl0llcX-9WOGnrIrXNgxKg/edit?usp=sharing)
+
 ## Brought To You By:
 <img src="https://github.com/StanfordCS194/Ashley-Taylor-Kashif-Nazir-Lucy-Wang-Maria-Yang/blob/master/misc/ashley.jpg" width="100" height="100" /> <img src="https://github.com/StanfordCS194/Ashley-Taylor-Kashif-Nazir-Lucy-Wang-Maria-Yang/blob/master/misc/maria.jpeg" width="100" height="100" /> <img src="https://github.com/StanfordCS194/Ashley-Taylor-Kashif-Nazir-Lucy-Wang-Maria-Yang/blob/master/misc/kashif.jpg" width="100" height="100" /> <img src="https://github.com/StanfordCS194/Ashley-Taylor-Kashif-Nazir-Lucy-Wang-Maria-Yang/blob/master/misc/lucy.jpeg" width="100" height="100" />
 
