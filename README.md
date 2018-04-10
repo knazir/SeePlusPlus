@@ -1,5 +1,5 @@
 
-<img src="https://github.com/StanfordCS194/Ashley-Taylor-Kashif-Nazir-Lucy-Wang-Maria-Yang/blob/master/misc/logo.png"/>
+<img src="https://github.com/StanfordCS194/Ashley-Taylor-Kashif-Nazir-Lucy-Wang-Maria-Yang/blob/master/docs/img/logo.png"/>
 
 ## Project Description
 Every quarter, CS106B students dread learning recursion and pointers, arguably the two hardest concepts in CS106B. We're excited to develop see++, a C++ memory visualization tool, to help students better understand how code affects memory. see++ will let students watch their code execute line by line, updating local variables as well as heap memory, helping them understand pointers in much greater detail.
@@ -22,6 +22,6 @@ Our internal communication is largely through Facebook Messenger. However, we ar
 * [Brainstorming and Project Development](https://docs.google.com/document/d/1G1kXY8zTfOtH4nB7pxNJIQl0llcX-9WOGnrIrXNgxKg/edit?usp=sharing)
 
 ## Brought To You By:
-<img src="https://github.com/StanfordCS194/Ashley-Taylor-Kashif-Nazir-Lucy-Wang-Maria-Yang/blob/master/misc/ashley.jpg" width="100" height="100" /> <img src="https://github.com/StanfordCS194/Ashley-Taylor-Kashif-Nazir-Lucy-Wang-Maria-Yang/blob/master/misc/maria.jpeg" width="100" height="100" /> <img src="https://github.com/StanfordCS194/Ashley-Taylor-Kashif-Nazir-Lucy-Wang-Maria-Yang/blob/master/misc/kashif.jpg" width="100" height="100" /> <img src="https://github.com/StanfordCS194/Ashley-Taylor-Kashif-Nazir-Lucy-Wang-Maria-Yang/blob/master/misc/lucy.jpeg" width="100" height="100" />
+<img src="https://github.com/StanfordCS194/Ashley-Taylor-Kashif-Nazir-Lucy-Wang-Maria-Yang/blob/master/docs/img/ashley.jpg" width="100" height="100" /> <img src="https://github.com/StanfordCS194/Ashley-Taylor-Kashif-Nazir-Lucy-Wang-Maria-Yang/blob/master/docs/img/maria.jpeg" width="100" height="100" /> <img src="https://github.com/StanfordCS194/Ashley-Taylor-Kashif-Nazir-Lucy-Wang-Maria-Yang/blob/master/docs/img/kashif.jpg" width="100" height="100" /> <img src="https://github.com/StanfordCS194/Ashley-Taylor-Kashif-Nazir-Lucy-Wang-Maria-Yang/blob/master/docs/img/lucy.jpeg" width="100" height="100" />
 
 Ashley Taylor, Maria Yang, Kashif Nazir, and Lucy Wang
