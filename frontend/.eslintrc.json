@@ -1,0 +1,35 @@
+{
+  "env": { "browser": true },
+  "parserOptions": {
+    "ecmaFeatures": { "jsx": true }
+  },
+
+  "plugins": [
+    "standard",
+    "promise",
+    "react"
+  ],
+
+  "extends": [
+    "eslint:recommended",
+    "plugin:react/recommended",
+    "standard"
+  ],
+
+  "rules": {
+    "no-new": "off",
+    "no-return-assign": "off",
+    "no-var": "error",
+    "object-curly-spacing": ["error", "always"],
+    "object-property-newline": "off",
+    "quotes": ["error", "double"],
+    "react/prop-types": ["error", {"ignore": ["children"]}],
+    "react/self-closing-comp": "error",
+    "semi": ["error", "always"],
+
+    "indent": "off",
+    "react/no-unescaped-entities": "off",
+    "space-before-function-paren": "off",
+    "spaced-comment": "off"
+  }
+}
