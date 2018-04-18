@@ -1,5 +1,5 @@
 class RawApi {
-  static async _send(method, path, body) {
+  static async _send(method, path, body = null) {
     const opts = {
       method: method,
       credentials: "include",
@@ -21,11 +21,11 @@ class RawApi {
     }
     return json;
   }
-}
 
-["get", "post", "put", "delete"].forEach(method => {
-  RawApi.prototype[method] = async (path, body) => this._send(method, path, body);
-});
+  static async get(path) {
+    return RawApi._send("get", path);
+  }
+}
 
 export default class Api {
   static getCodeTrace(lang, code) {
