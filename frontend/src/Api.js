@@ -2,7 +2,6 @@ class RawApi {
   static async _send(method, path, body = null) {
     const opts = {
       method: method,
-      credentials: "include",
       headers: {}
     };
 
@@ -11,7 +10,7 @@ class RawApi {
       opts.body = JSON.stringify(body);
     }
 
-    const res = await fetch(path, opts);
+    const res = await fetch(`${process.env.REACT_APP_API_URL}/${path}`, opts);
     let json;
     try {
       json = await res.json();
@@ -29,6 +28,6 @@ class RawApi {
 
 export default class Api {
   static getCodeTrace(lang, code) {
-    return RawApi.get(`/wsgi-bin/wsgi_backend.py?lang=${encodeURIComponent(lang)}&code=${encodeURIComponent(code)}`);
+    return RawApi.get(`wsgi-bin/wsgi_backend.py?lang=${encodeURIComponent(lang)}&code=${encodeURIComponent(code)}`);
   }
 }

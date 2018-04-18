@@ -1,6 +1,13 @@
 import React, { Component } from "react";
 
+import Api from "./Api";
+
 class App extends Component {
+  async componentDidMount() {
+    const res = await Api.getCodeTrace("c", "int main() { int x = 5; return 0; }");
+    console.log(res);
+  }
+
   render() {
     return (
       <div className="App">
