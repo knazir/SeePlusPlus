@@ -5,7 +5,7 @@ class App extends Component {
     return (
       <div className="App">
         <header className="App-header">
-          <img src={"/img/logo.svg"} className="App-logo" alt="logo" />
+          <img src="/img/logo.svg" className="App-logo" alt="logo" />
           <h1 className="App-title">Welcome to SeePlusPlus</h1>
         </header>
         <p className="App-intro">
