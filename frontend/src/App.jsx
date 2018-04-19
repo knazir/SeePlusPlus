@@ -1,4 +1,5 @@
 import React, { Component } from "react";
+import Ide from "./codeEditor/Ide";
 
 class App extends Component {
   render() {
@@ -8,9 +9,14 @@ class App extends Component {
           <img src={"/img/logo.svg"} className="App-logo" alt="logo" />
           <h1 className="App-title">Welcome to SeePlusPlus</h1>
         </header>
-        <p className="App-intro">
-          To get started, edit <code>src/App.js</code> and save to reload.
-        </p>
+        <div className="split-view">
+          <div className="split-panel code-panel">
+            <Ide/>
+          </div>
+          <div className="split-panel vis-panel">
+            <h1>Visualization</h1>
+          </div>
+        </div>
       </div>
     );
   }
