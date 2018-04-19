@@ -1,3 +1,5 @@
+import ProgramTrace from "./models/ProgramTrace";
+
 class RawApi {
   static async _send(method, path, body = null) {
     const opts = {
@@ -27,7 +29,8 @@ class RawApi {
 }
 
 export default class Api {
-  static getCodeTrace(lang, code) {
-    return RawApi.get(`wsgi-bin/wsgi_backend.py?lang=${encodeURIComponent(lang)}&code=${encodeURIComponent(code)}`);
+  static async getCodeTrace(lang, code) {
+    const path = `wsgi-bin/wsgi_backend.py?lang=${encodeURIComponent(lang)}&code=${encodeURIComponent(code)}`;
+    return new ProgramTrace(await RawApi.get(path));
   }
 }
