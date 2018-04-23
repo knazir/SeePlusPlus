@@ -5,11 +5,13 @@
   "dependencies": {
     "codemirror": "^5.36.0",
     "dotenv": "^5.0.1",
+    "konva": "^2.0.3",
     "npm": "^5.8.0",
     "prop-types": "^15.6.1",
     "react": "^16.3.1",
     "react-codemirror2": "^4.2.1",
     "react-dom": "^16.3.1",
+    "react-konva": "^1.7.2",
     "react-scripts": "1.1.4",
     "whatwg-fetch": "^2.0.4"
   },

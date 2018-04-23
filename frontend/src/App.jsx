@@ -1,7 +1,7 @@
 import React, { Component } from "react";
 import Ide from "./codeEditor/Ide";
+import Visualization from "./viz/Visualization";
 import Output from "./output/Output";
-import Visualization from "./visualization/Visualization";
 
 class App extends Component {
   render() {
