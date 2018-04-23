@@ -16,7 +16,7 @@ class App extends Component {
             <Output/>
           </div>
         </div>
-        <p style={ {fontSize: "small", textAlign: "center"} }>&copy; 2018 by SeePlusPlus</p>
+        <p style={{ fontSize: "small", textAlign: "center" }}>&copy; 2018 by SeePlusPlus</p>
       </div>
     );
   }
