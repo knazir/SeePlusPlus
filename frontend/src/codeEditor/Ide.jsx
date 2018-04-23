@@ -21,9 +21,7 @@ class Ide extends Component {
                 lineNumbers: true
               }}
               value={"int main() {\n\tint x = 3;\n\tstring y = \"hello\";\n\treturn 0;\n}"}
-              onChange={(editor, data, value) => {
-                this.setState({ code: value });
-              }}
+              onChange={(editor, data, code) => this.setState({ code })}
             />
             <button>Visualize Code</button>
           </div>
