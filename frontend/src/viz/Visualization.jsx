@@ -2,7 +2,7 @@ import React, { Component } from "react";
 import Card from "./vizComponents/Card";
 import { Stage} from 'react-konva';
 
-class Viz extends Component {
+class Visualization extends Component {
     render() {
         return (
             /*TODO lw: figure out how to actually do placement here*/
@@ -28,4 +28,4 @@ class Viz extends Component {
     }
 }
 
-export default Viz;
+export default Visualization;

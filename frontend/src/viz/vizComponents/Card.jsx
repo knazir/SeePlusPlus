@@ -9,12 +9,12 @@ class Card extends Component {
     render() {
         return (
             <Layer>
-                <Group>
+                <Group draggable={true}>
                     <Rect
                         x={this.props.x}
                         y={this.props.y}
                         width={this.state.frameWidth}
-                        height={50}
+                        height={this.props.height || 50}
                         fill={this.state.color}
                         shadowBlur={5}
                         onClick={this.handleClick}
@@ -25,7 +25,7 @@ class Card extends Component {
                         text={this.props.type + ' ' + this.props.name}
                         x={this.props.x}
                         y={this.props.y + 3}
-                        fontSize={15}
+                        fontSize={this.props.nameFontSize || 15}
                         align={'center'}
                         width={this.state.frameWidth}
                     />
@@ -33,7 +33,7 @@ class Card extends Component {
                         text={this.props.val}
                         x={this.props.x}
                         y={this.props.y + 20}
-                        fontSize={30}
+                        fontSize={this.props.valFontSize || 30}
                         align={'center'}
                         width={this.state.frameWidth}
 
