@@ -1,5 +1,6 @@
 import React, { Component } from "react";
 import Ide from "./codeEditor/Ide";
+import Visualization from "./viz/Visualization";
 
 class App extends Component {
   render() {
@@ -14,7 +15,7 @@ class App extends Component {
             <Ide/>
           </div>
           <div className="split-panel vis-panel">
-            <h1>Visualization</h1>
+              <Visualization/>
           </div>
         </div>
       </div>
