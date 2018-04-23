@@ -87,3 +87,16 @@ h3 {
   height: 80%
 }
 
+button {
+  background-color: pink;
+  border-radius: 20px;
+  border: none;
+  color: black;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  margin: 10px 10px 0px 10px;
+  padding: 5px;
+  font-size: 16px;
+}
+
