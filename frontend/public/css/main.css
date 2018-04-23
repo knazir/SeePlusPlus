@@ -88,9 +88,8 @@ h3 {
 }
 
 button {
-  background-color: pink;
+  border: solid 2px teal;
   border-radius: 20px;
-  border: none;
   color: black;
   text-align: center;
   text-decoration: none;
