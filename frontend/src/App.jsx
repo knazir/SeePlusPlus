@@ -1,7 +1,7 @@
 import React, { Component } from "react";
 import Ide from "./codeEditor/Ide";
+import Visualization from "./viz/Visualization";
 import Output from "./output/Output";
-import Visualization from "./visualization/Visualization";
 
 class App extends Component {
   render() {
@@ -16,7 +16,7 @@ class App extends Component {
             <Output/>
           </div>
         </div>
-        <p style={ {fontSize: "small", textAlign: "center"} }>&copy; 2018 by SeePlusPlus</p>
+        <p style={{ fontSize: "small", textAlign: "center" }}>&copy; 2018 by SeePlusPlus</p>
       </div>
     );
   }
