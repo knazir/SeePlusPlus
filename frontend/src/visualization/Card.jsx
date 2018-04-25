@@ -10,9 +10,17 @@ export default class Card extends Component {
       val: PropTypes.string,
       x: PropTypes.number,
       y: PropTypes.number,
-      height: PropTypes.string,
-      nameFontSize: PropTypes.string,
-      valFontSize: PropTypes.string
+      height: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+      nameFontSize: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+      valFontSize: PropTypes.oneOfType([PropTypes.string, PropTypes.number])
+    };
+  }
+
+  static get defaultProps() {
+    return {
+      height: 50,
+      nameFontSize: 15,
+      valFontSize: 30
     };
   }
 
@@ -24,6 +32,14 @@ export default class Card extends Component {
     };
   }
 
+  getWidth() {
+    return this.state.frameWidth;
+  }
+
+  getHeight() {
+    return this.props.height;
+  }
+
   render() {
     return (
       <Layer>
@@ -32,7 +48,7 @@ export default class Card extends Component {
             x={this.props.x}
             y={this.props.y}
             width={this.state.frameWidth}
-            height={this.props.height || 50}
+            height={this.props.height}
             fill={this.state.color}
             shadowBlur={5}
             onClick={this.handleClick}
@@ -42,7 +58,7 @@ export default class Card extends Component {
             text={`${this.props.type} ${this.props.name}`}
             x={this.props.x}
             y={this.props.y + 3}
-            fontSize={this.props.nameFontSize || 15}
+            fontSize={this.props.nameFontSize}
             align="center"
             width={this.state.frameWidth}
           />
@@ -50,7 +66,7 @@ export default class Card extends Component {
             text={this.props.val}
             x={this.props.x}
             y={this.props.y + 20}
-            fontSize={this.props.valFontSize || 30}
+            fontSize={this.props.valFontSize}
             align="center"
             width={this.state.frameWidth}
           />
