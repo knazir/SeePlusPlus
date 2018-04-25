@@ -6,8 +6,10 @@ import CodeMirrorCard from "../util/CodeMirrorCard";
 class Ide extends Component {
   constructor(props) {
     super(props);
-    this.state = { code: "int main() {\n\tint x = 3;\n\tstring y = \"hello\";\n\treturn 0;\n}",
-                   isVisualizing: false };
+    this.state = {
+      code: "int main() {\n\tint x = 3;\n\tstring y = \"hello\";\n\treturn 0;\n}",
+      isVisualizing: false
+    };
   }
 
   render() {
@@ -37,7 +39,7 @@ class Ide extends Component {
   getButtons() {
     if (this.state.isVisualizing) {
       return (
-        <div style={{display: "flex", flexDirection: "column", alignItems: "center"}}>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
           <div style={{ display: "flex" }}>
             <button>|&lt;</button>
             <button>&lt;</button>
