@@ -19,7 +19,7 @@ export default class Card extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      frameWidth: Math.max(this.props.type.length, this.props.name.length, this.props.val.length * 1.5, 5) * 10,
+      frameWidth: Math.max(this.props.type.length, this.props.name.length, this.props.val.length * 2, 5) * 10,
       color: "white"
     };
   }

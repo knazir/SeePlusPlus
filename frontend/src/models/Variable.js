@@ -6,6 +6,7 @@ export default class Variable {
   }
 
   constructor(data) {
+    this.name = null;
     const [ cType, address ] = data;
     this.cType = cType;
     this.address = address;
@@ -16,6 +17,11 @@ export default class Variable {
       this.type = data[2];
       this.value = data[3];
     }
+  }
+
+  withName(name) {
+    this.name = name;
+    return this;
   }
 
   isUninitialized() {

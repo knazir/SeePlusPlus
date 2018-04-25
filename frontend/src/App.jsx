@@ -25,6 +25,7 @@ export default class App extends Component {
   }
 
   loadTrace(trace) {
+    window.trace = trace;
     this.setState({ trace });
   }
 
