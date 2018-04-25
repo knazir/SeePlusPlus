@@ -14,8 +14,7 @@ export default class Visualization extends Component {
   }
 
   getVariableNodes() {
-    const currentStep = this.props.trace.getCurrentStep();
-    return currentStep.getVariables().map(v => {
+    return this.props.trace.getCurrentStep().getVariables().map(v => {
       return <Card key={v.name} type={v.type} name={v.name} val={v.value.toString()} x={30} y={30}/>;
     });
   }

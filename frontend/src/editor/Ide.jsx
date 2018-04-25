@@ -37,6 +37,7 @@ export default class Ide extends Component {
   }
 
   stopVisualizing() {
+    if (this.activeLineMarker) this.activeLineMarker.clear();
     this.setState({ isVisualizing: false });
   }
 

@@ -32,12 +32,10 @@ export default class Card extends Component {
     };
   }
 
-  getWidth() {
-    return this.state.frameWidth;
-  }
-
-  getHeight() {
-    return this.props.height;
+  componentWillReceiveProps({ type, name, val }) {
+    // TODO: kn merge with constructor calculation
+    const frameWidth =  Math.max(type.length, name.length, val.length * 2, 5) * 10;
+    this.setState({ frameWidth });
   }
 
   render() {
