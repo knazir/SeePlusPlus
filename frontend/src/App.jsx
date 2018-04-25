@@ -9,7 +9,7 @@ export default class App extends Component {
   constructor(props) {
     super(props);
     this.resize = this.resize.bind(this);
-    this.loadTrace = this.loadTrace.bind(this);
+    this.state = { trace: null };
   }
 
   componentDidMount() {
@@ -25,7 +25,17 @@ export default class App extends Component {
   }
 
   loadTrace(trace) {
-    console.log(trace);
+    this.setState({ trace });
+  }
+
+  stepNext() {
+    this.state.trace.stepNext();
+    this.forceUpdate();
+  }
+
+  stepPrev() {
+    this.state.trace.stepPrev();
+    this.forceUpdate();
   }
 
   render() {
@@ -33,11 +43,12 @@ export default class App extends Component {
       <div className="App">
         <div className="split-view">
           <div className="split-panel code-panel">
-            <Ide onLoadTrace={this.loadTrace}/>
+            <Ide onLoadTrace={trace => this.loadTrace(trace)} trace={this.state.trace}
+                 stepNext={() => this.stepNext()} stepPrev={() => this.stepPrev()}/>
           </div>
           <div className="split-panel vis-panel">
             <ContainerDimensions>
-              {({ width, height }) => <Visualization width={width} height={height * 0.8}/>}
+              {({ width, height }) => <Visualization width={width} height={height * 0.8} trace={this.state.trace}/>}
             </ContainerDimensions>
             <ContainerDimensions>
               {({ width, height }) => <Output width={width} height={height * 0.2}/>}

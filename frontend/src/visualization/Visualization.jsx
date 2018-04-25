@@ -6,7 +6,15 @@ import Card from "./Card";
 
 export default class Visualization extends Component {
   static get propTypes() {
-    return { width: PropTypes.number, height: PropTypes.number };
+    return {
+      width: PropTypes.number,
+      height: PropTypes.number,
+      trace: PropTypes.object
+    };
+  }
+
+  getCurrentStep() {
+
   }
 
   render() {
