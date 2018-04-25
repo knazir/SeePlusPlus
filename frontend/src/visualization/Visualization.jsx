@@ -1,18 +1,21 @@
 import React, { Component } from "react";
+import PropTypes from "prop-types";
 import { Stage } from "react-konva";
 
-import Card from "./vizComponents/Card";
+import Card from "./Card";
 
-class Visualization extends Component {
+export default class Visualization extends Component {
+  static get propTypes() {
+    return { width: PropTypes.number, height: PropTypes.number };
+  }
+
   render() {
     // TODO lw: figure out how to actually do placement here
     return (
-      <Stage width={window.innerWidth / 2} height={window.innerHeight / 1.5}>
+      <Stage ref={e => this.node = e} width={this.props.width} height={this.props.height}>
         <Card type="int" name="x" val="3" x={30} y={30}/>
         <Card type="string" name="y" val={"\"hello\""} x={30} y={100}/>
       </Stage>
     );
   }
 }
-
-export default Visualization;

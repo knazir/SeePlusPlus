@@ -1,6 +1,6 @@
 import Variable from "./Variable";
 import StackFrame from "./StackFrame";
-import Utils from "../Utils";
+import Utils from "../utils/Utils";
 
 export default class TraceStep {
   constructor({ event, exception_msg, func_name, line, globals, ordered_globals, heap, stack_to_render, stdout }) {

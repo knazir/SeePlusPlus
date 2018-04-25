@@ -34,28 +34,25 @@ h3 {
   padding: 10px;
 }
 
-.code-panel {
-
-}
-
 .vis-panel {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  align-items: center
+  align-items: center;
+  margin-right: 10px;
 }
 
 .box-title {
   display: flex;
   justify-content: center;
   align-items: center;
-  border-radius: 20px 20px 0px 0px;
+  border-radius: 20px 20px 0 0;
   width: 100%;
   height: 5%;
   background-color: teal;
   color: black;
   padding: 5px;
-  left-margin: 5px;
+  margin-left: 5px;
   background-clip: border-box;
 }
 
@@ -63,27 +60,21 @@ h3 {
   width: 100%;
   height: 95%;
   border: 2px solid teal;
-  border-radius: 0px 0px 20px 20px;
+  border-radius: 0 0 20px 20px;
   padding: 5px;
-  left-margin: 5px;
-  bottom-margin: 5px;
-}
-
-.output {
-  width: 100%;
-  height: 50px;
+  margin-left: 5px;
+  margin-bottom: 5px;
 }
 
 .output-text {
   height: 50px;
-  text: pre;
   white-space:pre-wrap;
   font-family: "courier", monospace;
   overflow: auto;
 }
 
 .visualization {
-  widht: 100%;
+  width: 100%;
   height: 80%
 }
 
@@ -94,8 +85,23 @@ button {
   text-align: center;
   text-decoration: none;
   display: inline-block;
-  margin: 10px 10px 0px 10px;
+  margin: 10px 10px 0 10px;
   padding: 5px;
   font-size: 16px;
+}
+
+.loader {
+  margin: 10px 10px 0 10px; /* Same as button */
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #3498db;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 

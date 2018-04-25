@@ -1,4 +1,4 @@
-import ProgramTrace from "./models/ProgramTrace";
+import ProgramTrace from "../models/ProgramTrace";
 
 class RawApi {
   static async _send(method, path, body = null) {

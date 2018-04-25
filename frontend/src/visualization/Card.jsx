@@ -2,7 +2,7 @@ import React, { Component } from "react";
 import PropTypes from "prop-types";
 import { Layer, Rect, Text, Group } from "react-konva";
 
-class Card extends Component {
+export default class Card extends Component {
   static get propTypes() {
     return {
       type: PropTypes.string,
@@ -10,9 +10,9 @@ class Card extends Component {
       val: PropTypes.string,
       x: PropTypes.number,
       y: PropTypes.number,
-      height: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-      nameFontSize: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-      valFontSize: PropTypes.oneOfType([PropTypes.string, PropTypes.number])
+      height: PropTypes.string,
+      nameFontSize: PropTypes.string,
+      valFontSize: PropTypes.string
     };
   }
 
@@ -53,12 +53,9 @@ class Card extends Component {
             fontSize={this.props.valFontSize || 30}
             align="center"
             width={this.state.frameWidth}
-
           />
         </Group>
       </Layer>
     );
   }
 }
-
-export default Card;

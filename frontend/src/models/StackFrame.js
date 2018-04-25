@@ -1,4 +1,4 @@
-import Utils from "../Utils";
+import Utils from "../utils/Utils";
 import Variable from "./Variable";
 
 export default class StackFrame {
