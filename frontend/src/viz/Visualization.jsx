@@ -13,6 +13,7 @@ class Visualization extends Component {
                         name={'x'}
                         x={30}
                         y={30}
+                        color={'LightSkyBlue '}
                     />
 
 
@@ -22,6 +23,7 @@ class Visualization extends Component {
                         name={'y'}
                         x={30}
                         y={100}
+                        color={'BlanchedAlmond'}
                     />
             </Stage>
         );
