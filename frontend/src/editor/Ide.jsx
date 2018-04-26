@@ -20,7 +20,7 @@ export default class Ide extends Component {
   constructor(props) {
     super(props);
     this.setupCodeMirrorInstance = this.setupCodeMirrorInstance.bind(this);
-    this.activeLineMarker = null;
+    this.activeLine = null;
     this.state = {
       code: "int main() {\n\tint x = 3;\n\tchar *y = \"hello\";\n\treturn 0;\n}",
       isVisualizing: false,
@@ -37,8 +37,20 @@ export default class Ide extends Component {
   }
 
   stopVisualizing() {
-    if (this.activeLineMarker) this.activeLineMarker.clear();
+    if (this.activeLine !== null) this.clearHighlightedLine();
     this.setState({ isVisualizing: false });
+  }
+
+  clearHighlightedLine() {
+    this.cm.removeLineClass(this.activeLine);
+    this.activeLine = null;
+    this.cm.refresh();
+  }
+
+  highlightLine(line) {
+    this.activeLine = line;
+    this.cm.addLineClass(this.activeLine, "wrap", "active-code");
+    this.cm.refresh();
   }
 
   setupCodeMirrorInstance(ref) {
@@ -46,10 +58,8 @@ export default class Ide extends Component {
   }
 
   highlightActiveLine() {
-    if (this.activeLineMarker) this.activeLineMarker.clear();
-    const line = this.props.trace.getCurrentStep().line - 1;
-    this.activeLineMarker = this.cm.markText({ line, ch: 0 }, { line }, { className: "active-code" });
-    this.cm.refresh();
+    if (this.activeLine !== null) this.clearHighlightedLine();
+    this.highlightLine(this.props.trace.getCurrentStep().line - 1);
   }
 
   getCodeEditor() {
@@ -98,10 +108,7 @@ export default class Ide extends Component {
   }
 
   render() {
-    if (this.state.isVisualizing && this.cm) {
-      this.highlightActiveLine();
-    }
-
+    if (this.state.isVisualizing && this.cm) this.highlightActiveLine();
     return (
       <div className="ide">
         {this.getCodeEditor()}
