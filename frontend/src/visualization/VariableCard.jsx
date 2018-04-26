@@ -26,6 +26,7 @@ export default class VariableCard extends Component {
 
   static get TypeColors() {
     return {
+      "char": "rgb(127, 255, 127)",
       "int": "rgb(255,127,127)",
       "string": "rgb(255,228,129)",
       "double": "rgb(210,255,139)",
@@ -45,7 +46,7 @@ export default class VariableCard extends Component {
 
   calculateFrameWidth(props) {
     const { type, name, val } = props;
-    return Math.max(type.length, name.length, val.length * 2, 5) * 10;
+    return Math.max(type.length + name.length + 1, val.length * 2, 5) * 10;
   }
 
   render() {
