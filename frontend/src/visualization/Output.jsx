@@ -1,7 +1,12 @@
 import React, { Component } from "react";
-import CodeMirrorCard from "../util/CodeMirrorCard";
+import PropTypes from "prop-types";
+import DomCard from "../components/DomCard";
 
 class Output extends Component {
+  static get propTypes() {
+    return { width: PropTypes.number, height: PropTypes.number };
+  }
+
   constructor(props) {
     super(props);
     this.state = { value: "This will display output." };
@@ -9,12 +14,12 @@ class Output extends Component {
 
   render() {
     return (
-      <div className="output">
-        <CodeMirrorCard title="Output" color="coral">
+      <div className="output" style={{ width: this.props.width, height: this.props.height }}>
+        <DomCard title="Output" color="coral">
           <div className="output-text">
             {this.state.value}
           </div>
-        </CodeMirrorCard>
+        </DomCard>
       </div>
     );
   }

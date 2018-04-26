@@ -1,4 +1,4 @@
-import Utils from "../Utils";
+import Utils from "../utils/Utils";
 import Variable from "./Variable";
 
 export default class StackFrame {
@@ -12,7 +12,11 @@ export default class StackFrame {
     this.isZombie = is_zombie;
     this.parentFrameIdList = parent_frame_id_list;
     this.uniqueHash = unique_hash;
-    this.encoded_locals = Utils.mapValues(Variable, encoded_locals);
-    this.ordered_varnames = ordered_varnames;
+    this.encodedLocals = Utils.mapValues(Variable, encoded_locals);
+    this.orderedVarnames = ordered_varnames;
+  }
+
+  getLocalVariables() {
+    return this.orderedVarnames.map(varName => this.encodedLocals[varName].withName(varName));
   }
 }
