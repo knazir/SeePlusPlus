@@ -89,6 +89,11 @@ button {
   padding: 5px;
   font-size: 16px;
   cursor: pointer;
+  user-select: none;
+}
+
+button:focus {
+  outline: 0;
 }
 
 .loader {
