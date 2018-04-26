@@ -31,4 +31,8 @@ export default class Variable {
   isNull() {
     return (this.type === "pointer" || this.type === "array") && this.value === "0x0";
   }
+
+  getColor() {
+    return Variable.TypeColors[this.type];
+  }
 }
