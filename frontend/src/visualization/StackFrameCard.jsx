@@ -10,7 +10,8 @@ export default class StackFrameCard extends Component {
       stackFrame: PropTypes.object,
       active: PropTypes.bool,
       x: PropTypes.number,
-      y: PropTypes.number
+      y: PropTypes.number,
+      height: PropTypes.oneOfType([PropTypes.string, PropTypes.number])
     };
   }
 
