@@ -19,4 +19,8 @@ export default class StackFrame {
   getLocalVariables() {
     return this.orderedVarnames.map(varName => this.encodedLocals[varName].withName(varName));
   }
+
+  toString() {
+    return `${this.funcName} ${this.frameId ? `(${this.frameId})` : ""}`.trim();
+  }
 }

@@ -21,7 +21,7 @@ export default class TraceStep {
   }
 
   getCurrentStackFrame() {
-    return this.stack[0];
+    return this.stack[this.stack.length - 1];
   }
 
   getGlobalVariables() {

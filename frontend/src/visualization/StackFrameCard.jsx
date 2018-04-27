@@ -2,34 +2,21 @@ import React, { Component } from "react";
 import PropTypes from "prop-types";
 import { Rect, Text, Group } from "react-konva";
 
-export default class VariableCard extends Component {
+import VariableCard from "./VariableCard";
+
+export default class StackFrameCard extends Component {
   static get propTypes() {
     return {
-      variable: PropTypes.object,
+      stackFrame: PropTypes.object,
+      active: PropTypes.bool,
       x: PropTypes.number,
-      y: PropTypes.number,
-      height: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-      nameFontSize: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-      valueFontSize: PropTypes.oneOfType([PropTypes.string, PropTypes.number])
+      y: PropTypes.number
     };
   }
 
   static get defaultProps() {
     return {
-      height: 50,
-      nameFontSize: 15,
-      valueFontSize: 25
-    };
-  }
-
-  static get TypeColors() {
-    return {
-      "char": "rgb(106, 247, 127)",
-      "int": "rgb(255,127,127)",
-      "string": "rgb(255,228,129)",
-      "double": "rgb(210,255,139)",
-      "pointer": "rgb(165,209,255)",
-      "bool": "rgb(227,156,255)"
+      height: 250
     };
   }
 
@@ -42,9 +29,12 @@ export default class VariableCard extends Component {
     this.setState({ frameWidth: this.calculateFrameWidth(newProps) });
   }
 
-  calculateFrameWidth({ variable }) {
-    const { type, name, value } = variable;
-    return Math.max(type.length + name.length + 2, value.toString().length * 2 + 2, 5) * 10;
+  calculateFrameWidth({ stackFrame }) {
+    return Math.max(stackFrame.funcName.length * 2, 20) * 20;
+  }
+
+  getColor() {
+    return this.props.active ? "rgb(210,255,139)" : "rgb(197, 204, 216)";
   }
 
   getOutline() {
@@ -55,7 +45,7 @@ export default class VariableCard extends Component {
         width={this.state.frameWidth}
         height={this.props.height}
         fill="white"
-        stroke={VariableCard.TypeColors[this.props.variable.type]}
+        stroke={this.getColor()}
         strokeWidth={2}
         cornerRadius={15}
       />
@@ -69,16 +59,16 @@ export default class VariableCard extends Component {
           x={this.props.x}
           y={this.props.y}
           width={this.state.frameWidth}
-          height={this.props.height - 30}
-          fill={VariableCard.TypeColors[this.props.variable.type]}
+          height={30}
+          fill={this.getColor()}
           cornerRadius={15}
         />
         <Rect
           x={this.props.x}
           y={this.props.y + 10}
           width={this.state.frameWidth}
-          height={this.props.height - 40}
-          fill={VariableCard.TypeColors[this.props.variable.type]}
+          height={20}
+          fill={this.getColor()}
         />
       </Group>
     );
@@ -87,10 +77,10 @@ export default class VariableCard extends Component {
   getTitleText() {
     return (
       <Text
-        text={this.props.variable.toString()}
+        text={this.props.stackFrame.funcName}
         x={this.props.x}
         y={this.props.y + 3}
-        fontSize={this.props.nameFontSize}
+        fontSize={20}
         fontFamily="Menlo"
         align="center"
         width={this.state.frameWidth}
@@ -107,18 +97,10 @@ export default class VariableCard extends Component {
     );
   }
 
-  getValueText() {
-    return (
-      <Text
-        text={this.props.variable.value.toString()}
-        x={this.props.x}
-        y={this.props.y + 23}
-        fontSize={this.props.valueFontSize}
-        align="center"
-        fontFamily="Menlo"
-        width={this.state.frameWidth}
-      />
-    );
+  getLocalVariableNodes() {
+    return this.props.stackFrame.getLocalVariables().map(v => {
+      return <VariableCard key={v.name} variable={v} x={this.props.x + 40} y={this.props.y + 40}/>;
+    });
   }
 
   render() {
@@ -126,7 +108,7 @@ export default class VariableCard extends Component {
       <Group draggable>
         {this.getOutline()}
         {this.getTitleSegment()}
-        {this.getValueText()}
+        {this.getLocalVariableNodes()}
       </Group>
     );
   }

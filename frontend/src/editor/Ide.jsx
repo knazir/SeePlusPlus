@@ -22,7 +22,7 @@ export default class Ide extends Component {
     this.setupCodeMirrorInstance = this.setupCodeMirrorInstance.bind(this);
     this.activeLine = null;
     this.state = {
-      code: "int main() {\n\tint x = 3;\n\tchar *y = \"hello\";\n\treturn 0;\n}",
+      code: "int a = 32;\n\nint main() {\n\tint x = 3;\n\tchar *y = \"hello\";\n\treturn 0;\n}",
       isVisualizing: false,
       loading: false
     };
@@ -76,7 +76,7 @@ export default class Ide extends Component {
         <CodeMirror
           ref={this.setupCodeMirrorInstance}
           options={options}
-          value={"int main() {\n\tint x = 3;\n\tchar *y = \"hello\";\n\treturn 0;\n}"}
+          value={"int a = 32;\n\nint main() {\n\tint x = 3;\n\tchar *y = \"hello\";\n\treturn 0;\n}"}
           onChange={(editor, data, code) => this.setState({ code })}
         />
       </DomCard>

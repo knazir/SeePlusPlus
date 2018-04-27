@@ -35,4 +35,8 @@ export default class Variable {
   getColor() {
     return Variable.TypeColors[this.type];
   }
+
+  toString() {
+    return `${this.type} ${this.name}`;
+  }
 }
