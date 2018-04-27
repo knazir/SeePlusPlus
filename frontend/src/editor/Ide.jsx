@@ -72,7 +72,7 @@ export default class Ide extends Component {
     };
 
     return (
-      <DomCard title="Code" color="#71CCA8">
+      <DomCard title="Code" color="lightgray">
         <CodeMirror
           ref={this.setupCodeMirrorInstance}
           options={options}

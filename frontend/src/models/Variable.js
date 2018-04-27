@@ -36,6 +36,10 @@ export default class Variable {
     return Variable.TypeColors[this.type];
   }
 
+  get varValue() {
+    return this.isUninitialized() ? "undefined" : this.value;
+  }
+
   toString() {
     return `${this.type} ${this.name}`;
   }
