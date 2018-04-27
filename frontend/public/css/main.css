@@ -5,7 +5,8 @@
 body {
   margin: 0;
   padding: 0;
-  font-family: sans-serif;
+  font-family: Menlo, monospace;
+  font-size: medium;
 }
 
 h3 {
@@ -67,9 +68,8 @@ h3 {
 }
 
 .output-text {
-  height: 50px;
+  height: 90px;
   white-space:pre-wrap;
-  font-family: "courier", monospace;
   overflow: auto;
 }
 
@@ -87,7 +87,8 @@ button {
   display: inline-block;
   margin: 10px 10px 0 10px;
   padding: 5px;
-  font-size: 16px;
+  font-size: medium;
+  font-family: Menlo, monospace;
   cursor: pointer;
   user-select: none;
 }
