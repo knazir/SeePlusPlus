@@ -44,7 +44,7 @@ export default class VariableCard extends Component {
 
   calculateFrameWidth({ variable }) {
     const { type, name } = variable;
-    return Math.max(type.length + name.length + 2, variable.varValue.toString().length * 2 + 2, 5) * 10;
+    return Math.max(type.length + name.length + 2, variable.getValue().toString().length * 2 + 2, 5) * 10;
   }
 
   getOutline() {
@@ -110,7 +110,7 @@ export default class VariableCard extends Component {
   getValueText() {
     return (
       <Text
-        text={this.props.variable.varValue.toString()}
+        text={this.props.variable.getValue().toString()}
         x={this.props.x}
         y={this.props.y + 23}
         fontSize={this.props.valueFontSize}
