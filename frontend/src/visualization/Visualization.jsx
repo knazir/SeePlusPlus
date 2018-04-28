@@ -4,6 +4,7 @@ import { Layer, Stage } from "react-konva";
 
 import StackFrameCard from "./StackFrameCard";
 import VariableCard from "./VariableCard";
+import VisualizationTool from "../utils/VisualizationTool";
 
 export default class Visualization extends Component {
   static get propTypes() {
@@ -16,7 +17,8 @@ export default class Visualization extends Component {
 
   getGlobalVariableNodes() {
     return this.props.trace.getCurrentStep().getGlobalVariables().map(v => {
-      return <VariableCard key={v.name} variable={v} x={30} y={30}/>;
+      const dimensions = VisualizationTool.getVariableCardDimensions(v);
+      return { ...dimensions, component: <VariableCard key={v.name} variable={v}/> };
     });
   }
 
@@ -24,17 +26,24 @@ export default class Visualization extends Component {
     const currentStep = this.props.trace.getCurrentStep();
     return currentStep.stack.map(frame => {
       const active = frame === currentStep.getCurrentStackFrame();
-      return <StackFrameCard key={frame.toString()} stackFrame={frame} active={active} x={30} y={30}/>;
+      const dimensions = VisualizationTool.getStackFrameCardDimensions(frame);
+      return { ...dimensions, component: <StackFrameCard key={frame.toString()} stackFrame={frame} active={active}/> };
     });
+  }
+
+  getAllNodes() {
+    const origin = { x: 10, y: 40 };
+    const offset = { x: 0, y: 15 };
+    const nodesToLayout = [...this.getGlobalVariableNodes(), ...this.getStackFrameNodes()];
+    return VisualizationTool.layoutNodes(nodesToLayout, origin, offset, VisualizationTool.Layouts.COLUMN);
   }
 
   render() {
     if (!this.props.trace) return <div style={{ width: this.props.width, height: this.props.height }}/>;
     return (
-      <Stage ref={e => this.node = e} width={this.props.width} height={this.props.height}>
+      <Stage width={this.props.width} height={this.props.height}>
         <Layer>
-          {this.getGlobalVariableNodes()}
-          {this.getStackFrameNodes()}
+          {this.getAllNodes()}
         </Layer>
       </Stage>
     );

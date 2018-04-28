@@ -4,6 +4,7 @@ import { Rect, Text, Group } from "react-konva";
 
 import VariableCard from "./VariableCard";
 import VisualizationTool from "../utils/VisualizationTool";
+import { StackFrameCard as VisualConstants } from "../utils/VisualConstants";
 
 export default class StackFrameCard extends Component {
   static get propTypes() {
@@ -11,21 +12,17 @@ export default class StackFrameCard extends Component {
       stackFrame: PropTypes.object,
       active: PropTypes.bool,
       x: PropTypes.number,
-      y: PropTypes.number,
+      y: PropTypes.number
     };
   }
 
   constructor(props) {
     super(props);
-    this.state = { ...VisualizationTool.getStackFrameCardDimensions(this.props.stackFrame) }
+    this.state = { ...VisualizationTool.getStackFrameCardDimensions(this.props.stackFrame) };
   }
 
   componentWillReceiveProps(newProps) {
     this.setState({ ...VisualizationTool.getStackFrameCardDimensions(newProps.stackFrame) });
-  }
-
-  getColor() {
-    return this.props.active ? "rgb(210,255,139)" : "rgb(197, 204, 216)";
   }
 
   getOutline() {
@@ -35,10 +32,10 @@ export default class StackFrameCard extends Component {
         y={this.props.y}
         width={this.state.width}
         height={this.state.height}
-        fill="white"
-        stroke={this.getColor()}
-        strokeWidth={2}
-        cornerRadius={15}
+        fill={VisualConstants.COLORS.BODY}
+        stroke={VisualizationTool.getColor(this)}
+        strokeWidth={VisualConstants.SIZING.OUTLINE_WIDTH}
+        cornerRadius={VisualConstants.SIZING.CORNER_RADIUS}
       />
     );
   }
@@ -51,15 +48,15 @@ export default class StackFrameCard extends Component {
           y={this.props.y}
           width={this.state.width}
           height={30}
-          fill={this.getColor()}
-          cornerRadius={15}
+          fill={VisualizationTool.getColor(this)}
+          cornerRadius={VisualConstants.SIZING.CORNER_RADIUS}
         />
         <Rect
           x={this.props.x}
           y={this.props.y + 10}
           width={this.state.width}
           height={20}
-          fill={this.getColor()}
+          fill={VisualizationTool.getColor(this)}
         />
       </Group>
     );
@@ -71,9 +68,9 @@ export default class StackFrameCard extends Component {
         text={this.props.stackFrame.funcName}
         x={this.props.x}
         y={this.props.y + 3}
-        fontSize={20}
-        fontFamily="Menlo"
-        align="center"
+        fontSize={VisualConstants.FONT.TITLE_SIZE}
+        fontFamily={VisualConstants.FONT.FAMILY}
+        align={VisualConstants.ALIGNMENT.TITLE}
         width={this.state.width}
       />
     );
@@ -89,9 +86,14 @@ export default class StackFrameCard extends Component {
   }
 
   getLocalVariableNodes() {
-    return this.props.stackFrame.getLocalVariables().map(v => {
-      return <VariableCard key={v.name} variable={v} x={this.props.x + 40} y={this.props.y + 40}/>;
+    const origin = { x: this.props.x + 7, y: this.props.y + 40 };
+    const offset = { x: 0, y: 15 };
+    const nodesToLayout = this.props.stackFrame.getLocalVariables().map(v => {
+      const { width, height } = VisualizationTool.getVariableCardDimensions(v);
+      const component = <VariableCard key={v.name} variable={v} x={this.props.x + 40} y={this.props.y + 40}/>;
+      return { width, height, component };
     });
+    return VisualizationTool.layoutNodes(nodesToLayout, origin, offset, VisualizationTool.Layouts.COLUMN);
   }
 
   render() {

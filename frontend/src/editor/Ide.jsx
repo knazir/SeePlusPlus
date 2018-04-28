@@ -6,6 +6,7 @@ import "codemirror/mode/clike/clike";
 import Api from "../utils/Api";
 import DomCard from "../components/DomCard";
 import LoadingSpinner from "../components/LoadingSpinner";
+import { code as starterCode } from "../samples/StarterCode";
 
 export default class Ide extends Component {
   static get propTypes() {
@@ -22,7 +23,7 @@ export default class Ide extends Component {
     this.setupCodeMirrorInstance = this.setupCodeMirrorInstance.bind(this);
     this.activeLine = null;
     this.state = {
-      code: "int a = 32;\n\nint main() {\n\tint x = 3;\n\tchar *y = \"hello\";\n\treturn 0;\n}",
+      code: starterCode,
       isVisualizing: false,
       loading: false
     };
@@ -76,7 +77,7 @@ export default class Ide extends Component {
         <CodeMirror
           ref={this.setupCodeMirrorInstance}
           options={options}
-          value={"int a = 32;\n\nint main() {\n\tint x = 3;\n\tchar *y = \"hello\";\n\treturn 0;\n}"}
+          value={starterCode}
           onChange={(editor, data, code) => this.setState({ code })}
         />
       </DomCard>

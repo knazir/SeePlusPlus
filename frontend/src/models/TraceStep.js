@@ -16,12 +16,12 @@ export default class TraceStep {
     this.globals = Utils.mapValues(Variable, globals);
     this.orderedGlobals = ordered_globals;
     this.heap = Utils.mapValues(Variable, heap);
-    this.stack = Utils.arrayOfType(StackFrame, stack_to_render);
+    this.stack = Utils.arrayOfType(StackFrame, stack_to_render).reverse(); // place current frame at index 0
     this.stdout = stdout;
   }
 
   getCurrentStackFrame() {
-    return this.stack[this.stack.length - 1];
+    return this.stack[0];
   }
 
   getGlobalVariables() {
