@@ -170,10 +170,9 @@ def application(env, start_response):
     prep_dir(opts)
     (gcc_retcode, gcc_stdout, gcc_stderr) = compile(opts)
     (stderr, stdout) = generate_trace(opts, gcc_stderr) if gcc_retcode == 0 else handle_gcc_error(opts, gcc_stderr)
-
-    status = '200 OK'
-    response_header = [('Content-type','application/json')]
-    start_response(status,response_header)
+    start_response('200 OK', [('Content-type', 'application/json')])
 
     # TODO: Figure out how to handle stderr
     return [stdout]
+
+
