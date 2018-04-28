@@ -37,7 +37,13 @@ export default class Variable {
   }
 
   getValue() {
-    return this.isUninitialized() ? "?" : this.value;
+    if (this.isUninitialized()) {
+      return "?";
+    } else if (this.type === "bool") {
+      return Boolean(this.value).toString();
+    } else {
+      return this.value;
+    }
   }
 
   toString() {
