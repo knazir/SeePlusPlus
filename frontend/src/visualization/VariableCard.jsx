@@ -2,13 +2,14 @@ import React, { Component } from "react";
 import PropTypes from "prop-types";
 import { Rect, Text, Group } from "react-konva";
 
+import VisualizationTool from "../utils/VisualizationTool";
+
 export default class VariableCard extends Component {
   static get propTypes() {
     return {
       variable: PropTypes.object,
       x: PropTypes.number,
       y: PropTypes.number,
-      height: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
       nameFontSize: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
       valueFontSize: PropTypes.oneOfType([PropTypes.string, PropTypes.number])
     };
@@ -16,7 +17,6 @@ export default class VariableCard extends Component {
 
   static get defaultProps() {
     return {
-      height: 50,
       nameFontSize: 15,
       valueFontSize: 25
     };
@@ -35,16 +35,11 @@ export default class VariableCard extends Component {
 
   constructor(props) {
     super(props);
-    this.state = { frameWidth: this.calculateFrameWidth(props) };
+    this.state = { ...VisualizationTool.getVariableCardDimensions(this.props.variable) };
   }
 
-  componentWillReceiveProps(newProps) {
-    this.setState({ frameWidth: this.calculateFrameWidth(newProps) });
-  }
-
-  calculateFrameWidth({ variable }) {
-    const { type, name } = variable;
-    return Math.max(type.length + name.length + 2, variable.getValue().toString().length * 2 + 2, 5) * 10;
+  componentWillReceiveProps({ variable }) {
+    this.setState({ ...VisualizationTool.getVariableCardDimensions(variable) });
   }
 
   getOutline() {
@@ -52,8 +47,8 @@ export default class VariableCard extends Component {
       <Rect
         x={this.props.x}
         y={this.props.y}
-        width={this.state.frameWidth}
-        height={this.props.height}
+        width={this.state.width}
+        height={this.state.height}
         fill="white"
         stroke={VariableCard.TypeColors[this.props.variable.type]}
         strokeWidth={2}
@@ -68,16 +63,16 @@ export default class VariableCard extends Component {
         <Rect
           x={this.props.x}
           y={this.props.y}
-          width={this.state.frameWidth}
-          height={this.props.height - 30}
+          width={this.state.width}
+          height={this.state.height - 30}
           fill={VariableCard.TypeColors[this.props.variable.type]}
           cornerRadius={15}
         />
         <Rect
           x={this.props.x}
           y={this.props.y + 10}
-          width={this.state.frameWidth}
-          height={this.props.height - 40}
+          width={this.state.width}
+          height={this.state.height - 40}
           fill={VariableCard.TypeColors[this.props.variable.type]}
         />
       </Group>
@@ -93,7 +88,7 @@ export default class VariableCard extends Component {
         fontSize={this.props.nameFontSize}
         fontFamily="Menlo"
         align="center"
-        width={this.state.frameWidth}
+        width={this.state.width}
       />
     );
   }
@@ -116,7 +111,7 @@ export default class VariableCard extends Component {
         fontSize={this.props.valueFontSize}
         align="center"
         fontFamily="Menlo"
-        width={this.state.frameWidth}
+        width={this.state.width}
       />
     );
   }

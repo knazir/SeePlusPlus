@@ -3,6 +3,7 @@ import PropTypes from "prop-types";
 import { Rect, Text, Group } from "react-konva";
 
 import VariableCard from "./VariableCard";
+import VisualizationTool from "../utils/VisualizationTool";
 
 export default class StackFrameCard extends Component {
   static get propTypes() {
@@ -11,27 +12,16 @@ export default class StackFrameCard extends Component {
       active: PropTypes.bool,
       x: PropTypes.number,
       y: PropTypes.number,
-      height: PropTypes.oneOfType([PropTypes.string, PropTypes.number])
-    };
-  }
-
-  static get defaultProps() {
-    return {
-      height: 250
     };
   }
 
   constructor(props) {
     super(props);
-    this.state = { frameWidth: this.calculateFrameWidth(props) };
+    this.state = { ...VisualizationTool.getStackFrameCardDimensions(this.props.stackFrame) }
   }
 
   componentWillReceiveProps(newProps) {
-    this.setState({ frameWidth: this.calculateFrameWidth(newProps) });
-  }
-
-  calculateFrameWidth({ stackFrame }) {
-    return Math.max(stackFrame.funcName.length * 2, 20) * 20;
+    this.setState({ ...VisualizationTool.getStackFrameCardDimensions(newProps.stackFrame) });
   }
 
   getColor() {
@@ -43,8 +33,8 @@ export default class StackFrameCard extends Component {
       <Rect
         x={this.props.x}
         y={this.props.y}
-        width={this.state.frameWidth}
-        height={this.props.height}
+        width={this.state.width}
+        height={this.state.height}
         fill="white"
         stroke={this.getColor()}
         strokeWidth={2}
@@ -59,7 +49,7 @@ export default class StackFrameCard extends Component {
         <Rect
           x={this.props.x}
           y={this.props.y}
-          width={this.state.frameWidth}
+          width={this.state.width}
           height={30}
           fill={this.getColor()}
           cornerRadius={15}
@@ -67,7 +57,7 @@ export default class StackFrameCard extends Component {
         <Rect
           x={this.props.x}
           y={this.props.y + 10}
-          width={this.state.frameWidth}
+          width={this.state.width}
           height={20}
           fill={this.getColor()}
         />
@@ -84,7 +74,7 @@ export default class StackFrameCard extends Component {
         fontSize={20}
         fontFamily="Menlo"
         align="center"
-        width={this.state.frameWidth}
+        width={this.state.width}
       />
     );
   }
