@@ -41,7 +41,7 @@ export default class Visualization extends Component {
   render() {
     if (!this.props.trace) return <div style={{ width: this.props.width, height: this.props.height }}/>;
     return (
-      <Stage width={this.props.width} height={this.props.height}>
+      <Stage draggable width={this.props.width} height={this.props.height}>
         <Layer>
           {this.getAllNodes()}
         </Layer>
