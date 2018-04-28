@@ -1,15 +1,14 @@
 # Run the Valgrind-based C/C++ backend for OPT and produce JSON to
 # stdout for piping to a web app, properly handling errors and stuff
 #
-# Created: 2016-05-09
-# Modified: 2018-04-14
+# Created: 2016-05-09 by Philip Guo
+# Modified: 2018-04-14 by Kashif Nazir
 
 import json
 import os
 import re
-import sys
 
-from cgi import parse_qs, escape
+from cgi import parse_qs
 from subprocess import Popen, PIPE
 
 
@@ -31,7 +30,7 @@ def setup_options(env):
         opts['CC'] = 'gcc'
         opts['DIALECT'] = '-std=c11'
         opts['FN'] = 'usercode.c'
-    else:
+    elif opts['LANG'] == 'cpp':
         opts['CC'] = 'g++'
         opts['DIALECT'] = '-std=c++11'
         opts['FN'] = 'usercode.cpp'
