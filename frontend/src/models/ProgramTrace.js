@@ -17,11 +17,29 @@ export default class ProgramTrace {
   }
 
   stepNext() {
-    if (!this.isDone()) this.traceIndex++;
+    while (!this.isDone()) {
+      this.traceIndex++;
+      if (this.getCurrentStep().line !== this.trace[this.traceIndex - 1].line) {
+        break;
+      }
+    }
   }
 
   stepPrev() {
-    if (!this.atStart()) this.traceIndex--;
+    while (!this.atStart()) {
+      this.traceIndex--;
+      if (this.getCurrentStep().line !== this.trace[this.traceIndex + 1].line) {
+        break;
+      }
+    }
+  }
+
+  stepStart() {
+    this.traceIndex = 0;
+  }
+
+  stepEnd() {
+    this.traceIndex = this.trace.length - 1;
   }
 
   getCurrentStep() {
