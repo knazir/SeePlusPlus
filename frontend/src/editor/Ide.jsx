@@ -14,6 +14,8 @@ export default class Ide extends Component {
       onLoadTrace: PropTypes.func.isRequired,
       stepNext: PropTypes.func.isRequired,
       stepPrev: PropTypes.func.isRequired,
+      stepStart: PropTypes.func.isRequired,
+      stepEnd: PropTypes.func.isRequired,
       trace: PropTypes.object
     };
   }
@@ -60,7 +62,14 @@ export default class Ide extends Component {
 
   highlightActiveLine() {
     if (this.activeLine !== null) this.clearHighlightedLine();
-    this.highlightLine(this.props.trace.getCurrentStep().line - 1);
+    let lineNumber = this.props.trace.getCurrentStep().line - 1;
+
+    // For some reason, main is highlighted as the first line of code,
+    // and the first real line is skipped. Manually fixing that bug
+    if (this.props.trace.atStart()) {
+      lineNumber += 1;
+    }
+    this.highlightLine(lineNumber);
   }
 
   getCodeEditor() {
@@ -94,10 +103,10 @@ export default class Ide extends Component {
       buttons = (
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
           <div style={{ display: "flex" }}>
-            <button>|&lt;</button>
+            <button onClick={() => this.props.stepStart()}>|&lt;</button>
             <button onClick={() => this.props.stepPrev()}>&lt;</button>
             <button onClick={() => this.props.stepNext()}>&gt;</button>
-            <button>&gt;|</button>
+            <button onClick={() => this.props.stepEnd()}>&gt;|</button>
           </div>
           <div>
             <button onClick={() => this.stopVisualizing()}>Stop Visualization</button>
