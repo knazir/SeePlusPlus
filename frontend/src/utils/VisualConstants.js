@@ -13,7 +13,7 @@ module.exports = {
       VALUE: "center"
     },
     FONT: {
-      FAMILY: "Menlo",
+      FAMILY: "Menlo, monospace",
       TITLE_SIZE: 15,
       BODY_SIZE: 25
     },
@@ -42,7 +42,7 @@ module.exports = {
       TITLE: "center"
     },
     FONT: {
-      FAMILY: "Menlo",
+      FAMILY: "Menlo, monospace",
       TITLE_SIZE: 20
     },
     COLORS: {

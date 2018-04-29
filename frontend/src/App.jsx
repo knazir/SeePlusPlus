@@ -39,13 +39,24 @@ export default class App extends Component {
     this.forceUpdate();
   }
 
+  stepStart() {
+    this.state.trace.stepStart();
+    this.forceUpdate();
+  }
+
+  stepEnd() {
+    this.state.trace.stepEnd();
+    this.forceUpdate();
+  }
+
   render() {
     return (
       <div className="App">
         <div className="split-view">
           <div className="split-panel code-panel">
             <Ide onLoadTrace={trace => this.loadTrace(trace)} trace={this.state.trace}
-                 stepNext={() => this.stepNext()} stepPrev={() => this.stepPrev()}/>
+                 stepNext={() => this.stepNext()} stepPrev={() => this.stepPrev()}
+                 stepStart={() => this.stepStart()} stepEnd={() => this.stepEnd()}/>
           </div>
           <div className="split-panel vis-panel">
             <ContainerDimensions>
