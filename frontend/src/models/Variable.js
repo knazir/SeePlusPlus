@@ -2,7 +2,7 @@ import Utils from "../utils/Utils";
 
 export default class Variable {
   static get CTypes() {
-    return { ARRAY: "C_ARRAY", DATA: "C_DATA" };
+    return { ARRAY: "C_ARRAY", DATA: "C_DATA", STRUCT: "C_STRUCT" };
   }
 
   constructor(data) {
@@ -13,6 +13,12 @@ export default class Variable {
     if (cType === Variable.CTypes.ARRAY) {
       this.type = "array";
       this.value = Utils.arrayOfType(Variable, data.slice(2));
+    } else if (cType === Variable.CTypes.STRUCT) {
+      this.type = data[2];
+      const fieldList = data.slice(3);
+      this.value = {};
+      Utils.arrayOfType(Variable, fieldList, (field) => new Variable(field[1]).withName(field[0]))
+        .forEach((elem) => this.value[elem.name] = elem);
     } else {
       this.type = data[2];
       this.value = data[3];

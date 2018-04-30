@@ -2,6 +2,7 @@ import React, { Component } from "react";
 import PropTypes from "prop-types";
 import { Rect, Text, Group } from "react-konva";
 
+import Variable from "../models/Variable";
 import VisualizationTool from "../utils/VisualizationTool";
 import { VariableCard as VisualConstants } from "../utils/VisualConstants";
 
@@ -97,12 +98,23 @@ export default class VariableCard extends Component {
     );
   }
 
+  getStructValues() {
+    const origin = { x: this.props.x + 7, y: this.props.y + 25 };
+    const offset = { x: 0, y: 15 };
+    const nodesToLayout = Object.values(this.props.variable.value).map(v => {
+      const { width, height } = VisualizationTool.getVariableCardDimensions(v);
+      const component = <VariableCard key={v.name} variable={v} x={this.props.x + 40} y={this.props.y + 40}/>;
+      return { width, height, component };
+    });
+    return VisualizationTool.layoutNodes(nodesToLayout, origin, offset, VisualizationTool.Layouts.COLUMN);
+  }
+
   render() {
     return (
       <Group draggable>
         {this.getOutline()}
         {this.getTitleSegment()}
-        {this.getValueText()}
+        {this.props.variable.cType === Variable.CTypes.STRUCT ? this.getStructValues() : this.getValueText()}
       </Group>
     );
   }

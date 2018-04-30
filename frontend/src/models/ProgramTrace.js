@@ -9,7 +9,9 @@ export default class ProgramTrace {
   }
 
   atStart() {
-    return this.traceIndex === 0;
+    return this.traceIndex === 0 ||
+      this.getCurrentStep().line === this.trace[0].line ||
+      this.getCurrentStep().line === this.trace[0].line + 1;
   }
 
   isDone() {
@@ -17,20 +19,26 @@ export default class ProgramTrace {
   }
 
   stepNext() {
+    let previousLine = this.getCurrentStep().line;
     while (!this.isDone()) {
       this.traceIndex++;
-      if (this.getCurrentStep().line !== this.trace[this.traceIndex - 1].line) {
+      if (this.getCurrentStep().line !== previousLine && !this.atStart()) {
         break;
       }
     }
   }
 
   stepPrev() {
+    if (this.atStart()) return;
+    this.traceIndex--;
     while (!this.atStart()) {
-      this.traceIndex--;
-      if (this.getCurrentStep().line !== this.trace[this.traceIndex + 1].line) {
+      if (this.getCurrentStep().line !== this.trace[this.traceIndex - 1].line) {
         break;
       }
+      this.traceIndex--;
+    }
+    if (this.getCurrentStep().line === this.trace[0].line + 1) {
+      this.traceIndex = 0;
     }
   }
 

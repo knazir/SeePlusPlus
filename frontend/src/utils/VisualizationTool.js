@@ -1,5 +1,6 @@
 import React from "react";
 
+import Variable from "../models/Variable";
 import StackFrameCard from "../visualization/StackFrameCard";
 import VariableCard from "../visualization/VariableCard";
 import VisualConstants from "./VisualConstants";
@@ -11,9 +12,17 @@ export default class VisualizationTool {
 
   static getVariableCardDimensions(variable) {
     const { type, name } = variable;
+    let calculatedHeight = VisualConstants.VariableCard.SIZING.HEIGHT;
+    if (variable.cType === Variable.CTypes.STRUCT) {
+      const offsetY = 15;
+      calculatedHeight = Object.values(variable.value)
+        .map(v => VisualizationTool.getVariableCardDimensions(v).height)
+        .reduce((total, height) => total + height + offsetY);
+      calculatedHeight += VisualConstants.VariableCard.SIZING.TITLE_HEIGHT + offsetY;
+    }
     return {
       width: Math.max(type.length + name.length + 2, variable.getValue().toString().length * 2 + 2, 5) * 10,
-      height: VisualConstants.VariableCard.SIZING.HEIGHT
+      height: calculatedHeight
     };
   }
 
