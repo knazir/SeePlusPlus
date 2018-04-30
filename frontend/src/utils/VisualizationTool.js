@@ -22,7 +22,7 @@ export default class VisualizationTool {
     let calculatedHeight = stackFrame.getLocalVariables()
       .map(v => VisualizationTool.getVariableCardDimensions(v).height)
       .reduce((total, height) => total + height + offsetY);
-    calculatedHeight += VisualConstants.StackFrameCard.SIZING.TITLE_HEIGHT + offsetY;
+    calculatedHeight += VisualConstants.StackFrameCard.SIZING.TITLE_HEIGHT + offsetY + 5;
     return {
       width: Math.max(stackFrame.funcName.length * 2, 20) * 20,
       height: Math.max(calculatedHeight, VisualConstants.StackFrameCard.SIZING.MIN_HEIGHT)

@@ -3,10 +3,11 @@
 }
 
 body {
-  margin: 0;
+  margin: 15px;
   padding: 0;
   font-family: Menlo, monospace;
   font-size: medium;
+  background-color: whitesmoke;
 }
 
 h3 {
@@ -25,12 +26,16 @@ h3 {
 .split-view {
   display: flex;
   flex-direction: row;
-  width: 100vw;
+  width: 100%;
   height: 95%;
 }
 
+.split-bar {
+  width: 15px;
+}
+
 .split-panel {
-  width: 50%;
+  width: calc(50% - 8px);
   height: 100%;
   padding: 10px;
 }
@@ -50,7 +55,7 @@ h3 {
   border-radius: 20px 20px 0 0;
   width: 100%;
   height: 5%;
-  background-color: teal;
+  background-color: #3498db;
   color: black;
   padding: 5px;
   margin-left: 5px;
@@ -60,11 +65,12 @@ h3 {
 .box-content {
   width: 100%;
   height: 95%;
-  border: 2px solid teal;
+  border: 2px solid #3498db;
   border-radius: 0 0 20px 20px;
-  padding: 5px;
+  padding: 10px;
   margin-left: 5px;
   margin-bottom: 5px;
+  background-color: white;
 }
 
 .output-text {
@@ -78,8 +84,13 @@ h3 {
   height: 80%
 }
 
+.cm-s-default {
+  border-radius: 0 0 20px 20px;
+}
+
 button {
-  border: solid 2px teal;
+  border: solid 2px #3498db;
+  background-color: lightcyan;
   border-radius: 20px;
   color: black;
   text-align: center;
@@ -91,6 +102,11 @@ button {
   font-family: Menlo, monospace;
   cursor: pointer;
   user-select: none;
+}
+
+.stop-button {
+  background-color: rgb(255,227,227);
+  border: solid 2px rgb(255,127,127);
 }
 
 button:focus {

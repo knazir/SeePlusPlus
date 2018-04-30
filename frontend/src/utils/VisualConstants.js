@@ -47,7 +47,7 @@ module.exports = {
     },
     COLORS: {
       BODY: "white",
-      ACTIVE: "rgb(210,255,139)",
+      ACTIVE: "rgb(94, 227, 100)",
       INACTIVE: "rgb(197, 204, 216)"
     }
   }

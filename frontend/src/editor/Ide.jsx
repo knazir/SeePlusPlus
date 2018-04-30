@@ -80,7 +80,7 @@ export default class Ide extends Component {
     };
 
     return (
-      <DomCard title="Code" color="lightgray">
+      <DomCard title="Code" color="lightgray" padding="0px">
         <CodeMirror
           ref={this.setupCodeMirrorInstance}
           options={options}
@@ -102,12 +102,12 @@ export default class Ide extends Component {
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
           <div style={{ display: "flex" }}>
             <button onClick={() => this.props.stepStart()}>|&lt;</button>
-            <button onClick={() => this.props.stepPrev()}>&lt;</button>
-            <button onClick={() => this.props.stepNext()}>&gt;</button>
+            <button onClick={() => this.props.stepPrev()}>&lt; </button>
+            <button onClick={() => this.props.stepNext()}> &gt; </button>
             <button onClick={() => this.props.stepEnd()}>&gt;|</button>
           </div>
           <div>
-            <button onClick={() => this.stopVisualizing()}>Stop Visualization</button>
+            <button className="stop-button" onClick={() => this.stopVisualizing()}>Stop Visualization</button>
           </div>
         </div>
       );

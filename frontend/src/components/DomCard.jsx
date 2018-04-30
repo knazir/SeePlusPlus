@@ -12,7 +12,7 @@ export default class DomCard extends Component {
         <div className="box-title" style={{ "backgroundColor": this.props.color }}>
           <h3 style={{ padding: 0 }}>{this.props.title}</h3>
         </div>
-        <div className="box-content" style={{ "borderColor": this.props.color }}>
+        <div className="box-content" style={{ "borderColor": this.props.color, "padding": this.props.padding }}>
           {this.props.children}
         </div>
       </div>

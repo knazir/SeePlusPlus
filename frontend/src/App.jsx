@@ -12,13 +12,7 @@ export default class App extends Component {
     this.state = { trace: null };
   }
 
-  componentDidMount() {
-    window.addEventListener("resize", this.resize);
-  }
 
-  componentWillUnmount() {
-    window.removeEventListener("resize", this.resize);
-  }
 
   resize() {
     this.forceUpdate();
@@ -58,6 +52,7 @@ export default class App extends Component {
                  stepNext={() => this.stepNext()} stepPrev={() => this.stepPrev()}
                  stepStart={() => this.stepStart()} stepEnd={() => this.stepEnd()}/>
           </div>
+          <div className ="split-bar" />
           <div className="split-panel vis-panel">
             <ContainerDimensions>
               {({ width, height }) => <Visualization width={width} height={height * 0.8} trace={this.state.trace}/>}
