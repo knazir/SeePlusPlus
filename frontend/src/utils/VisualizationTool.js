@@ -24,7 +24,7 @@ export default class VisualizationTool {
       maxFieldWidth = Math.max.apply(null, fields.map(v => VisualizationTool.getVariableCardDimensions(v).width));
     }
 
-    const titleWidth = type.length + (name === null ? 0 : name.length) + 2;
+    const titleWidth = type.length + (name || "").length + 2;
     const valueWidth = variable.getValue().toString().length * 1.25 + 2;
     const minWidth = VisualConstants.VariableCard.SIZING.MIN_WIDTH;
     let calculatedWidth = Math.max(Math.max(titleWidth, valueWidth, minWidth) * 10 + 7, maxFieldWidth + 14);

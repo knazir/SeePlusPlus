@@ -13,16 +13,7 @@ export default class Variable {
     if (cType === Variable.CTypes.ARRAY) {
       this.type = "array";
       this.value = Utils.arrayOfType(Variable, data.slice(2));
-      if (this.value.length === 1) {
-        const actualValue = this.value[0];
-
-        this.cType = actualValue.cType;
-        this.address = actualValue.address;
-        this.type = actualValue.type;
-        this.value = actualValue.value;
-        this.name = actualValue.name;
-        return;
-      }
+      if (this.value.length === 1) Object.assign(this, this.value[0]);
       if (this.value.length > 0 && this.value[0].cType !== Variable.CTypes.DATA) {
         this.type = "structArray";
       }
@@ -57,8 +48,11 @@ export default class Variable {
     } else if (this.type === "bool") {
       return Boolean(this.value).toString();
     } else if (this.cType === Variable.CTypes.ARRAY) {
+
       if (this.value.length > 0 && this.value[0].type === "char") {
-        return "\"" + this.value.slice(0, this.value.length - 1).map((elem) => elem.getValue().toString()).join("") + "\"";
+        const chars = this.value.slice(this.value, this.value.length - 1);
+        const str = chars.map(c => c.getValue()).join("");
+        return `"${str}"`;
       }
       return this.value.map((elem) => elem.getValue().toString()).join(", ");
     } else {
@@ -67,6 +61,6 @@ export default class Variable {
   }
 
   toString() {
-    return `${this.type === "structArray" ? "array" : this.type}${this.name === null ? "" : " " + this.name}`;
+    return `${this.type === "structArray" ? "array" : this.type} ${this.name || ""}`.trim();
   }
 }

@@ -17,9 +17,9 @@ export default class Visualization extends Component {
 
   getHeapVariableNodes() {
     const heapVars = this.props.trace.getCurrentStep().getHeapVariables();
-    return Object.keys(heapVars).map(k => {
-      const dimensions = VisualizationTool.getVariableCardDimensions(heapVars[k]);
-      return { ...dimensions, component: <VariableCard key={heapVars[k].name} variable={heapVars[k]}/> };
+    return heapVars.map(v => {
+      const dimensions = VisualizationTool.getVariableCardDimensions(v);
+      return { ...dimensions, component: <VariableCard key={v.name} variable={v}/> };
     });
   }
 
