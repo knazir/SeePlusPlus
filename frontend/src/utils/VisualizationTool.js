@@ -12,16 +12,28 @@ export default class VisualizationTool {
 
   static getVariableCardDimensions(variable) {
     const { type, name } = variable;
+
     let calculatedHeight = VisualConstants.VariableCard.SIZING.HEIGHT;
+    let maxFieldWidth = 0;
     if (variable.cType === Variable.CTypes.STRUCT) {
       const offsetY = 15;
-      calculatedHeight = Object.values(variable.value)
-        .map(v => VisualizationTool.getVariableCardDimensions(v).height)
+      const fields = Object.values(variable.value);
+      calculatedHeight = fields.map(v => VisualizationTool.getVariableCardDimensions(v).height)
         .reduce((total, height) => total + height + offsetY);
       calculatedHeight += VisualConstants.VariableCard.SIZING.TITLE_HEIGHT + offsetY;
+      maxFieldWidth = Math.max.apply(null, fields.map(v => VisualizationTool.getVariableCardDimensions(v).width));
     }
+
+    const titleWidth = type.length + name.length + 2;
+    const valueWidth = variable.getValue().toString().length * 1.25 + 2;
+    const minWidth = VisualConstants.VariableCard.SIZING.MIN_WIDTH;
+
+    console.log(titleWidth, valueWidth, maxFieldWidth, minWidth);
+
+    let calculatedWidth = Math.max(Math.max(titleWidth, valueWidth, minWidth) * 10 + 7, maxFieldWidth + 14);
+
     return {
-      width: Math.max(type.length + name.length + 2, variable.getValue().toString().length * 2 + 2, 5) * 10,
+      width: calculatedWidth,
       height: calculatedHeight
     };
   }

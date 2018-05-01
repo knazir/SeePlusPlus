@@ -2,6 +2,7 @@ module.exports = {
   VariableCard: {
     SIZING: {
       HEIGHT: 50,
+      MIN_WIDTH: 5,
       TITLE_UPPER_RECT_HEIGHT: 20,
       TITLE_LOWER_RECT_HEIGHT: 10,
       TITLE_HEIGHT: 20,
