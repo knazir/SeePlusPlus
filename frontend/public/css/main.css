@@ -88,29 +88,43 @@ h3 {
   border-radius: 0 0 20px 20px;
 }
 
+.smaller-button {
+  font-size: small;
+  border-radius: 20px;
+  padding: 5px;
+}
+
 button {
   border: solid 2px #3498db;
-  background-color: lightcyan;
   border-radius: 20px;
-  color: black;
+  color: #3498db;
   text-align: center;
   text-decoration: none;
   display: inline-block;
   margin: 10px 10px 0 10px;
-  padding: 5px;
-  font-size: medium;
+  padding: 10px;
+  font-size: large;
   font-family: Menlo, monospace;
   cursor: pointer;
   user-select: none;
 }
 
 .stop-button {
-  background-color: rgb(255,227,227);
+
   border: solid 2px rgb(255,127,127);
+  color: rgb(255,127,127);
 }
 
 button:focus {
   outline: 0;
+}
+
+button:hover {
+  background-color: lightcyan;
+}
+
+.stop-button:hover {
+  background-color: rgb(255,227,227);
 }
 
 .loader {
