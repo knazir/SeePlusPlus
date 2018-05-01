@@ -16,7 +16,7 @@ export default class VisualizationTool {
     let calculatedHeight = VisualConstants.VariableCard.SIZING.HEIGHT;
     let maxFieldWidth = 0;
     if (variable.cType === Variable.CTypes.STRUCT) {
-      const offsetY = 15;
+      const offsetY = VisualConstants.VariableCard.SIZING.SPACE_BETWEEN;
       const fields = Object.values(variable.value);
       calculatedHeight = fields.map(v => VisualizationTool.getVariableCardDimensions(v).height)
         .reduce((total, height) => total + height + offsetY, 0);
@@ -36,14 +36,14 @@ export default class VisualizationTool {
   }
 
   static getStackFrameCardDimensions(stackFrame) {
-    const offsetY = 15;
+    const offsetY = VisualConstants.VariableCard.SIZING.SPACE_BETWEEN;
     const dimensions = stackFrame.getLocalVariables().map(v => VisualizationTool.getVariableCardDimensions(v));
 
     let maxVarWidth = Math.max.apply(null, dimensions.map(d => d.width)) + 14;
     const minWidth = VisualConstants.StackFrameCard.SIZING.MIN_WIDTH;
 
     let calculatedHeight = dimensions.map(d => d.height).reduce((total, height) => total + height + offsetY, 0);
-    calculatedHeight += VisualConstants.StackFrameCard.SIZING.TITLE_HEIGHT + offsetY + 5;
+    calculatedHeight += VisualConstants.StackFrameCard.SIZING.TITLE_HEIGHT + offsetY;
 
     return {
       width: Math.max(Math.max(stackFrame.funcName.length * 1.25 * 20, minWidth), maxVarWidth),

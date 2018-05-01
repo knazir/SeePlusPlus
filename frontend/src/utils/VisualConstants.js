@@ -1,13 +1,15 @@
 module.exports = {
   VariableCard: {
     SIZING: {
-      HEIGHT: 50,
+      HEIGHT: 44,
       MIN_WIDTH: 5,
       TITLE_UPPER_RECT_HEIGHT: 20,
       TITLE_LOWER_RECT_HEIGHT: 10,
       TITLE_HEIGHT: 20,
-      OUTLINE_WIDTH: 2,
-      CORNER_RADIUS: 15
+      OUTLINE_WIDTH: 1,
+      CORNER_RADIUS: 15,
+        SPACE_BETWEEN: 10,
+
     },
     ALIGNMENT: {
       TITLE: "center",
@@ -16,7 +18,7 @@ module.exports = {
     FONT: {
       FAMILY: "Menlo, monospace",
       TITLE_SIZE: 15,
-      BODY_SIZE: 25
+      BODY_SIZE: 20
     },
     COLORS: {
       BODY: "white",
@@ -37,7 +39,7 @@ module.exports = {
       MIN_WIDTH: 20,
       MIN_HEIGHT: 150,
       TITLE_HEIGHT: 30,
-      OUTLINE_WIDTH: 2,
+      OUTLINE_WIDTH: 1,
       CORNER_RADIUS: 15
     },
     ALIGNMENT: {
