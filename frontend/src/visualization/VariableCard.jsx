@@ -114,7 +114,8 @@ export default class VariableCard extends Component {
       <Group draggable>
         {this.getOutline()}
         {this.getTitleSegment()}
-        {this.props.variable.cType === Variable.CTypes.STRUCT ? this.getStructValues() : this.getValueText()}
+        {this.props.variable.cType === Variable.CTypes.STRUCT || this.props.variable.type === "structArray"
+          ? this.getStructValues() : this.getValueText()}
       </Group>
     );
   }
