@@ -1,6 +1,6 @@
 import React, { Component } from "react";
 import PropTypes from "prop-types";
-import { Rect, Text, Group } from "react-konva";
+import { Rect, Text, Group, Arrow, Circle } from "react-konva";
 
 import Variable from "../models/Variable";
 import VisualizationTool from "../utils/VisualizationTool";
@@ -84,18 +84,42 @@ export default class VariableCard extends Component {
     );
   }
 
-  getValueText() {
-    return (
-      <Text
-        text={this.props.variable.getValue().toString()}
-        x={this.props.x}
-        y={this.props.y + 23}
-        fontSize={VisualConstants.FONT.BODY_SIZE}
-        align={VisualConstants.ALIGNMENT.VALUE}
-        fontFamily={VisualConstants.FONT.FAMILY}
-        width={this.state.width}
-      />
-    );
+  getPrimitiveValue() {
+    console.log(this.props.type);
+    if(!this.props.variable.isPointer() | this.props.variable.isUninitialized()){
+      return (
+            <Text
+                text={this.props.variable.getValue().toString()}
+                x={this.props.x}
+                y={this.props.y + 23}
+                fontSize={VisualConstants.FONT.BODY_SIZE}
+                align={VisualConstants.ALIGNMENT.VALUE}
+                fontFamily={VisualConstants.FONT.FAMILY}
+                width={this.state.width}
+            />
+        );
+    }
+    else {
+      const origin = {x: this.props.x + this.state.width/2.0, y: this.props.y + VisualConstants.POINTER.Y_OFFSET}
+      return (
+          <Group>
+            <Circle
+                x={origin.x}
+                y={origin.y}
+                radius={VisualConstants.POINTER.RADIUS}
+                fill={VisualConstants.POINTER.COLOR}
+            />
+            <Arrow
+              points={[origin.x, origin.y, origin.x + 40, origin.y]}
+              stroke={VisualConstants.POINTER.COLOR}
+              tension={VisualConstants.POINTER.TENSION}
+              pointerLength={VisualConstants.POINTER.LENGTH}
+              pointerWidth ={VisualConstants.POINTER.WIDTH}
+              fill={VisualConstants.POINTER.COLOR}
+            />
+          </Group>
+      );
+    }
   }
 
   getStructValues() {
@@ -117,9 +141,7 @@ export default class VariableCard extends Component {
       <Group draggable>
         {this.getOutline()}
         {this.getTitleSegment()}
-        {this.props.variable.cType === Variable.CTypes.STRUCT || this.props.variable.cType === Variable.CTypes.STRUCT_ARRAY
-          ? this.getStructValues()
-          : this.getValueText()}
+        {this.props.variable.cType === Variable.CTypes.STRUCT ? this.getStructValues() : this.getPrimitiveValue()}
       </Group>
     );
   }

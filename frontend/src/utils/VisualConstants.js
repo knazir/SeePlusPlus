@@ -31,7 +31,16 @@ module.exports = {
         "string": "rgb(255,228,129)",
         DEFAULT: "rgb(147, 188, 255)"
       }
-    }
+    },
+      POINTER: {
+          WIDTH: 10,
+          LENGTH: 10,
+          COLOR: 'black',
+          Y_OFFSET: 35,
+          RADIUS: 4,
+          TENSION: 2
+      }
+
   },
   StackFrameCard: {
     SIZING: {
