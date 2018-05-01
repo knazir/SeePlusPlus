@@ -34,6 +34,7 @@ module.exports = {
   },
   StackFrameCard: {
     SIZING: {
+      MIN_WIDTH: 20,
       MIN_HEIGHT: 150,
       TITLE_HEIGHT: 30,
       OUTLINE_WIDTH: 2,
