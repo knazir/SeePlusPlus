@@ -46,7 +46,7 @@ export default class VisualizationTool {
     calculatedHeight += VisualConstants.StackFrameCard.SIZING.TITLE_HEIGHT + offsetY + 5;
 
     return {
-      width: Math.max(Math.max(stackFrame.funcName.length * 1.25, minWidth), maxVarWidth),
+      width: Math.max(Math.max(stackFrame.funcName.length * 1.25 * 20, minWidth), maxVarWidth),
       height: Math.max(calculatedHeight, VisualConstants.StackFrameCard.SIZING.MIN_HEIGHT)
     };
   }
