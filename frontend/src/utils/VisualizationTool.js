@@ -19,7 +19,7 @@ export default class VisualizationTool {
       const offsetY = 15;
       const fields = Object.values(variable.value);
       calculatedHeight = fields.map(v => VisualizationTool.getVariableCardDimensions(v).height)
-        .reduce((total, height) => total + height + offsetY);
+        .reduce((total, height) => total + height + offsetY, 0);
       calculatedHeight += VisualConstants.VariableCard.SIZING.TITLE_HEIGHT + offsetY;
       maxFieldWidth = Math.max.apply(null, fields.map(v => VisualizationTool.getVariableCardDimensions(v).width));
     }
@@ -42,7 +42,7 @@ export default class VisualizationTool {
     let maxVarWidth = Math.max.apply(null, dimensions.map(d => d.width)) + 14;
     const minWidth = VisualConstants.StackFrameCard.SIZING.MIN_WIDTH;
 
-    let calculatedHeight = dimensions.map(d => d.height).reduce((total, height) => total + height + offsetY);
+    let calculatedHeight = dimensions.map(d => d.height).reduce((total, height) => total + height + offsetY, 0);
     calculatedHeight += VisualConstants.StackFrameCard.SIZING.TITLE_HEIGHT + offsetY + 5;
 
     return {
