@@ -48,6 +48,10 @@ export default class Variable {
     }
   }
 
+  isPointer() {
+    return this.type === "pointer";
+  }
+
   toString() {
     return `${this.type} ${this.name}`;
   }

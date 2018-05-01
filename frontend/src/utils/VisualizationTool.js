@@ -20,10 +20,18 @@ export default class VisualizationTool {
         .reduce((total, height) => total + height + offsetY);
       calculatedHeight += VisualConstants.VariableCard.SIZING.TITLE_HEIGHT + offsetY;
     }
-    return {
-      width: Math.max(type.length + name.length + 2, variable.getValue().toString().length * 2 + 2, 5) * 10,
-      height: calculatedHeight
-    };
+    if (variable.isPointer()) {
+        return {
+            width: Math.max(type.length + name.length + 2, 5) * 10,
+            height: calculatedHeight
+        };
+    }
+    else {
+        return {
+            width: Math.max(type.length + name.length + 2, variable.getValue().toString().length * 2 + 2, 5) * 10,
+            height: calculatedHeight
+        };
+    }
   }
 
   static getStackFrameCardDimensions(stackFrame) {
