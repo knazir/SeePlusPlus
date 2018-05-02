@@ -15,6 +15,14 @@ export default class Visualization extends Component {
     };
   }
 
+  getHeapVariableNodes() {
+    const heapVars = this.props.trace.getCurrentStep().getHeapVariables();
+    return heapVars.map(v => {
+      const dimensions = VisualizationTool.getVariableCardDimensions(v);
+      return { ...dimensions, component: <VariableCard key={v.name} variable={v}/> };
+    });
+  }
+
   getGlobalVariableNodes() {
     return this.props.trace.getCurrentStep().getGlobalVariables().map(v => {
       const dimensions = VisualizationTool.getVariableCardDimensions(v);
@@ -34,7 +42,7 @@ export default class Visualization extends Component {
   getAllNodes() {
     const origin = { x: 10, y: 40 };
     const offset = { x: 0, y: 15 };
-    const nodesToLayout = [...this.getGlobalVariableNodes(), ...this.getStackFrameNodes()];
+    const nodesToLayout = [...this.getGlobalVariableNodes(), ...this.getStackFrameNodes(), ...this.getHeapVariableNodes()];
     return VisualizationTool.layoutNodes(nodesToLayout, origin, offset, VisualizationTool.Layouts.COLUMN);
   }
 
