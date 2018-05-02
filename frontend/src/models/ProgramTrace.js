@@ -49,7 +49,6 @@ export default class ProgramTrace {
 
   stepEnd() {
     this.traceIndex = this.trace.length - 1;
-    console.log(this.getCurrentStep().line);
     while (this.getCurrentStep().line === this.trace[this.traceIndex - 1].line) {
       this.traceIndex--;
     }
