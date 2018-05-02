@@ -100,13 +100,16 @@ export default class VariableCard extends Component {
 
   getStructValues() {
     const origin = { x: this.props.x + 7, y: this.props.y + 25 };
-    const offset = { x: 0, y: 15 };
+    const offset = this.props.variable.cType === Variable.CTypes.STRUCT_ARRAY ? { x: 15, y: 0 } : { x: 0, y: 15 };
     const nodesToLayout = Object.values(this.props.variable.value).map(v => {
       const { width, height } = VisualizationTool.getVariableCardDimensions(v);
       const component = <VariableCard key={v.name} variable={v} x={this.props.x + 40} y={this.props.y + 40}/>;
       return { width, height, component };
     });
-    return VisualizationTool.layoutNodes(nodesToLayout, origin, offset, VisualizationTool.Layouts.COLUMN);
+    return VisualizationTool.layoutNodes(nodesToLayout, origin, offset,
+      this.props.variable.cType === Variable.CTypes.STRUCT_ARRAY
+        ? VisualizationTool.Layouts.ROW
+        : VisualizationTool.Layouts.COLUMN);
   }
 
   render() {
@@ -114,8 +117,9 @@ export default class VariableCard extends Component {
       <Group draggable>
         {this.getOutline()}
         {this.getTitleSegment()}
-        {this.props.variable.cType === Variable.CTypes.STRUCT || this.props.variable.type === "structArray"
-          ? this.getStructValues() : this.getValueText()}
+        {this.props.variable.cType === Variable.CTypes.STRUCT || this.props.variable.cType === Variable.CTypes.STRUCT_ARRAY
+          ? this.getStructValues()
+          : this.getValueText()}
       </Group>
     );
   }

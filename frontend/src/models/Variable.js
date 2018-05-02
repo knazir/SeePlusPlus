@@ -2,7 +2,7 @@ import Utils from "../utils/Utils";
 
 export default class Variable {
   static get CTypes() {
-    return { ARRAY: "C_ARRAY", DATA: "C_DATA", STRUCT: "C_STRUCT" };
+    return { ARRAY: "C_ARRAY", DATA: "C_DATA", STRUCT: "C_STRUCT", STRUCT_ARRAY: "C_STRUCT_ARRAY" };
   }
 
   constructor(data) {
@@ -13,9 +13,10 @@ export default class Variable {
     if (cType === Variable.CTypes.ARRAY) {
       this.type = "array";
       this.value = Utils.arrayOfType(Variable, data.slice(2));
-      if (this.value.length === 1) Object.assign(this, this.value[0]);
-      if (this.value.length > 0 && this.value[0].cType !== Variable.CTypes.DATA) {
-        this.type = "structArray";
+      if (this.value.length === 1) {
+        Object.assign(this, this.value[0]);
+      } else if (this.value.length > 0 && this.value[0].cType !== Variable.CTypes.DATA) {
+        this.cType = Variable.CTypes.STRUCT_ARRAY;
       }
     } else if (cType === Variable.CTypes.STRUCT) {
       this.type = data[2];
@@ -48,7 +49,6 @@ export default class Variable {
     } else if (this.type === "bool") {
       return Boolean(this.value).toString();
     } else if (this.cType === Variable.CTypes.ARRAY) {
-
       if (this.value.length > 0 && this.value[0].type === "char") {
         const chars = this.value.slice(this.value, this.value.length - 1);
         const str = chars.map(c => c.getValue()).join("");
@@ -61,6 +61,6 @@ export default class Variable {
   }
 
   toString() {
-    return `${this.type === "structArray" ? "array" : this.type} ${this.name || ""}`.trim();
+    return `${this.type} ${this.name || ""}`.trim();
   }
 }
