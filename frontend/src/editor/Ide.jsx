@@ -101,10 +101,12 @@ export default class Ide extends Component {
       buttons = (
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
           <div style={{ display: "flex" }}>
-            <button className="smaller-button" onClick={() => this.props.stepStart()}>|&lt;</button>
-            <button onClick={() => this.props.stepPrev()}>&lt; </button>
-            <button onClick={() => this.props.stepNext()}> &gt; </button>
-            <button className="smaller-button" onClick={() => this.props.stepEnd()}>&gt;|</button>
+            <button className="smaller-button" disabled={this.props.trace.atStart()}
+                    onClick={() => this.props.stepStart()}>|&lt;</button>
+            <button disabled={this.props.trace.atStart()} onClick={() => this.props.stepPrev()}>&lt; </button>
+            <button disabled={this.props.trace.isDone()} onClick={() => this.props.stepNext()}> &gt; </button>
+            <button disabled={this.props.trace.isDone()} className="smaller-button"
+                    onClick={() => this.props.stepEnd()}>&gt;|</button>
           </div>
           <div>
             <button className="stop-button" onClick={() => this.stopVisualizing()}>Stop Visualization</button>

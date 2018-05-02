@@ -15,7 +15,8 @@ export default class ProgramTrace {
   }
 
   isDone() {
-    return this.traceIndex === this.trace.length - 1;
+    return this.traceIndex === this.trace.length - 1 ||
+      this.getCurrentStep().line === this.trace[this.trace.length - 1].line;
   }
 
   stepNext() {
@@ -48,6 +49,10 @@ export default class ProgramTrace {
 
   stepEnd() {
     this.traceIndex = this.trace.length - 1;
+    console.log(this.getCurrentStep().line);
+    while (this.getCurrentStep().line === this.trace[this.traceIndex - 1].line) {
+      this.traceIndex--;
+    }
   }
 
   getCurrentStep() {

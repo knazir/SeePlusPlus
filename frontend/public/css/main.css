@@ -109,6 +109,11 @@ button {
   user-select: none;
 }
 
+button:disabled {
+  background-color: lightgray;
+  color: gray;
+}
+
 .stop-button {
 
   border: solid 1px rgb(255,127,127);
@@ -119,7 +124,7 @@ button:focus {
   outline: 0;
 }
 
-button:hover {
+button:hover:enabled {
   background-color: lightcyan;
 }
 
