@@ -1,14 +1,15 @@
 # Run the Valgrind-based C/C++ backend for OPT and produce JSON to
 # stdout for piping to a web app, properly handling errors and stuff
 #
-# Created: 2016-05-09 by Philip Guo
-# Modified: 2018-04-14 by Kashif Nazir
+# Created: 2016-05-09
+# Modified: 2018-04-14
 
 import json
 import os
 import re
+import sys
 
-from cgi import parse_qs
+from cgi import parse_qs, escape
 from subprocess import Popen, PIPE
 
 
@@ -16,13 +17,16 @@ def pluck(d, *args):
     return (d[arg] for arg in args)
 
 
+def preprocess_code(code):
+    return "#define union struct\n" + code
+
 def setup_options(env):
     query_params = parse_qs(env['QUERY_STRING'])
     opts = {
         'VALGRIND_MSG_RE': re.compile('==\d+== (.*)$'),
         'PROGRAM_DIR': '/var/spp/programs',
         'LIB_DIR': '/var/spp/lib',
-        'USER_PROGRAM': query_params['code'][0],
+        'USER_PROGRAM': preprocess_code(query_params['code'][0]),
         'LANG': query_params['lang'][0],
         'PRETTY_DUMP': False
     }
@@ -30,7 +34,7 @@ def setup_options(env):
         opts['CC'] = 'gcc'
         opts['DIALECT'] = '-std=c11'
         opts['FN'] = 'usercode.c'
-    elif opts['LANG'] == 'cpp':
+    elif opts['LANG'] == 'c++':
         opts['CC'] = 'g++'
         opts['DIALECT'] = '-std=c++11'
         opts['FN'] = 'usercode.cpp'
@@ -83,6 +87,13 @@ def check_for_valgrind_errors(opts, valgrind_stderr):
 
 def run_valgrind(opts):
     VALGRIND_EXE = os.path.join(opts['LIB_DIR'], 'valgrind-3.11.0/inst/bin/valgrind')
+    sys.stderr.write("%s\n" % ['stdbuf', '-o0',  # VERY IMPORTANT to disable stdout buffering so that stdout is traced properly
+         VALGRIND_EXE,
+         '--tool=memcheck',
+         '--source-filename=' + opts['FN'],
+         '--trace-filename=' + opts['VGTRACE_PATH'],
+         opts['EXE_PATH']
+         ])
     valgrind_p = Popen(
         ['stdbuf', '-o0',  # VERY IMPORTANT to disable stdout buffering so that stdout is traced properly
          VALGRIND_EXE,
