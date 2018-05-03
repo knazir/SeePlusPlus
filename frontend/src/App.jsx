@@ -13,7 +13,7 @@ export default class App extends Component {
   }
 
   componentDidMount() {
-    window.addEventListener("keydown", this.handleKeyCommands)
+    window.addEventListener("keydown", this.handleKeyCommands);
   }
 
   componentWillUnmount() {
@@ -22,7 +22,7 @@ export default class App extends Component {
 
   handleKeyCommands(event) {
     if (event.ctrlKey || event.metaKey) {
-      switch(event.which) {
+      switch (event.which) {
         case 83: event.preventDefault(); break; // s
         case 13: this.ide.visualizeCode(); break; // enter
         case 27: this.ide.stopVisualizing(); break; // escape
@@ -39,9 +39,9 @@ export default class App extends Component {
 
     if (!this.state.trace) return;
     switch (event.which) {
-      case 37: this.stepPrev(); break;  // left arrow
-      case 39: this.stepNext(); break;  // right arrow
-      default: return;
+      case 37: this.stepPrev(); break; // left arrow
+      case 39: this.stepNext(); break; // right arrow
+      default: break;
     }
   }
 
