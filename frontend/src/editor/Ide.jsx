@@ -65,8 +65,8 @@ export default class Ide extends Component {
     let lineNumber = this.props.trace.getCurrentStep().line - 1;
 
     // For some reason, main is highlighted as the first line of code,
-    // and the first real line is skipped. Manually fixing that bug
-    if (this.props.trace.atStart()) lineNumber++;
+    // and the first real line is skipped. Manually fixing that bug (and temporarily unfixed)
+    // if (this.props.trace.atStart()) lineNumber++;
     this.highlightLine(lineNumber);
   }
 
@@ -80,7 +80,7 @@ export default class Ide extends Component {
     };
 
     return (
-      <DomCard title="Code" color="lightgray" padding="0px">
+      <DomCard title="Code" color="lightgray" bodyStyle={{ padding: "0px" }}>
         <CodeMirror
           ref={this.setupCodeMirrorInstance}
           options={options}
@@ -101,10 +101,12 @@ export default class Ide extends Component {
       buttons = (
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
           <div style={{ display: "flex" }}>
-            <button onClick={() => this.props.stepStart()}>|&lt;</button>
-            <button onClick={() => this.props.stepPrev()}>&lt; </button>
-            <button onClick={() => this.props.stepNext()}> &gt; </button>
-            <button onClick={() => this.props.stepEnd()}>&gt;|</button>
+            <button className="smaller-button" disabled={this.props.trace.atStart()}
+                    onClick={() => this.props.stepStart()}>|&lt;</button>
+            <button disabled={this.props.trace.atStart()} onClick={() => this.props.stepPrev()}>&lt; </button>
+            <button disabled={this.props.trace.isDone()} onClick={() => this.props.stepNext()}> &gt; </button>
+            <button disabled={this.props.trace.isDone()} className="smaller-button"
+                    onClick={() => this.props.stepEnd()}>&gt;|</button>
           </div>
           <div>
             <button className="stop-button" onClick={() => this.stopVisualizing()}>Stop Visualization</button>

@@ -16,15 +16,22 @@ export default class VisualizationTool {
     let calculatedHeight = VisualConstants.VariableCard.SIZING.HEIGHT;
     let maxFieldWidth = 0;
     if (variable.cType === Variable.CTypes.STRUCT) {
-      const offsetY = 15;
+      const offsetY = VisualConstants.VariableCard.SIZING.SPACE_BETWEEN;
       const fields = Object.values(variable.value);
       calculatedHeight = fields.map(v => VisualizationTool.getVariableCardDimensions(v).height)
         .reduce((total, height) => total + height + offsetY, 0);
       calculatedHeight += VisualConstants.VariableCard.SIZING.TITLE_HEIGHT + offsetY;
       maxFieldWidth = Math.max.apply(null, fields.map(v => VisualizationTool.getVariableCardDimensions(v).width));
+    } else if (variable.cType === Variable.CTypes.STRUCT_ARRAY) {
+      const offset = VisualConstants.VariableCard.SIZING.SPACE_BETWEEN;
+      const fields = Object.values(variable.value);
+      maxFieldWidth = fields.map(v => VisualizationTool.getVariableCardDimensions(v).width)
+        .reduce((total, width) => total + width + offset, 0);
+      calculatedHeight = VisualConstants.VariableCard.SIZING.TITLE_HEIGHT + offset;
+      calculatedHeight += Math.max.apply(null, fields.map(v => VisualizationTool.getVariableCardDimensions(v).height));
     }
 
-    const titleWidth = type.length + name.length + 2;
+    const titleWidth = type.length + (name || "").length + 2;
     const valueWidth = variable.getValue().toString().length * 1.25 + 2;
     const minWidth = VisualConstants.VariableCard.SIZING.MIN_WIDTH;
     let calculatedWidth = 0;
@@ -41,17 +48,17 @@ export default class VisualizationTool {
   }
 
   static getStackFrameCardDimensions(stackFrame) {
-    const offsetY = 15;
+    const offsetY = VisualConstants.VariableCard.SIZING.SPACE_BETWEEN;
     const dimensions = stackFrame.getLocalVariables().map(v => VisualizationTool.getVariableCardDimensions(v));
 
     let maxVarWidth = Math.max.apply(null, dimensions.map(d => d.width)) + 14;
     const minWidth = VisualConstants.StackFrameCard.SIZING.MIN_WIDTH;
 
     let calculatedHeight = dimensions.map(d => d.height).reduce((total, height) => total + height + offsetY, 0);
-    calculatedHeight += VisualConstants.StackFrameCard.SIZING.TITLE_HEIGHT + offsetY + 5;
+    calculatedHeight += VisualConstants.StackFrameCard.SIZING.TITLE_HEIGHT + offsetY + offsetY;
 
     return {
-      width: Math.max(Math.max(stackFrame.funcName.length * 1.25, minWidth), maxVarWidth),
+      width: Math.max(Math.max(stackFrame.funcName.length * 1.25 * 20, minWidth), maxVarWidth),
       height: Math.max(calculatedHeight, VisualConstants.StackFrameCard.SIZING.MIN_HEIGHT)
     };
   }

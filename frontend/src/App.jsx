@@ -8,14 +8,7 @@ import Visualization from "./visualization/Visualization";
 export default class App extends Component {
   constructor(props) {
     super(props);
-    this.resize = this.resize.bind(this);
     this.state = { trace: null };
-  }
-
-
-
-  resize() {
-    this.forceUpdate();
   }
 
   loadTrace(trace) {
