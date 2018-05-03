@@ -128,18 +128,20 @@ export default class VariableCard extends Component {
       const component = <VariableCard key={v.name} variable={v} x={this.props.x + 40} y={this.props.y + 40}/>;
       return { width, height, component };
     });
-    return VisualizationTool.layoutNodes(nodesToLayout, origin, offset,
-      this.props.variable.cType === Variable.CTypes.STRUCT_ARRAY
-        ? VisualizationTool.Layouts.ROW
-        : VisualizationTool.Layouts.COLUMN);
+      return VisualizationTool.layoutNodes(nodesToLayout, origin, offset,
+          this.props.variable.cType === Variable.CTypes.STRUCT_ARRAY
+              ? VisualizationTool.Layouts.ROW
+              : VisualizationTool.Layouts.COLUMN);
   }
 
   render() {
+    const isPrimitive = !this.props.variable.cType === Variable.CTypes.STRUCT
+      && !this.props.variable.cType === Variable.CTypes.STRUCT_ARRAY;
     return (
       <Group draggable>
         {this.getOutline()}
         {this.getTitleSegment()}
-        {this.props.variable.cType === Variable.CTypes.STRUCT ? this.getStructValues() : this.getPrimitiveValue()}
+          {!isPrimitive ? this.getStructValues() : this.getPrimitiveValue()}
       </Group>
     );
   }
