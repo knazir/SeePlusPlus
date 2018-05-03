@@ -3,7 +3,7 @@ import Variable from "./Variable";
 
 export default class StackFrame {
   constructor({ frame_id, func_name, is_highlighted, is_parent, is_zombie, line, parent_frame_id_list, unique_hash,
-                encoded_locals, ordered_varnames }) {
+                encoded_locals, ordered_varnames }, heap = {}) {
     this.frameId = frame_id;
     this.funcName = func_name;
     this.isHighlighted = is_highlighted;
@@ -12,7 +12,7 @@ export default class StackFrame {
     this.isZombie = is_zombie;
     this.parentFrameIdList = parent_frame_id_list;
     this.uniqueHash = unique_hash;
-    this.encodedLocals = Utils.mapValues(Variable, encoded_locals);
+    this.encodedLocals = Utils.mapValues(Variable, encoded_locals, varData => new Variable(varData, heap));
     this.orderedVarnames = ordered_varnames;
   }
 

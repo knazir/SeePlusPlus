@@ -12,12 +12,13 @@ export default class TraceStep {
     }
 
     this.funcName = func_name;
-    this.line = line;
+    this.line = line - 1; // IMPORTANT: we do line - 1 to discount the #define for fixing unions
     this.globals = Utils.mapValues(Variable, globals);
     this.orderedGlobals = ordered_globals;
     this.heap = Utils.mapValues(Variable, heap);
     Object.entries(this.heap).forEach(([key, value]) => value.withName(key));
-    this.stack = Utils.arrayOfType(StackFrame, stack_to_render).reverse(); // place current frame at index 0
+    this.stack = Utils.arrayOfType(StackFrame, stack_to_render, frameData => new StackFrame(frameData, this.heap))
+      .reverse(); // place current frame at index 0
     this.stdout = stdout;
   }
 
