@@ -12,7 +12,7 @@ export default class TraceStep {
     }
 
     this.funcName = func_name;
-    this.line = line - 1; // IMPORTANT: we do line - 1 to discount the #define for fixing unions
+    this.line = line - 1; // IMPORTANT: we do line - 1 to discount the #define for fixing unions TODO kn: Do on backend
     this.globals = Utils.mapValues(Variable, globals);
     this.orderedGlobals = ordered_globals;
     this.heap = Utils.mapValues(Variable, heap);

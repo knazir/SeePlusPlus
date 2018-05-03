@@ -8,7 +8,31 @@ import Visualization from "./visualization/Visualization";
 export default class App extends Component {
   constructor(props) {
     super(props);
+    this.handleKeyCommands = this.handleKeyCommands.bind(this);
     this.state = { trace: null };
+  }
+
+  componentDidMount() {
+    window.addEventListener("keydown", this.handleKeyCommands)
+  }
+
+  componentWillUnmount() {
+    window.removeEventListener("keydown", this.handleKeyCommands);
+  }
+
+  handleKeyCommands(event) {
+    // disable saving web page through shortcut
+    if ((event.ctrlKey || event.metaKey) && event.which === 83 /* s */) {
+      event.preventDefault();
+      return;
+    }
+
+    if (!this.state.trace) return;
+    switch (event.which) {
+      case 37: this.stepPrev(); break;  // left arrow
+      case 39: this.stepNext(); break;  // right arrow
+      default: return;
+    }
   }
 
   loadTrace(trace) {
