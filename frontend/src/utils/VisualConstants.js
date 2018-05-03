@@ -8,8 +8,7 @@ module.exports = {
       TITLE_HEIGHT: 20,
       OUTLINE_WIDTH: 1,
       CORNER_RADIUS: 15,
-        SPACE_BETWEEN: 10,
-
+      SPACE_BETWEEN: 10
     },
     ALIGNMENT: {
       TITLE: "center",

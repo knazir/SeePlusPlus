@@ -112,10 +112,10 @@ button {
 button:disabled {
   background-color: lightgray;
   color: gray;
+  cursor: default;
 }
 
 .stop-button {
-
   border: solid 1px rgb(255,127,127);
   color: rgb(255,127,127);
 }
