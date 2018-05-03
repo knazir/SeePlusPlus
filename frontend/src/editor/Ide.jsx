@@ -101,8 +101,8 @@ export default class Ide extends Component {
       buttons = <button onClick={() => this.visualizeCode()}>Visualize Code</button>;
     } else {
       buttons = (
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-          <div style={{ display: "flex" }}>
+        <div className="control-buttons">
+          <div className="step-button-bar">
             <button className="smaller-button" disabled={this.props.trace.atStart()}
                     onClick={() => this.props.stepStart()}>|&lt;</button>
             <button className="bigger-button" disabled={this.props.trace.atStart()} onClick={() => this.props.stepPrev()}>&lt; </button>

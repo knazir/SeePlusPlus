@@ -88,17 +88,28 @@ h3 {
   border-radius: 0 0 20px 20px;
 }
 
+.control-buttons {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.step-button-bar {
+  display: flex;
+  align-items: center;
+}
+
 .smaller-button {
   font-size: small;
   border-radius: 20px;
-  margin: 5px 5px 5px 5px;
+  margin: 5px;
 }
 
 .bigger-button {
+  font-size: 28px;
   border-radius: 20px;
-  margin: 5px 5px 5px 5px;
-  padding: 5px 10px 5px 10px;
-
+  margin: 5px;
+  padding: 5px 10px;
 }
 
 button {
