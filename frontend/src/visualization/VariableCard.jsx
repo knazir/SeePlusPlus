@@ -85,39 +85,37 @@ export default class VariableCard extends Component {
   }
 
   getPrimitiveValue() {
-    console.log(this.props.type);
-    if(!this.props.variable.isPointer() | this.props.variable.isUninitialized()){
+    if (!this.props.variable.isPointer() || this.props.variable.isUninitialized()) {
       return (
-            <Text
-                text={this.props.variable.getValue().toString()}
-                x={this.props.x}
-                y={this.props.y + 23}
-                fontSize={VisualConstants.FONT.BODY_SIZE}
-                align={VisualConstants.ALIGNMENT.VALUE}
-                fontFamily={VisualConstants.FONT.FAMILY}
-                width={this.state.width}
-            />
-        );
-    }
-    else {
-      const origin = {x: this.props.x + this.state.width/2.0, y: this.props.y + VisualConstants.POINTER.Y_OFFSET}
+        <Text
+          text={this.props.variable.getValue().toString()}
+          x={this.props.x}
+          y={this.props.y + 23}
+          fontSize={VisualConstants.FONT.BODY_SIZE}
+          align={VisualConstants.ALIGNMENT.VALUE}
+          fontFamily={VisualConstants.FONT.FAMILY}
+          width={this.state.width}
+        />
+      );
+    } else {
+      const origin = { x: this.props.x + this.state.width / 2.0, y: this.props.y + VisualConstants.POINTER.Y_OFFSET };
       return (
-          <Group>
-            <Circle
-                x={origin.x}
-                y={origin.y}
-                radius={VisualConstants.POINTER.RADIUS}
-                fill={VisualConstants.POINTER.COLOR}
-            />
-            <Arrow
-              points={[origin.x, origin.y, origin.x + 40, origin.y]}
-              stroke={VisualConstants.POINTER.COLOR}
-              tension={VisualConstants.POINTER.TENSION}
-              pointerLength={VisualConstants.POINTER.LENGTH}
-              pointerWidth ={VisualConstants.POINTER.WIDTH}
-              fill={VisualConstants.POINTER.COLOR}
-            />
-          </Group>
+        <Group>
+          <Circle
+            x={origin.x}
+            y={origin.y}
+            radius={VisualConstants.POINTER.RADIUS}
+            fill={VisualConstants.POINTER.COLOR}
+          />
+          <Arrow
+            points={[origin.x, origin.y, origin.x + 40, origin.y]}
+            stroke={VisualConstants.POINTER.COLOR}
+            tension={VisualConstants.POINTER.TENSION}
+            pointerLength={VisualConstants.POINTER.LENGTH}
+            pointerWidth ={VisualConstants.POINTER.WIDTH}
+            fill={VisualConstants.POINTER.COLOR}
+          />
+        </Group>
       );
     }
   }

@@ -76,7 +76,7 @@ export default class Ide extends Component {
       indentUnit: 4,
       lineNumbers: true,
       styleActiveLine: true,
-      readOnly: this.state.isVisualizing ? "nocursor" : false,
+      readOnly: this.state.isVisualizing ? "nocursor" : false
       // dragDrop: true,
       // allowDropFileTypes: ["c", "cpp", "cc", "h"]
     };

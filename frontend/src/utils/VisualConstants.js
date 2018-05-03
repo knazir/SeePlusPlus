@@ -35,7 +35,7 @@ module.exports = {
       POINTER: {
           WIDTH: 10,
           LENGTH: 10,
-          COLOR: 'black',
+          COLOR: "black",
           Y_OFFSET: 35,
           RADIUS: 4,
           TENSION: 2
