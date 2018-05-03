@@ -26,8 +26,8 @@ export default class App extends Component {
         case 83: event.preventDefault(); break; // s
         case 13: this.ide.visualizeCode(); break; // enter
         case 27: this.ide.stopVisualizing(); break; // escape
-        case 37: this.stepStart(); break; // left arrow
-        case 39: this.stepEnd(); break; // right arrow
+        case 37: event.preventDefault(); this.stepStart(); break; // left arrow
+        case 39: event.preventDefault(); this.stepEnd(); break; // right arrow
         default: return;
       }
     }
