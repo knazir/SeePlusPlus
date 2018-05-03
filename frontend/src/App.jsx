@@ -22,6 +22,21 @@ export default class App extends Component {
 
   handleKeyCommands(event) {
     // disable saving web page through shortcut
+    if (event.ctrlKey || event.metaKey) {
+      switch(event.which) {
+        case 83: event.preventDefault(); break; // s
+        case 13: // enter
+          if (!this.state.trace) this.ide.visualizeCode();
+          break;
+        case 27:
+          if (this.state.trace) this.ide.stopVisualizing();
+          break;
+        case 37: this.stepStart(); break; // left arrow
+        case 39: this.stepEnd(); break; // right arrow
+        default: return;
+      }
+    }
+
     if ((event.ctrlKey || event.metaKey) && event.which === 83 /* s */) {
       event.preventDefault();
       return;
@@ -65,7 +80,7 @@ export default class App extends Component {
       <div className="App">
         <div className="split-view">
           <div className="split-panel code-panel">
-            <Ide onLoadTrace={trace => this.loadTrace(trace)} trace={this.state.trace}
+            <Ide ref={ide => this.ide = ide} onLoadTrace={trace => this.loadTrace(trace)} trace={this.state.trace}
                  stepNext={() => this.stepNext()} stepPrev={() => this.stepPrev()}
                  stepStart={() => this.stepStart()} stepEnd={() => this.stepEnd()}/>
           </div>
