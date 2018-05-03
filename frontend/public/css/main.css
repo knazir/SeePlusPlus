@@ -91,7 +91,14 @@ h3 {
 .smaller-button {
   font-size: small;
   border-radius: 20px;
-  padding: 5px;
+  margin: 5px 5px 5px 5px;
+}
+
+.bigger-button {
+  border-radius: 20px;
+  margin: 5px 5px 5px 5px;
+  padding: 5px 10px 5px 10px;
+
 }
 
 button {
@@ -101,17 +108,16 @@ button {
   text-align: center;
   text-decoration: none;
   display: inline-block;
-  margin: 10px 10px 0 10px;
-  padding: 10px;
-  font-size: large;
+  margin: 5px 5px 0 5px;
+  padding: 7px;
+  font-size: medium;
   font-family: Menlo, monospace;
   cursor: pointer;
   user-select: none;
 }
 
 button:disabled {
-  background-color: lightgray;
-  color: gray;
+  background-color: #efebeb;
   cursor: default;
 }
 
@@ -128,7 +134,7 @@ button:hover:enabled {
   background-color: lightcyan;
 }
 
-.stop-button:hover {
+.stop-button:hover:enabled {
   background-color: rgb(255,227,227);
 }
 
