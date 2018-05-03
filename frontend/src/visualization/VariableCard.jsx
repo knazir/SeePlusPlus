@@ -135,13 +135,13 @@ export default class VariableCard extends Component {
   }
 
   render() {
-    const isPrimitive = !this.props.variable.cType === Variable.CTypes.STRUCT
-      && !this.props.variable.cType === Variable.CTypes.STRUCT_ARRAY;
+    const cType = this.props.variable.cType;
+    const isComplexVar = cType === Variable.CTypes.STRUCT || cType === Variable.CTypes.STRUCT_ARRAY;
     return (
       <Group draggable>
         {this.getOutline()}
         {this.getTitleSegment()}
-          {!isPrimitive ? this.getStructValues() : this.getPrimitiveValue()}
+          {isComplexVar ? this.getStructValues() : this.getPrimitiveValue()}
       </Group>
     );
   }

@@ -11,6 +11,7 @@ export default class VisualizationTool {
   }
 
   static getVariableCardDimensions(variable) {
+    //console.log(typeof variable);
     const { type, name } = variable;
 
     let calculatedHeight = VisualConstants.VariableCard.SIZING.HEIGHT;
