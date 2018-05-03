@@ -48,11 +48,12 @@ export default class Variable {
     if (cStrPointer.isUninitialized()) { // string not yet initialized
       this.value = "<UNINITIALIZED>";
     } else if (!heap[cStrPointer.value]) { // doesn't exist on heap, string was optimized to be on stack
-      this.value = this.value["<anon_field>"].value["_M_local_buf"].value
+      const localBuffer = this.value["<anon_field>"].value["_M_local_buf"].value
         .filter(charVar => !charVar.isUninitialized())
         .filter(charVar => charVar.getValue() !== "\\0")
         .map(charVar => charVar.getValue())
         .join("");
+      this.value = `"${localBuffer}"`;
     } else { // string is on the heap, get value and make sure it's not rendered as part of the heap
       this.value = heap[cStrPointer.value].getValue();
       delete heap[cStrPointer.value];
