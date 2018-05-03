@@ -65,8 +65,8 @@ export default class Ide extends Component {
     let lineNumber = this.props.trace.getCurrentStep().line - 1;
 
     // For some reason, main is highlighted as the first line of code,
-    // and the first real line is skipped. Manually fixing that bug
-    if (this.props.trace.atStart()) lineNumber++;
+    // and the first real line is skipped. Manually fixing that bug (and temporarily unfixed)
+    // if (this.props.trace.atStart()) lineNumber++;
     this.highlightLine(lineNumber);
   }
 
