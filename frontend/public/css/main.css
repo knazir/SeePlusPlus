@@ -62,15 +62,15 @@ h3 {
 }
 
 .split {
-    justify-content:space-between;
+  justify-content:space-between;
 }
 
 .split-line {
-    border-left: 1px solid;
-    position: absolute;
-    left: 50%;
-    margin-left: -3px;
-    color: rgba(1,1,1,.1);
+  border-left: 1px solid;
+  position: absolute;
+  left: 50%;
+  margin-left: -3px;
+  color: rgba(1,1,1,.1);
 
 }
 
