@@ -141,7 +141,7 @@ export default class VariableCard extends Component {
       <Group draggable>
         {this.getOutline()}
         {this.getTitleSegment()}
-          {isComplexVar ? this.getStructValues() : this.getPrimitiveValue()}
+        {isComplexVar ? this.getStructValues() : this.getPrimitiveValue()}
       </Group>
     );
   }
