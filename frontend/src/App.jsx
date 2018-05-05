@@ -21,6 +21,7 @@ export default class App extends Component {
   }
 
   handleKeyCommands(event) {
+    // disable saving web page through shortcut
     if (event.ctrlKey || event.metaKey) {
       switch (event.which) {
         case 83: event.preventDefault(); break; // s

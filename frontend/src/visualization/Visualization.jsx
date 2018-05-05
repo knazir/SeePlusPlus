@@ -5,6 +5,7 @@ import { Layer, Stage } from "react-konva";
 import StackFrameCard from "./StackFrameCard";
 import VariableCard from "./VariableCard";
 import VisualizationTool from "../utils/VisualizationTool";
+import DomCard from "../components/DomCard";
 
 export default class Visualization extends Component {
   static get propTypes() {
@@ -35,7 +36,10 @@ export default class Visualization extends Component {
     return currentStep.stack.map(frame => {
       const active = frame === currentStep.getCurrentStackFrame();
       const dimensions = VisualizationTool.getStackFrameCardDimensions(frame);
-      return { ...dimensions, component: <StackFrameCard key={frame.toString()} stackFrame={frame} active={active}/> };
+      return {
+        ...dimensions,
+        component: <StackFrameCard key={frame.toString()} stackFrame={frame} active={active}/>
+      };
     });
   }
 
@@ -47,13 +51,27 @@ export default class Visualization extends Component {
   }
 
   render() {
-    if (!this.props.trace) return <div style={{ width: this.props.width, height: this.props.height }}/>;
-    return (
-      <Stage draggable width={this.props.width} height={this.props.height}>
-        <Layer>
-          {this.getAllNodes()}
-        </Layer>
-      </Stage>
-    );
+    const height = this.props.height * 0.87;
+    if (!this.props.trace) {
+      return (
+        <div className="visualization" style={{ width: this.props.width, height: this.props.height }}>
+          <DomCard splitTitle={true} height={height} title="Stack" title2="Heap" color="lightgray"
+                   bodyStyle={{ width: this.props.width, height: height }}/>
+        </div>
+      );
+    } else {
+      return (
+        <div className="visualization" style={{ width: this.props.width, height: this.props.height }}>
+          <DomCard splitTitle={true} height={height} title="Stack" title2="Heap" color="lightgray"
+                   bodyStyle={{ width: this.props.width, height: height }}>
+            <Stage draggable width={this.props.width} height={this.props.height}>
+              <Layer>
+                {this.getAllNodes()}
+              </Layer>
+            </Stage>
+          </DomCard>
+        </div>
+      );
+    }
   }
 }
