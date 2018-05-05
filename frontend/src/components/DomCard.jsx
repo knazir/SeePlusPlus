@@ -45,7 +45,7 @@ export default class DomCard extends Component {
     const titleStyle = Object.assign({}, this.props.titleStyle, { backgroundColor: this.props.color });
     const bodyStyle = Object.assign({}, this.props.bodyStyle, { borderColor: this.props.color });
     return (
-      <div className="CodeMirrorCard">
+      <div>
         {this.getSplitLine()}
         {this.getTitle(titleStyle)}
         <div className="box-content" style={bodyStyle}>

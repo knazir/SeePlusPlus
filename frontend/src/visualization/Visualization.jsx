@@ -44,10 +44,14 @@ export default class Visualization extends Component {
   }
 
   getAllNodes() {
-    const origin = { x: 10, y: 40 };
+    const stackOrigin = { x: 10, y: 40 };
+    const heapOrigin = { x: (this.props.width / 2.0) + 10, y: 40 };
     const offset = { x: 0, y: 15 };
-    const nodesToLayout = [...this.getGlobalVariableNodes(), ...this.getStackFrameNodes(), ...this.getHeapVariableNodes()];
-    return VisualizationTool.layoutNodes(nodesToLayout, origin, offset, VisualizationTool.Layouts.COLUMN);
+    let stackNodes = [...this.getGlobalVariableNodes(), ...this.getStackFrameNodes()];
+    let heapNodes = this.getHeapVariableNodes();
+    stackNodes = VisualizationTool.layoutNodes(stackNodes, stackOrigin, offset, VisualizationTool.Layouts.COLUMN);
+    heapNodes = VisualizationTool.layoutNodes(heapNodes, heapOrigin, offset, VisualizationTool.Layouts.COLUMN);
+    return [...stackNodes, ...heapNodes];
   }
 
   render() {
