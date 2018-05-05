@@ -37,7 +37,7 @@ export default class App extends Component {
       return;
     }
 
-    if (!this.state.trace) return;
+    if (!this.state.trace || !this.ide.isVisualizing()) return;
     switch (event.which) {
       case 37: this.stepPrev(); break; // left arrow
       case 39: this.stepNext(); break; // right arrow

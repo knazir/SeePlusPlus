@@ -39,6 +39,10 @@ export default class Ide extends Component {
     });
   }
 
+  isVisualizing() {
+    return this.state.isVisualizing;
+  }
+
   stopVisualizing() {
     if (this.activeLine !== null) this.clearHighlightedLine();
     this.setState({ isVisualizing: false });
