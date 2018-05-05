@@ -20,14 +20,14 @@ export default class Visualization extends Component {
     const heapVars = this.props.trace.getCurrentStep().getHeapVariables();
     return heapVars.map(v => {
       const dimensions = VisualizationTool.getVariableCardDimensions(v);
-      return {...dimensions, component: <VariableCard key={v.name} variable={v}/>};
+      return { ...dimensions, component: <VariableCard key={v.name} variable={v}/> };
     });
   }
 
   getGlobalVariableNodes() {
     return this.props.trace.getCurrentStep().getGlobalVariables().map(v => {
       const dimensions = VisualizationTool.getVariableCardDimensions(v);
-      return {...dimensions, component: <VariableCard key={v.name} variable={v}/>};
+      return { ...dimensions, component: <VariableCard key={v.name} variable={v}/> };
     });
   }
 
@@ -44,30 +44,31 @@ export default class Visualization extends Component {
   }
 
   getAllNodes() {
-    const origin = {x: 10, y: 40};
-    const offset = {x: 0, y: 15};
+    const origin = { x: 10, y: 40 };
+    const offset = { x: 0, y: 15 };
     const nodesToLayout = [...this.getGlobalVariableNodes(), ...this.getStackFrameNodes(), ...this.getHeapVariableNodes()];
     return VisualizationTool.layoutNodes(nodesToLayout, origin, offset, VisualizationTool.Layouts.COLUMN);
   }
 
   render() {
-    let height = this.props.height*.87
+    const height = this.props.height * 0.87;
     if (!this.props.trace) {
       return (
-        <div className="visualization" style={{width: this.props.width, height: this.props.height}}>
-          <DomCard splitTitle={true} height={height} title="Stack" title2="Heap" color="lightgray" bodyStyle={{width: this.props.width, height: height}}/>
+        <div className="visualization" style={{ width: this.props.width, height: this.props.height }}>
+          <DomCard splitTitle={true} height={height} title="Stack" title2="Heap" color="lightgray"
+                   bodyStyle={{ width: this.props.width, height: height }}/>
         </div>
       );
     } else {
       return (
-        <div className="visualization" style={{width: this.props.width, height: this.props.height}}>
-          <DomCard splitTitle={true}  height={height}  title="Stack" title2="Heap" color="lightgray" bodyStyle={{width: this.props.width, height: height}}>
+        <div className="visualization" style={{ width: this.props.width, height: this.props.height }}>
+          <DomCard splitTitle={true} height={height} title="Stack" title2="Heap" color="lightgray"
+                   bodyStyle={{ width: this.props.width, height: height }}>
             <Stage draggable width={this.props.width} height={this.props.height}>
               <Layer>
                 {this.getAllNodes()}
               </Layer>
             </Stage>
-
           </DomCard>
         </div>
       );
