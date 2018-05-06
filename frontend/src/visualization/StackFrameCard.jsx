@@ -24,8 +24,11 @@ export default class StackFrameCard extends Component {
     };
   }
 
-  componentWillReceiveProps({ stackFrame }) {
-    this.setState({ ...VisualizationTool.getStackFrameCardDimensions(stackFrame) });
+  componentWillReceiveProps({ stackFrame, active }) {
+    this.setState({
+      expanded: active,
+      ...VisualizationTool.getStackFrameCardDimensions(stackFrame, active)
+    });
   }
 
   getOutline() {
