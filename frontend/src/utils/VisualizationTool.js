@@ -5,13 +5,12 @@ import StackFrameCard from "../visualization/StackFrameCard";
 import VariableCard from "../visualization/VariableCard";
 import VisualConstants from "./VisualConstants";
 
-export default class VisualizationTool {
+class VisualizationTool {
   static get Layouts() {
     return { ROW: "ROW", COLUMN: "COLUMN" };
   }
 
   static getVariableCardDimensions(variable) {
-    //console.log(typeof variable);
     const { type, name } = variable;
 
     let calculatedHeight = VisualConstants.VariableCard.SIZING.HEIGHT;
@@ -33,6 +32,8 @@ export default class VisualizationTool {
       calculatedHeight += Math.max.apply(null, fields.map(v => VisualizationTool.getVariableCardDimensions(v).height));
     }
 
+    const valueHeight = calculatedHeight - VisualConstants.VariableCard.SIZING.TITLE_HEIGHT;
+    const offsetToValueCenter = VisualConstants.VariableCard.SIZING.TITLE_HEIGHT + (valueHeight / 2.0);
     const titleWidth = type.length + name.length + 2;
     const valueWidth = variable.getValue().toString().length * 1.25 + 2;
     const minWidth = VisualConstants.VariableCard.SIZING.MIN_WIDTH;
@@ -45,7 +46,8 @@ export default class VisualizationTool {
 
     return {
       width: calculatedWidth,
-      height: calculatedHeight
+      height: calculatedHeight,
+      centerOffset: offsetToValueCenter
     };
   }
 
@@ -84,16 +86,40 @@ export default class VisualizationTool {
   // offset: the amount to offset between each element with fields { x, y }
   // layout: either row or column
   // returns: a list of node components to be rendered by React's render() method
-  static layoutNodes(nodes, origin = { x: 0, y: 0 }, offset = { x: 0, y: 0 }, layout) {
+  static layoutNodes({ nodes, origin, offset, traceStep, otherNodes = [], layout }) {
     let x = origin.x;
     let y = origin.y;
-    return nodes.map((node, index) => {
+    const layedOutNodes = nodes.map(node => {
       const newComponent = React.cloneElement(node.component, { x, y });
       if (layout === VisualizationTool.Layouts.ROW) x += node.width;
       else if (layout === VisualizationTool.Layouts.COLUMN) y += node.height;
       x += offset.x;
       y += offset.y;
       return newComponent;
+    }).map(component => {
+      const variable = component.props.variable;
+      if (!variable || !variable.isPointer()) return component;
+      const address = variable.getValue();
+      let pointerTarget = VisualizationTool.components.filter(potentialTarget => potentialTarget.props.variable)
+        .filter(potentialTarget => potentialTarget.props.variable.address === address)[0];
+      return pointerTarget ? React.cloneElement(component, { pointerTarget }) : component;
     });
+    VisualizationTool.registerComponents(layedOutNodes);
+    return layedOutNodes;
+  }
+
+  static registerComponents(components) {
+    const obj = {};
+    //components.forEach(component => )
+    //Object.assign(VisualizationTool.components, );
+    VisualizationTool.components = VisualizationTool.components.concat(components);
+  }
+
+  static clearRegisteredComponents() {
+    VisualizationTool.components = [];
   }
 }
+
+VisualizationTool.components = [];
+
+export default VisualizationTool;

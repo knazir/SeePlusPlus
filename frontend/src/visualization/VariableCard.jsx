@@ -9,7 +9,16 @@ import { VariableCard as VisualConstants } from "../utils/VisualConstants";
 export default class VariableCard extends Component {
   static get propTypes() {
     return {
-      variable: PropTypes.object,
+      traceStep: PropTypes.object.isRequired,
+      variable: PropTypes.object.isRequired,
+      updateVisualization: PropTypes.func.isRequired,
+      pointerTarget: PropTypes.shape({
+        props: PropTypes.shape({
+          x: PropTypes.number,
+          y: PropTypes.number,
+          variable: PropTypes.object
+        })
+      }),
       x: PropTypes.number,
       y: PropTypes.number
     };
@@ -99,6 +108,10 @@ export default class VariableCard extends Component {
       );
     } else {
       const origin = { x: this.props.x + this.state.width / 2.0, y: this.props.y + VisualConstants.POINTER.Y_OFFSET };
+      const targetProps = this.props.pointerTarget.props;
+      const targetDimensions = VisualizationTool.getVariableCardDimensions(targetProps.variable);
+      const targetX = targetProps.x;
+      const targetY = targetProps.y + targetDimensions.centerOffset;
       return (
         <Group>
           <Circle
@@ -108,7 +121,7 @@ export default class VariableCard extends Component {
             fill={VisualConstants.POINTER.COLOR}
           />
           <Arrow
-            points={[origin.x, origin.y, origin.x + 40, origin.y]}
+            points={[origin.x, origin.y, targetX, targetY]}
             stroke={VisualConstants.POINTER.COLOR}
             tension={VisualConstants.POINTER.TENSION}
             pointerLength={VisualConstants.POINTER.LENGTH}
@@ -121,24 +134,27 @@ export default class VariableCard extends Component {
   }
 
   getStructValues() {
-    const origin = { x: this.props.x + 7, y: this.props.y + 25 };
-    const offset = this.props.variable.cType === Variable.CTypes.STRUCT_ARRAY ? { x: 15, y: 0 } : { x: 0, y: 15 };
+    const { ROW, COLUMN } = VisualizationTool.Layouts;
     const nodesToLayout = Object.values(this.props.variable.value).map(v => {
       const { width, height } = VisualizationTool.getVariableCardDimensions(v);
-      const component = <VariableCard key={v.name} variable={v} x={this.props.x + 40} y={this.props.y + 40}/>;
+      const component = <VariableCard key={v.name} variable={v} traceStep={this.props.traceStep} x={this.props.x + 40}
+                                      y={this.props.y + 40} updateVisualization={this.props.updateVisualization}/>;
       return { width, height, component };
     });
-    return VisualizationTool.layoutNodes(nodesToLayout, origin, offset,
-      this.props.variable.cType === Variable.CTypes.STRUCT_ARRAY
-        ? VisualizationTool.Layouts.ROW
-        : VisualizationTool.Layouts.COLUMN);
+    return VisualizationTool.layoutNodes({
+      nodes: nodesToLayout,
+      origin: { x: this.props.x + 7, y: this.props.y + 25 },
+      offset: this.props.variable.cType === Variable.CTypes.STRUCT_ARRAY ? { x: 15, y: 0 } : { x: 0, y: 15 },
+      traceStep: this.props.traceStep,
+      layout: this.props.variable.cType === Variable.CTypes.STRUCT_ARRAY ? ROW : COLUMN
+    });
   }
 
   render() {
     const cType = this.props.variable.cType;
     const isComplexVar = cType === Variable.CTypes.STRUCT || cType === Variable.CTypes.STRUCT_ARRAY;
     return (
-      <Group draggable>
+      <Group draggable onDragEnd={this.props.updateVisualization}>
         {this.getOutline()}
         {this.getTitleSegment()}
         {isComplexVar ? this.getStructValues() : this.getPrimitiveValue()}

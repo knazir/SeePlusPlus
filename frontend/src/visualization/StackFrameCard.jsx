@@ -9,7 +9,9 @@ import { StackFrameCard as VisualConstants } from "../utils/VisualConstants";
 export default class StackFrameCard extends Component {
   static get propTypes() {
     return {
-      stackFrame: PropTypes.object,
+      traceStep: PropTypes.object.isRequired,
+      stackFrame: PropTypes.object.isRequired,
+      updateVisualization: PropTypes.func.isRequired,
       active: PropTypes.bool,
       x: PropTypes.number,
       y: PropTypes.number
@@ -97,14 +99,18 @@ export default class StackFrameCard extends Component {
   }
 
   getLocalVariableNodes() {
-    const origin = { x: this.props.x + 7, y: this.props.y + 40 };
-    const offset = { x: 0, y: 15 };
-    let localVars = this.props.stackFrame.getLocalVariables();
-    const nodesToLayout = localVars.map(v => {
-      const component = <VariableCard key={v.name} variable={v} x={this.props.x + 40} y={this.props.y + 40}/>;
+    const nodesToLayout = this.props.stackFrame.getLocalVariables().map(v => {
+      const component = <VariableCard key={v.name} variable={v} traceStep={this.props.traceStep} x={this.props.x + 40}
+                                      y={this.props.y + 40} updateVisualization={this.props.updateVisualization}/>;
       return { ...VisualizationTool.getVariableCardDimensions(v), component };
     });
-    return VisualizationTool.layoutNodes(nodesToLayout, origin, offset, VisualizationTool.Layouts.COLUMN);
+    return VisualizationTool.layoutNodes({
+      nodes: nodesToLayout,
+      origin: { x: this.props.x + 7, y: this.props.y + 40 },
+      offset: { x: 0, y: 15 },
+      traceStep: this.props.traceStep,
+      layout: VisualizationTool.Layouts.COLUMN
+    });
   }
 
   toggleOpen() {
