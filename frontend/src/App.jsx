@@ -86,7 +86,9 @@ export default class App extends Component {
               {({ width, height }) => <Visualization width={width} height={height * 0.8} trace={this.state.trace}/>}
             </ContainerDimensions>
             <ContainerDimensions>
-              {({ width, height }) => <Output width={width} height={height * 0.2}/>}
+              {({ width, height }) => <Output width={width} height={height * 0.2}
+                                              value={this.state.trace
+                                                ? this.state.trace.getCurrentStep().stdout : ""}/>}
             </ContainerDimensions>
           </div>
         </div>
