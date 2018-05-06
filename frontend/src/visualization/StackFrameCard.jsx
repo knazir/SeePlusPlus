@@ -21,7 +21,8 @@ export default class StackFrameCard extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      expanded: this.props.active, prevActive: this.props.active,
+      expanded: this.props.active,
+      prevActive: this.props.active,
       ...VisualizationTool.getStackFrameCardDimensions(this.props.stackFrame, this.props.active)
     };
   }
@@ -31,7 +32,8 @@ export default class StackFrameCard extends Component {
       this.setState({ ...VisualizationTool.getStackFrameCardDimensions(stackFrame, this.state.expanded) });
     } else {
       this.setState({
-        expanded: active, prevActive: active,
+        expanded: active,
+        prevActive: active,
         ...VisualizationTool.getStackFrameCardDimensions(stackFrame, active)
       });
     }
