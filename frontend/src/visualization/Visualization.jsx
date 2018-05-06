@@ -16,6 +16,16 @@ export default class Visualization extends Component {
     };
   }
 
+  constructor(props) {
+    super(props);
+    this.updateVisualizationOnDrag = this.updateVisualizationOnDrag.bind(this);
+  }
+
+  updateVisualizationOnDrag(event) {
+    console.log(`(${event.target.x()}, ${event.target.y()})`);
+    this.forceUpdate();
+  }
+
   getHeapVariableNodes() {
     const step = this.props.trace.getCurrentStep();
     return step.getHeapVariables().map(v => {
@@ -23,7 +33,7 @@ export default class Visualization extends Component {
       return {
         ...dimensions,
         component: <VariableCard key={v.name} variable={v} traceStep={step}
-                                 updateVisualization={() => this.forceUpdate()}/>
+                                 updateVisualization={this.updateVisualizationOnDrag}/>
       };
     });
   }
@@ -35,7 +45,7 @@ export default class Visualization extends Component {
       return {
         ...dimensions,
         component: <VariableCard key={v.name} variable={v} traceStep={step}
-                                 updateVisualization={() => this.forceUpdate()}/>
+                                 updateVisualization={this.updateVisualizationOnDrag}/>
       };
     });
   }
@@ -48,7 +58,7 @@ export default class Visualization extends Component {
       return {
         ...dimensions,
         component: <StackFrameCard key={frame.toString()} traceStep={currentStep} stackFrame={frame} active={active}
-                                   updateVisualization={() => this.forceUpdate()}/>
+                                   updateVisualization={this.updateVisualizationOnDrag}/>
       };
     });
   }
@@ -75,6 +85,7 @@ export default class Visualization extends Component {
   }
 
   getAllNodes() {
+    // note that order is important here, we need heap nodes to be registered first
     return [...this.getHeapNodes(), ...this.getStackNodes()];
   }
 

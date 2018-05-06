@@ -154,7 +154,7 @@ export default class VariableCard extends Component {
     const cType = this.props.variable.cType;
     const isComplexVar = cType === Variable.CTypes.STRUCT || cType === Variable.CTypes.STRUCT_ARRAY;
     return (
-      <Group draggable onDragEnd={this.props.updateVisualization}>
+      <Group draggable onDragMove={this.props.updateVisualization}>
         {this.getOutline()}
         {this.getTitleSegment()}
         {isComplexVar ? this.getStructValues() : this.getPrimitiveValue()}

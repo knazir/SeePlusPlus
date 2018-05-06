@@ -94,6 +94,10 @@ export default class Variable {
     }
   }
 
+  getId() {
+    return `${this.toString()} ${this.address}`;
+  }
+
   isPointer() {
     return this.type === "pointer";
   }
@@ -101,4 +105,5 @@ export default class Variable {
   toString() {
     return `${this.type} ${this.name || ""}`.trim();
   }
+
 }
