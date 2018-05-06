@@ -49,7 +49,7 @@ export default class VisualizationTool {
     };
   }
 
-  static getStackFrameCardDimensions(stackFrame) {
+  static getStackFrameCardDimensions(stackFrame, expanded = true) {
     const offsetY = VisualConstants.VariableCard.SIZING.SPACE_BETWEEN;
     const dimensions = stackFrame.getLocalVariables().map(v => VisualizationTool.getVariableCardDimensions(v));
 
@@ -58,6 +58,10 @@ export default class VisualizationTool {
 
     let calculatedHeight = dimensions.map(d => d.height).reduce((total, height) => total + height + offsetY, 0);
     calculatedHeight += VisualConstants.StackFrameCard.SIZING.TITLE_HEIGHT + offsetY + offsetY;
+    if (!expanded) {
+      calculatedHeight = VisualConstants.StackFrameCard.SIZING.TITLE_HEIGHT;
+      maxVarWidth = 0;
+    }
 
     return {
       width: Math.max(Math.max(stackFrame.funcName.length * 1.25 * 20, minWidth), maxVarWidth),
