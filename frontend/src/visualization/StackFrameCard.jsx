@@ -18,19 +18,14 @@ export default class StackFrameCard extends Component {
 
   constructor(props) {
     super(props);
-    this.state = { expanded: this.props.active, prevActive: this.props.active,
-      ...VisualizationTool.getStackFrameCardDimensions(this.props.stackFrame, this.props.active) };
+    this.state = {
+      expanded: this.props.active,
+      ...VisualizationTool.getStackFrameCardDimensions(this.props.stackFrame, this.props.active)
+    };
   }
 
-  componentWillReceiveProps(newProps) {
-    if (this.state.prevActive === newProps.active) {
-      this.setState({ ...VisualizationTool.getStackFrameCardDimensions(newProps.stackFrame, this.state.expanded) });
-    } else {
-      this.setState({
-        expanded: this.props.active, prevActive: this.props.active,
-        ...VisualizationTool.getStackFrameCardDimensions(newProps.stackFrame, newProps.active)
-      });
-    }
+  componentWillReceiveProps({ stackFrame }) {
+    this.setState({ ...VisualizationTool.getStackFrameCardDimensions(stackFrame) });
   }
 
   getOutline() {
@@ -80,7 +75,7 @@ export default class StackFrameCard extends Component {
         fontFamily={VisualConstants.FONT.FAMILY}
         align={VisualConstants.ALIGNMENT.TITLE}
         width={this.state.width}
-        onClick={() => this.toggleOpen() }
+        onClick={() => this.toggleOpen()}
       />
     );
   }
@@ -98,34 +93,26 @@ export default class StackFrameCard extends Component {
     const origin = { x: this.props.x + 7, y: this.props.y + 40 };
     const offset = { x: 0, y: 15 };
     let localVars = this.props.stackFrame.getLocalVariables();
-    if (!this.state.expanded) {
-      localVars.length = 0;
-    }
     const nodesToLayout = localVars.map(v => {
-      const { width, height } = VisualizationTool.getVariableCardDimensions(v);
       const component = <VariableCard key={v.name} variable={v} x={this.props.x + 40} y={this.props.y + 40}/>;
-      return { width, height, component };
+      return { ...VisualizationTool.getVariableCardDimensions(v), component };
     });
     return VisualizationTool.layoutNodes(nodesToLayout, origin, offset, VisualizationTool.Layouts.COLUMN);
   }
 
   toggleOpen() {
-    this.setState({ expanded: !this.state.expanded,
-      ...VisualizationTool.getStackFrameCardDimensions(this.props.stackFrame, !this.state.expanded) });
+    this.setState({
+      expanded: !this.state.expanded,
+      ...VisualizationTool.getStackFrameCardDimensions(this.props.stackFrame, !this.state.expanded)
+    });
   }
 
   render() {
-    if (this.props.active !== this.state.prevActive) {
-      this.setState({
-        expanded: this.props.active, prevActive: this.props.active,
-        ...VisualizationTool.getStackFrameCardDimensions(this.props.stackFrame, this.props.active)
-      });
-    }
     return (
       <Group draggable>
         {this.getOutline()}
         {this.getTitleSegment()}
-        {this.getLocalVariableNodes()}
+        {this.state.expanded && this.getLocalVariableNodes()}
       </Group>
     );
   }
