@@ -60,8 +60,8 @@ export default class Variable {
 
   formatString(value) {
     return value.filter(charVar => !charVar.isUninitialized())
-      .filter(charVar => charVar.getValue() !== "\\0")
-      .map(charVar => charVar.getValue())
+      .filter(charVar => charVar.value !== "\\0")
+      .map(charVar => charVar.value)
       .join("");
   }
 
