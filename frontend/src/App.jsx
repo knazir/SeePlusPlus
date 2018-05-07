@@ -4,7 +4,6 @@ import ContainerDimensions from "react-container-dimensions";
 import Ide from "./editor/Ide";
 import Output from "./visualization/Output";
 import Visualization from "./visualization/Visualization";
-import VisualizationTool from "./utils/VisualizationTool";
 
 export default class App extends Component {
   constructor(props) {
@@ -79,17 +78,9 @@ export default class App extends Component {
   getOutput() {
     if (this.state.trace) {
       if (this.state.trace.encounteredException()) {
-        return (
-          <div style={{ color: "red" }}>
-            {this.state.trace.getCurrentStep().exceptionMessage}
-          </div>
-        );
+        return <div style={{ color: "red" }}>{this.state.trace.getCurrentStep().exceptionMessage}</div>;
       } else {
-        return (
-          <div>
-            {this.state.trace.getCurrentStep().stdout}
-          </div>
-        );
+        return <div>{this.state.trace.getCurrentStep().stdout}</div>;
       }
     }
   }
@@ -109,8 +100,6 @@ export default class App extends Component {
               {({ width, height }) => <Visualization width={width} height={height * 0.8} trace={this.state.trace}/>}
             </ContainerDimensions>
             <ContainerDimensions>
-              {/* if the state is null, output nothing; if it's not null,
-                  check for an exception and output the error message; else, output stdout */}
               {({ width, height }) => <Output width={width} height={height * 0.2}>{this.getOutput()}</Output>}
             </ContainerDimensions>
           </div>

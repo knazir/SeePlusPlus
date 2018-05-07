@@ -26,7 +26,7 @@ export default class Utils {
     if (obj.length === 0) return true;
     if (typeof obj !== "object") return true;
     for (const key in obj) {
-      if (obj.hasOwnProperty.call(obj, key)) return false;
+      if (obj.hasOwnProperty(key)) return false;
     }
     return true;
   }
