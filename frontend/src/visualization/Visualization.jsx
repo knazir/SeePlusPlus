@@ -107,7 +107,7 @@ export default class Visualization extends Component {
                  bodyStyle={{ width: this.props.width, height }}>
           <Stage draggable width={this.props.width} height={this.props.height}>
             <Layer>
-              {this.getAllNodes()}
+              {!this.props.trace.encounteredException() && this.getAllNodes()}
             </Layer>
           </Stage>
         </DomCard>
