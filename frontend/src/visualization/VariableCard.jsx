@@ -115,6 +115,18 @@ export default class VariableCard extends Component {
         const targetDimensions = VisualizationTool.getVariableCardDimensions(variable);
         targetX = x;
         targetY = y + targetDimensions.centerOffset;
+      } else if (this.props.variable.getValue() === "0x0") {
+        return (
+          <Text
+            text="NULL"
+            x={this.props.x}
+            y={this.props.y + 23}
+            fontSize={VisualConstants.FONT.BODY_SIZE}
+            align={VisualConstants.ALIGNMENT.VALUE}
+            fontFamily={VisualConstants.FONT.FAMILY}
+            width={this.state.width}
+          />
+        );
       }
 
       return (
