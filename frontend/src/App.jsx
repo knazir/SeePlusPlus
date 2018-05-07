@@ -71,6 +71,24 @@ export default class App extends Component {
     this.forceUpdate();
   }
 
+  getOutput() {
+    if (this.state.trace) {
+      if (this.state.trace.encounteredException()) {
+        return (
+          <div style={{ color: "red" }}>
+            {this.state.trace.getCurrentStep().exceptionMessage}
+          </div>
+        );
+      } else {
+        return (
+          <div>
+            {this.state.trace.getCurrentStep().stdout}
+          </div>
+        );
+      }
+    }
+  }
+
   render() {
     return (
       <div className="App">
@@ -86,9 +104,9 @@ export default class App extends Component {
               {({ width, height }) => <Visualization width={width} height={height * 0.8} trace={this.state.trace}/>}
             </ContainerDimensions>
             <ContainerDimensions>
-              {({ width, height }) => <Output width={width} height={height * 0.2}
-                                              value={this.state.trace
-                                                ? this.state.trace.getCurrentStep().stdout : ""}/>}
+              {/* if the state is null, output nothing; if it's not null,
+                  check for an exception and output the error message; else, output stdout */}
+              {({ width, height }) => <Output width={width} height={height * 0.2}>{this.getOutput()}</Output>}
             </ContainerDimensions>
           </div>
         </div>
