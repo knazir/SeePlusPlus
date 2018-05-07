@@ -90,6 +90,8 @@ export default class Variable {
         return `"${str}"`;
       }
       return this.value.map((elem) => elem.getValue().toString()).join(", ");
+    } else if (this.type === "char") {
+      return `'${this.value}'`;
     } else {
       return this.value;
     }
