@@ -13,8 +13,13 @@ export default class VariableCard extends Component {
       variable: PropTypes.object.isRequired,
       updateVisualization: PropTypes.func.isRequired,
       x: PropTypes.number,
-      y: PropTypes.number
+      y: PropTypes.number,
+      squareCorners: PropTypes.bool
     };
+  }
+
+  static get defaultProps() {
+    return { squareCorners: false };
   }
 
   constructor(props) {
@@ -36,7 +41,7 @@ export default class VariableCard extends Component {
         fill={VisualConstants.COLORS.BODY}
         stroke={VisualizationTool.getColor(this)}
         strokeWidth={VisualConstants.SIZING.OUTLINE_WIDTH}
-        cornerRadius={VisualConstants.SIZING.CORNER_RADIUS}
+        cornerRadius={this.props.squareCorners ? 0 : VisualConstants.SIZING.CORNER_RADIUS}
       />
     );
   }
@@ -50,7 +55,7 @@ export default class VariableCard extends Component {
           width={this.state.width}
           height={20}
           fill={VisualizationTool.getColor(this)}
-          cornerRadius={VisualConstants.SIZING.CORNER_RADIUS}
+          cornerRadius={this.props.squareCorners ? 0 : VisualConstants.SIZING.CORNER_RADIUS}
         />
         <Rect
           x={this.props.x}
@@ -145,13 +150,14 @@ export default class VariableCard extends Component {
     const nodesToLayout = Object.values(this.props.variable.value).map(v => {
       const { width, height } = VisualizationTool.getVariableCardDimensions(v);
       const component = <VariableCard key={v.name} variable={v} traceStep={this.props.traceStep} x={this.props.x + 40}
-                                      y={this.props.y + 40} updateVisualization={this.props.updateVisualization}/>;
+                                      y={this.props.y + 40} updateVisualization={this.props.updateVisualization}
+                                      squareCorners/>;
       return { width, height, component };
     });
     return VisualizationTool.layoutNodes({
       nodes: nodesToLayout,
       origin: { x: this.props.x + 7, y: this.props.y + 25 },
-      offset: this.props.variable.cType === Variable.CTypes.STRUCT_ARRAY ? { x: 15, y: 0 } : { x: 0, y: 15 },
+      offset: this.props.variable.cType === Variable.CTypes.STRUCT_ARRAY ? { x: 0, y: 0 } : { x: 0, y: 15 },
       traceStep: this.props.traceStep,
       layout: this.props.variable.cType === Variable.CTypes.STRUCT_ARRAY ? ROW : COLUMN
     });
