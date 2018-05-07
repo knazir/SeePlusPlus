@@ -7,6 +7,7 @@ import Api from "../utils/Api";
 import DomCard from "../components/DomCard";
 import LoadingSpinner from "../components/LoadingSpinner";
 import { code as starterCode } from "../samples/StarterCode";
+import VisualizationTool from "../utils/VisualizationTool";
 
 export default class Ide extends Component {
   static get propTypes() {
@@ -32,6 +33,7 @@ export default class Ide extends Component {
   }
 
   visualizeCode() {
+    VisualizationTool.clearRegisteredComponents();
     this.setState({ loading: true }, async () => {
       const trace = await Api.getCodeTrace("c++", this.state.code);
       this.props.onLoadTrace(trace);
