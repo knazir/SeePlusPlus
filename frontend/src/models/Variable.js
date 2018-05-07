@@ -98,6 +98,18 @@ export default class Variable {
     return `${this.toString()} ${this.address}`;
   }
 
+  isComplexType() {
+    return Variable.CTypes[this.cType] !== Variable.CTypes.DATA;
+  }
+
+  isArray() {
+    return this.cType in [Variable.CTypes.ARRAY, Variable.CTypes.STRUCT_ARRAY];
+  }
+
+  isStruct() {
+    return this.cType === Variable.CTypes.STRUCT;
+  }
+
   isPointer() {
     return this.type === "pointer";
   }

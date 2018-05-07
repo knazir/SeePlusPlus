@@ -54,25 +54,25 @@ export default class App extends Component {
 
   stepNext() {
     this.state.trace.stepNext();
-    VisualizationTool.clearRegisteredComponents();
+    //VisualizationTool.clearRegisteredComponents();
     this.forceUpdate();
   }
 
   stepPrev() {
     this.state.trace.stepPrev();
-    VisualizationTool.clearRegisteredComponents();
+    //VisualizationTool.clearRegisteredComponents();
     this.forceUpdate();
   }
 
   stepStart() {
     this.state.trace.stepStart();
-    VisualizationTool.clearRegisteredComponents();
+    //VisualizationTool.clearRegisteredComponents();
     this.forceUpdate();
   }
 
   stepEnd() {
     this.state.trace.stepEnd();
-    VisualizationTool.clearRegisteredComponents();
+    //VisualizationTool.clearRegisteredComponents();
     this.forceUpdate();
   }
 

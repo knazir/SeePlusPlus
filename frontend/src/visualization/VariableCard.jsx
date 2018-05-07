@@ -100,12 +100,18 @@ export default class VariableCard extends Component {
         />
       );
     } else {
+      // TODO kn: Figure out dragging for pointer origin
       const origin = { x: this.props.x + this.state.width / 2.0, y: this.props.y + VisualConstants.POINTER.Y_OFFSET };
+      let targetX = origin.x + 10;
+      let targetY = origin.y;
       const pointerTarget = VisualizationTool.getComponentByAddress(this.props.variable.getValue());
-      const { x, y, variable } = pointerTarget;
-      const targetDimensions = VisualizationTool.getVariableCardDimensions(variable);
-      const targetX = x;
-      const targetY = y + targetDimensions.centerOffset;
+      if (pointerTarget) {
+        const { x, y, variable } = pointerTarget;
+        const targetDimensions = VisualizationTool.getVariableCardDimensions(variable);
+        targetX = x;
+        targetY = y + targetDimensions.centerOffset;
+      }
+
       return (
         <Group>
           <Circle
@@ -127,7 +133,7 @@ export default class VariableCard extends Component {
     }
   }
 
-  updateTargetPosition(event) {
+  updatePosition(event) {
     if (!event) return;
     VisualizationTool.getComponentByAddress(this.props.variable.address).x = this.props.x + event.target.x();
     VisualizationTool.getComponentByAddress(this.props.variable.address).y = this.props.y + event.target.y();
@@ -155,7 +161,7 @@ export default class VariableCard extends Component {
     const cType = this.props.variable.cType;
     const isComplexVar = cType === Variable.CTypes.STRUCT || cType === Variable.CTypes.STRUCT_ARRAY;
     return (
-      <Group draggable onDragMove={event => this.updateTargetPosition(event)}>
+      <Group draggable onDragMove={event => this.updatePosition(event)}>
         {this.getOutline()}
         {this.getTitleSegment()}
         {isComplexVar ? this.getStructValues() : this.getPrimitiveValue()}

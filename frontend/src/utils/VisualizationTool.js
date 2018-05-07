@@ -101,6 +101,10 @@ class VisualizationTool {
     return layedOutNodes;
   }
 
+  registerComplexComponent(component) {
+    // TODO kn + at: good lord
+  }
+
   static registerComponents(components) {
     components.forEach(component => {
       const variable = component.props.variable;
