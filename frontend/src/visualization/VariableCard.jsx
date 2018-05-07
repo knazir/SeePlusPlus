@@ -12,13 +12,6 @@ export default class VariableCard extends Component {
       traceStep: PropTypes.object.isRequired,
       variable: PropTypes.object.isRequired,
       updateVisualization: PropTypes.func.isRequired,
-      pointerTarget: PropTypes.shape({
-        props: PropTypes.shape({
-          x: PropTypes.number,
-          y: PropTypes.number,
-          variable: PropTypes.object
-        })
-      }),
       x: PropTypes.number,
       y: PropTypes.number
     };
@@ -108,10 +101,11 @@ export default class VariableCard extends Component {
       );
     } else {
       const origin = { x: this.props.x + this.state.width / 2.0, y: this.props.y + VisualConstants.POINTER.Y_OFFSET };
-      const targetProps = this.props.pointerTarget.props;
-      const targetDimensions = VisualizationTool.getVariableCardDimensions(targetProps.variable);
-      const targetX = targetProps.x;
-      const targetY = targetProps.y + targetDimensions.centerOffset;
+      const pointerTarget = VisualizationTool.getComponentByAddress(this.props.variable.getValue());
+      const { x, y, variable } = pointerTarget;
+      const targetDimensions = VisualizationTool.getVariableCardDimensions(variable);
+      const targetX = x;
+      const targetY = y + targetDimensions.centerOffset;
       return (
         <Group>
           <Circle
@@ -131,6 +125,13 @@ export default class VariableCard extends Component {
         </Group>
       );
     }
+  }
+
+  updateTargetPosition(event) {
+    if (!event) return;
+    VisualizationTool.getComponentByAddress(this.props.variable.address).x = this.props.x + event.target.x();
+    VisualizationTool.getComponentByAddress(this.props.variable.address).y = this.props.y + event.target.y();
+    this.props.updateVisualization();
   }
 
   getStructValues() {
@@ -154,7 +155,7 @@ export default class VariableCard extends Component {
     const cType = this.props.variable.cType;
     const isComplexVar = cType === Variable.CTypes.STRUCT || cType === Variable.CTypes.STRUCT_ARRAY;
     return (
-      <Group draggable onDragMove={this.props.updateVisualization}>
+      <Group draggable onDragMove={event => this.updateTargetPosition(event)}>
         {this.getOutline()}
         {this.getTitleSegment()}
         {isComplexVar ? this.getStructValues() : this.getPrimitiveValue()}

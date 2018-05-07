@@ -4,6 +4,7 @@ import ContainerDimensions from "react-container-dimensions";
 import Ide from "./editor/Ide";
 import Output from "./visualization/Output";
 import Visualization from "./visualization/Visualization";
+import VisualizationTool from "./utils/VisualizationTool";
 
 export default class App extends Component {
   constructor(props) {
@@ -53,21 +54,25 @@ export default class App extends Component {
 
   stepNext() {
     this.state.trace.stepNext();
+    VisualizationTool.clearRegisteredComponents();
     this.forceUpdate();
   }
 
   stepPrev() {
     this.state.trace.stepPrev();
+    VisualizationTool.clearRegisteredComponents();
     this.forceUpdate();
   }
 
   stepStart() {
     this.state.trace.stepStart();
+    VisualizationTool.clearRegisteredComponents();
     this.forceUpdate();
   }
 
   stepEnd() {
     this.state.trace.stepEnd();
+    VisualizationTool.clearRegisteredComponents();
     this.forceUpdate();
   }
 

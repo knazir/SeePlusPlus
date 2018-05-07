@@ -97,34 +97,29 @@ class VisualizationTool {
       y += offset.y;
       return newComponent;
     });
-
-    // registering components before we figure out pointer targets will allow stack pointers to work
     VisualizationTool.registerComponents(layedOutNodes);
-
-    return layedOutNodes.map(component => {
-      const variable = component.props.variable;
-      if (!variable || !variable.isPointer()) return component;
-      const address = variable.getValue();
-      const pointerTarget = VisualizationTool.components.filter(potentialTarget => potentialTarget.props.variable)
-        .filter(potentialTarget => potentialTarget.props.variable.address === address)[0];
-
-      if (pointerTarget) {
-        return React.cloneElement(component, { pointerTarget });
-      } else {
-        return component;
-      }
-    });
+    return layedOutNodes;
   }
 
   static registerComponents(components) {
-    VisualizationTool.components = VisualizationTool.components.concat(components);
+    components.forEach(component => {
+      const variable = component.props.variable;
+      if (!variable || VisualizationTool.componentsByAddress[variable.address]) return;
+      const { x, y } = component.props;
+      VisualizationTool.componentsByAddress[variable.address] = { x, y, variable, component };
+    });
+  }
+
+  static getComponentByAddress(address) {
+    return VisualizationTool.componentsByAddress[address];
   }
 
   static clearRegisteredComponents() {
-    VisualizationTool.components = [];
+    VisualizationTool.componentsByAddress = {};
+    window.componentsByAddress = VisualizationTool.componentsByAddress;
   }
 }
 
-VisualizationTool.components = [];
+VisualizationTool.componentsByAddress = {};
 
 export default VisualizationTool;

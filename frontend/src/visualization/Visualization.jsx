@@ -21,8 +21,7 @@ export default class Visualization extends Component {
     this.updateVisualizationOnDrag = this.updateVisualizationOnDrag.bind(this);
   }
 
-  updateVisualizationOnDrag(event) {
-    console.log(`(${event.target.x()}, ${event.target.y()})`);
+  updateVisualizationOnDrag() {
     this.forceUpdate();
   }
 
@@ -100,8 +99,6 @@ export default class Visualization extends Component {
   }
 
   render() {
-    // clear previously registered nodes
-    VisualizationTool.clearRegisteredComponents();
     const height = this.props.height * 0.87;
     if (!this.props.trace) return this.getEmptyVisualization();
     return (
