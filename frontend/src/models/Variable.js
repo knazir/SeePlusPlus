@@ -14,7 +14,7 @@ export default class Variable {
     if (cType === Variable.CTypes.ARRAY) {
       this.setupArray(data);
     } else if (cType === Variable.CTypes.STRUCT) {
-      this.setupStruct(data, heap);
+      this.setupStruct(data);
       if (type === "string") this.setupString(data);
     } else {
       this.type = type;
@@ -32,15 +32,15 @@ export default class Variable {
     }
   }
 
-  setupStruct(data, heap) {
+  setupStruct(data) {
     this.type = data[2];
     const fieldList = data.slice(3);
     this.value = {};
-    Utils.arrayOfType(Variable, fieldList, field => new Variable(field[1], heap).withName(field[0]))
+    Utils.arrayOfType(Variable, fieldList, field => new Variable(field[1], this.heap).withName(field[0]))
       .forEach((elem) => this.value[elem.name] = elem);
   }
 
-  setupString(data, heap) {
+  setupString(data) {
     this.cType = Variable.CTypes.DATA;
 
     // first check to see if the C string pointer is initialized
@@ -48,13 +48,13 @@ export default class Variable {
 
     if (cStrPointer.isUninitialized()) { // string not yet initialized
       this.value = "<UNINITIALIZED>";
-    } else if (!heap[cStrPointer.value]) { // doesn't exist on heap, string was optimized to be on stack
+    } else if (!this.heap[cStrPointer.value]) { // doesn't exist on heap, string was optimized to be on stack
       const localBuffer = this.formatString(this.value["<anon_field>"].value["_M_local_buf"].value);
       this.value = `"${localBuffer}"`;
     } else { // string is on the heap, get value and make sure it's not rendered as part of the heap
-      const heapValue = this.formatString(heap[cStrPointer.value].value);
+      const heapValue = this.formatString(this.heap[cStrPointer.value].value);
       this.value = `"${heapValue}"`;
-      delete heap[cStrPointer.value];
+      delete this.heap[cStrPointer.value];
     }
   }
 
