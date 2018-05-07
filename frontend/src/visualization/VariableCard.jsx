@@ -149,7 +149,7 @@ export default class VariableCard extends Component {
     const { ROW, COLUMN } = VisualizationTool.Layouts;
     const nodesToLayout = Object.values(this.props.variable.value).map(v => {
       const { width, height } = VisualizationTool.getVariableCardDimensions(v);
-      const component = <VariableCard key={v.name} variable={v} traceStep={this.props.traceStep} x={this.props.x + 40}
+      const component = <VariableCard key={v.getId()} variable={v} traceStep={this.props.traceStep} x={this.props.x + 40}
                                       y={this.props.y + 40} updateVisualization={this.props.updateVisualization}
                                       squareCorners={this.props.variable.isArray()}/>;
       return { width, height, component };
