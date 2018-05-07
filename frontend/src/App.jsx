@@ -49,6 +49,9 @@ export default class App extends Component {
   loadTrace(trace) {
     window.trace = trace;
     this.setState({ trace });
+    if (trace.encounteredException()) {
+      this.ide.stopVisualizing();
+    }
   }
 
   stepNext() {

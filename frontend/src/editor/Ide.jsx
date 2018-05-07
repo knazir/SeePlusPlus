@@ -37,7 +37,7 @@ export default class Ide extends Component {
     this.setState({ loading: true }, async () => {
       const trace = await Api.getCodeTrace("c++", this.state.code);
       this.props.onLoadTrace(trace);
-      this.setState({ isVisualizing: true, loading: false });
+      this.setState({ isVisualizing: !trace.encounteredException(), loading: false });
     });
   }
 
