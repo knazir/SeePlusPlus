@@ -24,17 +24,17 @@ class VisualizationTool {
       calculatedHeight += VisualConstants.VariableCard.SIZING.TITLE_HEIGHT + offsetY;
       maxFieldWidth = Math.max.apply(null, fields.map(v => VisualizationTool.getVariableCardDimensions(v).width));
     } else if (variable.cType === Variable.CTypes.STRUCT_ARRAY) {
-      const offset = VisualConstants.VariableCard.SIZING.SPACE_BETWEEN;
+      const offset = VisualConstants.VariableCard.SIZING.ARRAY_SPACE_BETWEEN;
       const fields = Object.values(variable.value);
       maxFieldWidth = fields.map(v => VisualizationTool.getVariableCardDimensions(v).width)
         .reduce((total, width) => total + width + offset, 0);
-      calculatedHeight = VisualConstants.VariableCard.SIZING.TITLE_HEIGHT + offset;
+      calculatedHeight = VisualConstants.VariableCard.SIZING.TITLE_HEIGHT + 15;
       calculatedHeight += Math.max.apply(null, fields.map(v => VisualizationTool.getVariableCardDimensions(v).height));
     }
 
     const valueHeight = calculatedHeight - VisualConstants.VariableCard.SIZING.TITLE_HEIGHT;
     const offsetToValueCenter = VisualConstants.VariableCard.SIZING.TITLE_HEIGHT + (valueHeight / 2.0);
-    const titleWidth = type.length + name.length + 2;
+    const titleWidth = type.length + (name || "").length + 2;
     const valueWidth = variable.getValue().toString().length * 1.25 + 2;
     const minWidth = VisualConstants.VariableCard.SIZING.MIN_WIDTH;
     let calculatedWidth = 0;

@@ -27,7 +27,7 @@ export default class Variable {
     this.value = Utils.arrayOfType(Variable, data.slice(2), element => new Variable(element, this.heap));
     if (this.value.length === 1) {
       Object.assign(this, this.value[0]);
-    } else if (this.value.length > 0 && this.value[0].cType !== Variable.CTypes.DATA) {
+    } else if (this.value.length > 0) {
       this.cType = Variable.CTypes.STRUCT_ARRAY;
     }
   }
