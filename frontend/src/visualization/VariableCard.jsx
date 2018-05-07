@@ -151,7 +151,7 @@ export default class VariableCard extends Component {
       const { width, height } = VisualizationTool.getVariableCardDimensions(v);
       const component = <VariableCard key={v.name} variable={v} traceStep={this.props.traceStep} x={this.props.x + 40}
                                       y={this.props.y + 40} updateVisualization={this.props.updateVisualization}
-                                      squareCorners/>;
+                                      squareCorners={this.props.variable.isArray()}/>;
       return { width, height, component };
     });
     return VisualizationTool.layoutNodes({
