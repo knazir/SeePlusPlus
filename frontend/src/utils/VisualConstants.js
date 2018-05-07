@@ -22,24 +22,24 @@ module.exports = {
     COLORS: {
       BODY: "white",
       TYPES: {
-        "bool": "rgb(227,156,255)",
-        "char": "rgb(147, 255, 163)",
-        "double": "rgb(210,255,139)",
-        "int": "rgb(255,127,127)",
-        "long int": "rgb(255, 213, 147)",
-        "pointer": "rgb(165,209,255)",
-        "string": "rgb(255,228,129)",
-        DEFAULT: "rgb(147, 188, 255)"
+        "bool": "#dedd95",
+        "char": "#ee94bc",
+        "double": "#df9be9",
+        "int": "#9ccafd",
+        "long int": "#beafff",
+        "pointer": "#89e1df",
+        "string": "#ffcead",
+        DEFAULT: "#b3ea99"
       }
     },
-      POINTER: {
-          WIDTH: 10,
-          LENGTH: 10,
-          COLOR: "black",
-          Y_OFFSET: 35,
-          RADIUS: 4,
-          TENSION: 2
-      }
+    POINTER: {
+      WIDTH: 10,
+      LENGTH: 10,
+      COLOR: "black",
+      Y_OFFSET: 35,
+      RADIUS: 4,
+      TENSION: 2
+    }
 
   },
   StackFrameCard: {
@@ -59,7 +59,7 @@ module.exports = {
     },
     COLORS: {
       BODY: "white",
-      ACTIVE: "rgb(94, 227, 100)",
+      ACTIVE: "#92edb6",
       INACTIVE: "rgb(197, 204, 216)"
     }
   }
