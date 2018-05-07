@@ -13,10 +13,15 @@ export default class TraceStep {
 
     this.funcName = func_name;
     this.line = line - 1; // IMPORTANT: we do line - 1 to discount the #define for fixing unions TODO kn: Do on backend
-    this.globals = Utils.mapValues(Variable, globals);
     this.orderedGlobals = ordered_globals;
-    this.heap = Utils.mapValues(Variable, heap);
+
+    // need to create a "meta heap" to pass in to heap variables without being circular (not sure why though...)
+    const metaHeap = Utils.mapValues(Variable, heap);
+    this.heap = Utils.mapValues(Variable, heap, varData => new Variable(varData, metaHeap));
+
+    this.globals = Utils.mapValues(Variable, globals, varData => new Variable(varData, this.heap));
     Object.entries(this.heap).forEach(([key, value]) => value.withName(key));
+
     this.stack = Utils.arrayOfType(StackFrame, stack_to_render, frameData => new StackFrame(frameData, this.heap))
       .reverse(); // place current frame at index 0
     this.stdout = stdout;

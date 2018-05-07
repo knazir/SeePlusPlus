@@ -10,20 +10,21 @@ export default class Variable {
     const [ cType, address, type ] = data;
     this.cType = cType;
     this.address = address;
+    this.heap = heap;
     if (cType === Variable.CTypes.ARRAY) {
       this.setupArray(data);
     } else if (cType === Variable.CTypes.STRUCT) {
       this.setupStruct(data, heap);
-      if (type === "string") this.setupString(data, heap);
+      if (type === "string") this.setupString(data);
     } else {
       this.type = type;
       this.value = data[3];
     }
   }
 
-  setupArray(data, heap) {
+  setupArray(data) {
     this.type = "array";
-    this.value = Utils.arrayOfType(Variable, data.slice(2), element => new Variable(element, heap));
+    this.value = Utils.arrayOfType(Variable, data.slice(2), element => new Variable(element, this.heap));
     if (this.value.length === 1) {
       Object.assign(this, this.value[0]);
     } else if (this.value.length > 0 && this.value[0].cType !== Variable.CTypes.DATA) {
@@ -103,11 +104,15 @@ export default class Variable {
   }
 
   isArray() {
-    return this.cType in [Variable.CTypes.ARRAY, Variable.CTypes.STRUCT_ARRAY];
+    return this.cType  === Variable.CTypes.ARRAY || this.cType === Variable.CTypes.STRUCT_ARRAY;
   }
 
   isStruct() {
     return this.cType === Variable.CTypes.STRUCT;
+  }
+
+  isFree() {
+    return Boolean(this.heap[this.address]) && this.isArray() && this.value.length === 0;
   }
 
   isPointer() {
@@ -115,6 +120,7 @@ export default class Variable {
   }
 
   toString() {
+    if (this.isFree()) return `(Freed) ${this.name || ""}`.trim();
     return `${this.type} ${this.name || ""}`.trim();
   }
 
