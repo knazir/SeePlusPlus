@@ -42,7 +42,9 @@ module.exports = {
       TENSION: 0,
       ARROW_OFFSET: 3,
       THRESHOLD_SUPER_CLOSE_Y: 50,
-      THRESHOLD_SUPER_CLOSE_X: 100
+      THRESHOLD_SUPER_CLOSE_X: 100,
+      BOLD_WIDTH: 4,
+      NORMAL_WIDTH: 2
     }
 
   },
