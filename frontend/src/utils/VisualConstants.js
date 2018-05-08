@@ -38,7 +38,7 @@ module.exports = {
       LENGTH: 10,
       COLOR: "black",
       Y_OFFSET: 35,
-      RADIUS: 0,
+      RADIUS: 3,
       TENSION: 0
     }
 
