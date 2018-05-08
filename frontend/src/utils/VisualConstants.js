@@ -38,8 +38,8 @@ module.exports = {
       LENGTH: 10,
       COLOR: "black",
       Y_OFFSET: 35,
-      RADIUS: 4,
-      TENSION: 2
+      RADIUS: 0,
+      TENSION: 0
     }
 
   },

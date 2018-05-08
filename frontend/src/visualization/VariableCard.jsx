@@ -138,7 +138,7 @@ export default class VariableCard extends Component {
             fill={VisualConstants.POINTER.COLOR}
           />
           <Arrow
-            points={[origin.x, origin.y, targetX, targetY]}
+            points={[origin.x, origin.y, (origin.x + targetX) / 2.0, origin.y, targetX, targetY]}
             stroke={VisualConstants.POINTER.COLOR}
             tension={VisualConstants.POINTER.TENSION}
             pointerLength={VisualConstants.POINTER.LENGTH}
