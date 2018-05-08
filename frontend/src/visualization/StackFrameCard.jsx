@@ -119,6 +119,9 @@ export default class StackFrameCard extends Component {
     this.setState({
       expanded: !this.state.expanded,
       ...VisualizationTool.getStackFrameCardDimensions(this.props.stackFrame, !this.state.expanded)
+    }, () => {
+      VisualizationTool.clearRegisteredComponents();
+      this.props.updateVisualization()
     });
   }
 

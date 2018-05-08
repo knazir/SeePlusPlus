@@ -48,10 +48,8 @@ export default class App extends Component {
 
   loadTrace(trace) {
     window.trace = trace;
-    this.setState({ trace });
-    if (trace.encounteredException()) {
-      this.ide.stopVisualizing();
-    }
+    // set trace to null to reset visualization
+    this.setState({ trace: null }, () => this.setState({ trace }));
   }
 
   stepNext() {
