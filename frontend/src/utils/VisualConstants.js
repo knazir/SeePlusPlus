@@ -34,12 +34,14 @@ module.exports = {
       }
     },
     POINTER: {
-      WIDTH: 10,
-      LENGTH: 10,
+      WIDTH: 12,
+      LENGTH: 7,
       COLOR: "black",
-      Y_OFFSET: 35,
+      Y_OFFSET: 32,
       RADIUS: 3,
-      TENSION: 0
+      TENSION: 0,
+      ARROW_OFFSET: 3,
+      THRESHOLD_SUPER_CLOSE_Y: 50
     }
 
   },

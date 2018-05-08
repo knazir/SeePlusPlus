@@ -91,6 +91,11 @@ export default class VariableCard extends Component {
     );
   }
 
+  getPointerIntermediateXCoordinate(originX, targetX) {
+    let length = Math.max(Math.abs((originX - targetX) / 2.0), this.state.width / 2.0);
+    return targetX > originX ? originX + length : originX - length;
+  }
+
   getPrimitiveValue() {
     if (!this.props.variable.isPointer() || this.props.variable.isUninitialized()) {
       return (
@@ -109,12 +114,22 @@ export default class VariableCard extends Component {
       const origin = { x: this.props.x + this.state.width / 2.0, y: this.props.y + VisualConstants.POINTER.Y_OFFSET };
       let targetX = origin.x + 10;
       let targetY = origin.y;
+      let points = [];
       const pointerTarget = VisualizationTool.getComponentByAddress(this.props.variable.getValue());
       if (pointerTarget) {
         const { x, y, variable } = pointerTarget;
         const targetDimensions = VisualizationTool.getVariableCardDimensions(variable);
-        targetX = x;
-        targetY = y + targetDimensions.centerOffset;
+        if (Math.abs(y - origin.y) < VisualConstants.POINTER.THRESHOLD_SUPER_CLOSE_Y) {
+          targetX = origin.x;
+          targetY = y + VisualConstants.POINTER.ARROW_OFFSET;
+          points = [origin.x, origin.y, targetX, targetY];
+        } else {
+          targetX = x + VisualConstants.POINTER.ARROW_OFFSET;
+          targetY = y + VisualConstants.POINTER.ARROW_OFFSET;
+          points = [origin.x, origin.y, this.getPointerIntermediateXCoordinate(origin.x, targetX), origin.y, targetX, targetY];
+        }
+
+
       } else if (this.props.variable.getValue() === "0x0") {
         return (
           <Text
@@ -138,7 +153,7 @@ export default class VariableCard extends Component {
             fill={VisualConstants.POINTER.COLOR}
           />
           <Arrow
-            points={[origin.x, origin.y, (origin.x + targetX) / 2.0, origin.y, targetX, targetY]}
+            points={points}
             stroke={VisualConstants.POINTER.COLOR}
             tension={VisualConstants.POINTER.TENSION}
             pointerLength={VisualConstants.POINTER.LENGTH}
