@@ -119,7 +119,7 @@ export default class VariableCard extends Component {
       if (pointerTarget) {
         const { x, y, variable } = pointerTarget;
         const targetDimensions = VisualizationTool.getVariableCardDimensions(variable);
-        if (Math.abs(y - origin.y) < VisualConstants.POINTER.THRESHOLD_SUPER_CLOSE_Y) {
+        if (Math.abs(y - origin.y) < VisualConstants.POINTER.THRESHOLD_SUPER_CLOSE_Y && Math.abs(x - origin.x) < VisualConstants.POINTER.THRESHOLD_SUPER_CLOSE_X) {
           targetX = origin.x;
           targetY = y + VisualConstants.POINTER.ARROW_OFFSET;
           points = [origin.x, origin.y, targetX, targetY];
