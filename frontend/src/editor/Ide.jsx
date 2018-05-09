@@ -62,6 +62,12 @@ export default class Ide extends Component {
     this.cm.refresh();
   }
 
+  scrollToLine(line) {
+    const t = this.cm.charCoords({line: line, ch: 0}, "local").top;
+    const middleHeight = this.cm.getScrollerElement().offsetHeight / 2.0;
+    this.cm.scrollTo(null, t - middleHeight - 5);
+  }
+
   setupCodeMirrorInstance(ref) {
     this.cm = ref.editor;
   }
@@ -75,6 +81,7 @@ export default class Ide extends Component {
     // and the first real line is skipped. Manually fixing that bug (and temporarily unfixed)
     // if (this.props.trace.atStart()) lineNumber++;
     this.highlightLine(lineNumber);
+    this.scrollToLine(lineNumber);
   }
 
   getCodeEditor() {
