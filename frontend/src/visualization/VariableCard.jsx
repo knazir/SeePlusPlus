@@ -28,7 +28,11 @@ export default class VariableCard extends Component {
   }
 
   componentWillReceiveProps({ variable }) {
-    this.setState({ ...VisualizationTool.getVariableCardDimensions(variable) });
+    if (variable.getValue() !== this.props.variable.getValue()) {
+      this.setState({ highlight: true, ...VisualizationTool.getVariableCardDimensions(variable) });
+    } else {
+      this.setState({ highlight: false, ...VisualizationTool.getVariableCardDimensions(variable) });
+    }
   }
 
   getOutline() {
@@ -106,6 +110,7 @@ export default class VariableCard extends Component {
           fontSize={VisualConstants.FONT.BODY_SIZE}
           align={VisualConstants.ALIGNMENT.VALUE}
           fontFamily={VisualConstants.FONT.FAMILY}
+          fontStyle={this.state.highlight ? "bold" : "normal"}
           width={this.state.width}
         />
       );
@@ -117,8 +122,7 @@ export default class VariableCard extends Component {
       let points = [];
       const pointerTarget = VisualizationTool.getComponentByAddress(this.props.variable.getValue());
       if (pointerTarget) {
-        const { x, y, variable } = pointerTarget;
-        const targetDimensions = VisualizationTool.getVariableCardDimensions(variable);
+        const { x, y } = pointerTarget;
         if (Math.abs(y - origin.y) < VisualConstants.POINTER.THRESHOLD_SUPER_CLOSE_Y && Math.abs(x - origin.x) < VisualConstants.POINTER.THRESHOLD_SUPER_CLOSE_X) {
           targetX = origin.x;
           targetY = y + VisualConstants.POINTER.ARROW_OFFSET;
@@ -128,8 +132,6 @@ export default class VariableCard extends Component {
           targetY = y + VisualConstants.POINTER.ARROW_OFFSET;
           points = [origin.x, origin.y, this.getPointerIntermediateXCoordinate(origin.x, targetX), origin.y, targetX, targetY];
         }
-
-
       } else if (this.props.variable.getValue() === "0x0") {
         return (
           <Text
@@ -140,6 +142,7 @@ export default class VariableCard extends Component {
             align={VisualConstants.ALIGNMENT.VALUE}
             fontFamily={VisualConstants.FONT.FAMILY}
             width={this.state.width}
+            fontStyle={this.state.highlight ? "bold" : "normal"}
           />
         );
       }
@@ -155,6 +158,8 @@ export default class VariableCard extends Component {
           <Arrow
             points={points}
             stroke={VisualConstants.POINTER.COLOR}
+            strokeWidth={this.state.highlight ? VisualConstants.POINTER.BOLD_WIDTH
+              : VisualConstants.POINTER.NORMAL_WIDTH}
             tension={VisualConstants.POINTER.TENSION}
             pointerLength={VisualConstants.POINTER.LENGTH}
             pointerWidth ={VisualConstants.POINTER.WIDTH}
