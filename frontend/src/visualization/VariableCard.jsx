@@ -25,10 +25,21 @@ export default class VariableCard extends Component {
   constructor(props) {
     super(props);
     this.state = { ...VisualizationTool.getVariableCardDimensions(this.props.variable) };
+    if (this.props.variable.isFree()) {
+      VisualizationTool.clearRegisteredComponents();
+      this.props.updateVisualization();
+    }
   }
 
   componentWillReceiveProps({ variable }) {
-    if (variable.getValue() !== this.props.variable.getValue()) {
+    if (variable.isFree() !== this.props.variable.isFree()) {
+      console.log("about to update due to freedom differences");
+        this.setState({highlight: false, ...VisualizationTool.getVariableCardDimensions(variable)},
+            () => {
+                VisualizationTool.clearRegisteredComponents();
+                this.props.updateVisualization();
+            });
+    } else if (variable.getValue() !== this.props.variable.getValue()) {
       this.setState({ highlight: true, ...VisualizationTool.getVariableCardDimensions(variable) });
     } else {
       this.setState({ highlight: false, ...VisualizationTool.getVariableCardDimensions(variable) });

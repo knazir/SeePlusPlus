@@ -58,6 +58,10 @@ export default class ProgramTrace {
     // }
   }
 
+  getPreviousStep() {
+    return this.atStart() ? this.trace[this.traceIndex] : this.trace[this.traceIndex - 1];
+  }
+
   getCurrentStep() {
     return this.trace[this.traceIndex] || null;
   }
