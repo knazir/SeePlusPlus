@@ -6,6 +6,7 @@ export default class ProgramTrace {
     this.code = code;
     this.trace = Utils.arrayOfType(TraceStep, trace);
     this.traceIndex = 0;
+    this.prevVisualizedIndex = 0;
   }
 
   atStart() {
@@ -20,7 +21,8 @@ export default class ProgramTrace {
   }
 
   stepNext() {
-    if (!this.isDone()) this.traceIndex++;
+      this.prevVisualizedIndex = this.traceIndex;
+      if (!this.isDone()) this.traceIndex++;
 
     // let previousLine = this.getCurrentStep().line;
     // while (!this.isDone()) {
@@ -32,7 +34,8 @@ export default class ProgramTrace {
   }
 
   stepPrev() {
-    if (!this.atStart()) this.traceIndex--;
+      this.prevVisualizedIndex = this.traceIndex;
+      if (!this.atStart()) this.traceIndex--;
 
     // if (this.atStart()) return;
     // this.traceIndex--;
@@ -48,18 +51,20 @@ export default class ProgramTrace {
   }
 
   stepStart() {
-    this.traceIndex = 0;
+      this.prevVisualizedIndex = this.traceIndex;
+      this.traceIndex = 0;
   }
 
   stepEnd() {
+    this.prevVisualizedIndex = this.traceIndex;
     this.traceIndex = this.trace.length - 1;
     // while (this.getCurrentStep().line === this.trace[this.traceIndex - 1].line) {
     //   this.traceIndex--;
     // }
   }
 
-  getPreviousStep() {
-    return this.atStart() ? this.trace[this.traceIndex] : this.trace[this.traceIndex - 1];
+  getPreviouslyVisualizedStep() {
+    return this.trace[this.prevVisualizedIndex] || null;
   }
 
   getCurrentStep() {
