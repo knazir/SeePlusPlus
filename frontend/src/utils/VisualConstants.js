@@ -68,5 +68,11 @@ module.exports = {
       ACTIVE: "#92edb6",
       INACTIVE: "rgb(197, 204, 216)"
     }
+  },
+  DomCard: {
+    TITLE_HEIGHT: 31
+  },
+  Visualization: {
+    PADDING: 80
   }
 };
