@@ -11,7 +11,7 @@ import { Visualization as VisualConstants } from "../utils/VisualConstants";
 export default class Visualization extends Component {
   static get propTypes() {
     return {
-      width: PropTypes.number,
+      width: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
       height: PropTypes.number,
       trace: PropTypes.object
     };

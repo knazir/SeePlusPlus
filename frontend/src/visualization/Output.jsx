@@ -4,7 +4,7 @@ import DomCard from "../components/DomCard";
 
 class Output extends Component {
   static get propTypes() {
-    return { width: PropTypes.number, height: PropTypes.number };
+    return { width: PropTypes.oneOfType([PropTypes.number, PropTypes.string]), height: PropTypes.number };
   }
 
   render() {

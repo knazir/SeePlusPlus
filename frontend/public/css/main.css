@@ -173,3 +173,20 @@ button:hover:enabled {
   background-color: #fbff98;
 }
 
+@media only screen and (max-width: 650px) {
+  .App {
+    height: 100%;
+  }
+
+  .split-view {
+    flex-direction: column;
+  }
+
+  .split-panel {
+    width: 100%;
+  }
+
+  .split-bar {
+    width: 0;
+  }
+}
