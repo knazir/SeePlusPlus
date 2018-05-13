@@ -94,10 +94,10 @@ export default class App extends Component {
           <div className ="split-bar" />
           <div className="split-panel vis-panel">
             <ContainerDimensions>
-              {({ width, height }) => <Visualization width={'100%'} height={height * 0.8} trace={this.state.trace}/>}
+              {({ width, height }) => <Visualization width={width} height={height * 0.8} trace={this.state.trace}/>}
             </ContainerDimensions>
             <ContainerDimensions>
-              {({ width, height }) => <Output width={'calc(100%) + 20px'} height={height * 0.2}>{this.getOutput()}</Output>}
+              {({ width, height }) => <Output width={"calc(100% + 20px)"} height={height * 0.2}>{this.getOutput()}</Output>}
             </ContainerDimensions>
           </div>
         </div>
