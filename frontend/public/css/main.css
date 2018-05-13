@@ -62,7 +62,8 @@ h3 {
 }
 
 .split {
-  justify-content:space-between;
+  justify-content:space-around;
+  align-items: stretch;
 }
 
 .split-line {
@@ -86,10 +87,6 @@ h3 {
   height: 90px;
   white-space:pre-wrap;
   overflow: auto;
-}
-
-.visualization {
-  width: 100%;
 }
 
 .cm-s-default {

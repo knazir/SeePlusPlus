@@ -6,6 +6,7 @@ import StackFrameCard from "./StackFrameCard";
 import VariableCard from "./VariableCard";
 import VisualizationTool from "../utils/VisualizationTool";
 import DomCard from "../components/DomCard";
+import {Visualization as VisualConstants} from "../utils/VisualConstants";
 
 export default class Visualization extends Component {
   static get propTypes() {
@@ -104,7 +105,7 @@ export default class Visualization extends Component {
   }
 
   getEmptyVisualization() {
-    const height = this.props.height * 0.87;
+    const height = this.props.height - VisualConstants.PADDING;
     return (
       <div className="visualization" style={{ width: this.props.width, height: this.props.height }}>
         <DomCard splitTitle={true} height={height} title="Stack" title2="Heap" color="lightgray"
@@ -114,7 +115,7 @@ export default class Visualization extends Component {
   }
 
   render() {
-    const height = this.props.height * 0.87;
+    const height = this.props.height - VisualConstants.PADDING;
     if (!this.props.trace) return this.getEmptyVisualization();
     return (
       <div className="visualization" style={{ width: this.props.width, height: this.props.height }}>
