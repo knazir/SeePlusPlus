@@ -6,7 +6,7 @@ import StackFrameCard from "./StackFrameCard";
 import VariableCard from "./VariableCard";
 import VisualizationTool from "../utils/VisualizationTool";
 import DomCard from "../components/DomCard";
-import {Visualization as VisualConstants} from "../utils/VisualConstants";
+import { Visualization as VisualConstants } from "../utils/VisualConstants";
 
 export default class Visualization extends Component {
   static get propTypes() {

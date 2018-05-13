@@ -63,7 +63,7 @@ export default class Ide extends Component {
   }
 
   scrollToLine(line) {
-    const t = this.cm.charCoords({line: line, ch: 0}, "local").top;
+    const t = this.cm.charCoords({ line: line, ch: 0 }, "local").top;
     const middleHeight = this.cm.getScrollerElement().offsetHeight / 2.0;
     this.cm.scrollTo(null, t - middleHeight - 5);
   }

@@ -1,6 +1,6 @@
 import React, { Component } from "react";
 import PropTypes from "prop-types";
-import {DomCard as VisualConstants} from "../utils/VisualConstants";
+import { DomCard as VisualConstants } from "../utils/VisualConstants";
 
 export default class DomCard extends Component {
   static get propTypes() {
