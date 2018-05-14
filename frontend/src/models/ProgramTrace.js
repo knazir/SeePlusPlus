@@ -7,6 +7,9 @@ export default class ProgramTrace {
     this.trace = Utils.arrayOfType(TraceStep, trace);
     this.traceIndex = 0;
     this.prevVisualizedIndex = 0;
+    if (this.trace) {
+      this.calculateOrphanedMemory();
+    }
   }
 
   atStart() {
@@ -74,5 +77,22 @@ export default class ProgramTrace {
   encounteredException() {
     return this.getCurrentStep() &&
       (this.getCurrentStep().event === "uncaught_exception" || this.getCurrentStep() === "exception");
+  }
+
+  calculateOrphanedMemory() {
+    for (let i = 1; i < this.trace.length; i++) {
+      for (let orphan in this.trace[i - 1].orphanedMemory) {
+        this.trace[i].orphanedMemory.push(this.trace[i - 1].orphanedMemory[orphan]);
+      }
+      let currHeapVars = this.trace[i].heap;
+      let prevHeapVars = this.trace[i - 1].heap;
+      for (let heapAddr in prevHeapVars) {
+          if (!prevHeapVars[heapAddr].isFree()) {
+              if (!(heapAddr in currHeapVars)) {
+                  this.trace[i].orphanedMemory.push(prevHeapVars[heapAddr]);
+              }
+          }
+      }
+    }
   }
 }

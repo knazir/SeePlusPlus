@@ -20,6 +20,7 @@ export default class Variable {
       this.type = type;
       this.value = data[3];
     }
+    this.orphaned = false;
   }
 
   setupArray(data) {
