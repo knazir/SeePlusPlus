@@ -69,6 +69,7 @@ export default class Visualization extends Component {
     const currentStep = this.props.trace.getCurrentStep();
     return currentStep.stack.map(frame => {
       const active = frame === currentStep.getCurrentStackFrame();
+      VisualizationTool.updateStackFrameActiveness(frame, active);
       const dimensions = VisualizationTool.getStackFrameCardDimensions(frame, active);
       return {
         ...dimensions,
