@@ -135,7 +135,6 @@ class VisualizationTool {
 
   static clearRegisteredComponents() {
     VisualizationTool.componentsByAddress = {};
-    window.componentsByAddress = VisualizationTool.componentsByAddress;
   }
 }
 
