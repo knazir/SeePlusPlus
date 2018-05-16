@@ -59,7 +59,7 @@ export default class Visualization extends Component {
       const dimensions = VisualizationTool.getVariableCardDimensions(v);
       return {
         ...dimensions,
-        component: <VariableCard key={v.getId()} variable={v} traceStep={step}
+        component: <VariableCard key={v.getId()} variable={v} traceStep={step} global
                                  updateVisualization={this.updateVisualizationOnDrag}/>
       };
     });

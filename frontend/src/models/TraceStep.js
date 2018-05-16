@@ -17,9 +17,9 @@ export default class TraceStep {
 
     // need to create a "meta heap" to pass in to heap variables without being circular (not sure why though...)
     const metaHeap = Utils.mapValues(Variable, heap);
-    this.heap = Utils.mapValues(Variable, heap, varData => new Variable(varData, metaHeap));
+    this.heap = Utils.mapValues(Variable, heap, varData => new Variable(varData, metaHeap, false));
 
-    this.globals = Utils.mapValues(Variable, globals, varData => new Variable(varData, this.heap));
+    this.globals = Utils.mapValues(Variable, globals, varData => new Variable(varData, this.heap, true));
     Object.entries(this.heap).forEach(([key, value]) => value.withName(key));
 
     this.stack = Utils.arrayOfType(StackFrame, stack_to_render, frameData => new StackFrame(frameData, this.heap));

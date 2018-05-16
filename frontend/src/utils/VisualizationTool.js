@@ -11,8 +11,6 @@ class VisualizationTool {
   }
 
   static getVariableCardDimensions(variable) {
-    const { type, name } = variable;
-
     let calculatedHeight = VisualConstants.VariableCard.SIZING.HEIGHT;
     let maxFieldWidth = 0;
 
@@ -34,7 +32,7 @@ class VisualizationTool {
 
     const valueHeight = calculatedHeight - VisualConstants.VariableCard.SIZING.TITLE_HEIGHT;
     const offsetToValueCenter = VisualConstants.VariableCard.SIZING.TITLE_HEIGHT + (valueHeight / 2.0);
-    const titleWidth = type.length + (name || "").length + 2;
+    const titleWidth = variable.toString().length + 2;
     const valueWidth = variable.getValue().toString().length * 1.25 + 2;
     const minWidth = VisualConstants.VariableCard.SIZING.MIN_WIDTH;
     let calculatedWidth = 0;

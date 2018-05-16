@@ -5,7 +5,7 @@ export default class Variable {
     return { ARRAY: "C_ARRAY", DATA: "C_DATA", STRUCT: "C_STRUCT", STRUCT_ARRAY: "C_STRUCT_ARRAY"};
   }
 
-  constructor(data, heap = {}) {
+  constructor(data, heap = {}, global = false) {
     this.name = null;
     const [ cType, address, type ] = data;
     this.cType = cType;
@@ -20,6 +20,7 @@ export default class Variable {
       this.type = type;
       this.value = data[3];
     }
+    this.global = global;
   }
 
   setupArray(data) {
@@ -123,6 +124,7 @@ export default class Variable {
 
   toString() {
     if (this.isFree()) return `(Freed) ${this.name || ""}`.trim();
+    if (this.global) return `(Global) ${this.type} ${this.name || ""}`.trim();
     return `${this.type} ${this.name || ""}`.trim();
   }
 
