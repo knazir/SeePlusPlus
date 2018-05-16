@@ -7,9 +7,7 @@ export default class ProgramTrace {
     this.trace = Utils.arrayOfType(TraceStep, trace);
     this.traceIndex = 0;
     this.prevVisualizedIndex = 0;
-    if (this.trace) {
-      this.calculateOrphanedMemory();
-    }
+    if (this.trace) this.calculateOrphanedMemory();
   }
 
   atStart() {
@@ -57,8 +55,8 @@ export default class ProgramTrace {
       for (let orphan in this.trace[i - 1].orphanedMemory) {
         this.trace[i].orphanedMemory.push(this.trace[i - 1].orphanedMemory[orphan]);
       }
-      let currHeapVars = this.trace[i].heap;
-      let prevHeapVars = this.trace[i - 1].heap;
+      const currHeapVars = this.trace[i].heap;
+      const prevHeapVars = this.trace[i - 1].heap;
       for (let heapAddr in prevHeapVars) {
           if (!prevHeapVars[heapAddr].isFree()) {
               if (!(heapAddr in currHeapVars)) {
