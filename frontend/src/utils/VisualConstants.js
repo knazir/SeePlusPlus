@@ -29,7 +29,7 @@ module.exports = {
         "double": "#df9be9",
         "int": "#9ccafd",
         "long int": "#beafff",
-        "pointer": "#89e1df",
+        "ptr": "#89e1df",
         "string": "#ffcead",
         DEFAULT: "#b3ea99"
       }

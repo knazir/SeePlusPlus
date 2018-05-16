@@ -7,7 +7,7 @@ export default class Variable {
 
   constructor(data, heap = {}, global = false) {
     this.name = null;
-    const [ cType, address, type ] = data;
+    const [cType, address, type] = data;
     this.cType = cType;
     this.address = address;
     this.heap = heap;
@@ -16,6 +16,9 @@ export default class Variable {
     } else if (cType === Variable.CTypes.STRUCT) {
       this.setupStruct(data);
       if (type === "string") this.setupString(data);
+    } else if (type === "pointer") {
+      this.type = "ptr";
+      this.value = data[3];
     } else {
       this.type = type;
       this.value = data[3];
@@ -76,7 +79,7 @@ export default class Variable {
   }
 
   isNull() {
-    return (this.type === "pointer" || this.type === "array") && this.value === "0x0";
+    return (this.type === "ptr" || this.type === "array") && this.value === "0x0";
   }
 
   getValue() {
@@ -119,7 +122,7 @@ export default class Variable {
   }
 
   isPointer() {
-    return this.type === "pointer";
+    return this.type === "ptr";
   }
 
   toString() {
