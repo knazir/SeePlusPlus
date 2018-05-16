@@ -43,7 +43,13 @@ export default class Visualization extends Component {
         }
       }
     }
-    return step.getHeapVariables().map(v => {
+    const heapVars = step.getHeapVariables();
+    heapVars.forEach((elem) => elem.orphaned = false);
+    step.orphanedMemory.forEach((elem) => {
+        elem.orphaned = true;
+        heapVars.push(elem);
+    });
+    return heapVars.map(v => {
       const dimensions = VisualizationTool.getVariableCardDimensions(v);
       return {
         ...dimensions,

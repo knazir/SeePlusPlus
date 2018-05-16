@@ -72,6 +72,7 @@ class VisualizationTool {
   static getColor(component) {
     if (component instanceof VariableCard) {
       const COLOR_TYPES = VisualConstants.VariableCard.COLORS.TYPES;
+      if (component.props.variable.orphaned) return COLOR_TYPES.ORPHANED;
       return COLOR_TYPES[component.props.variable.type] || COLOR_TYPES.DEFAULT;
     } else if (component instanceof StackFrameCard) {
       const { ACTIVE, INACTIVE } = VisualConstants.StackFrameCard.COLORS;

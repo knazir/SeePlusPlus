@@ -24,6 +24,7 @@ export default class TraceStep {
 
     this.stack = Utils.arrayOfType(StackFrame, stack_to_render, frameData => new StackFrame(frameData, this.heap));
     this.stdout = stdout;
+    this.orphanedMemory = [];
   }
 
   getCurrentStackFrame() {

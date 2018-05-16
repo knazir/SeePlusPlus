@@ -31,6 +31,7 @@ module.exports = {
         "long int": "#beafff",
         "ptr": "#89e1df",
         "string": "#ffcead",
+        ORPHANED: "#ea9e9d",
         DEFAULT: "#b3ea99"
       }
     },
