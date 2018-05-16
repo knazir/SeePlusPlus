@@ -4,10 +4,11 @@
 
 body {
   margin: 15px;
-  padding: 0;
+  padding: 10px;
   font-family: Menlo, monospace;
   font-size: medium;
   background-color: whitesmoke;
+  overflow: hidden;
 }
 
 h3 {
