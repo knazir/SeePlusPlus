@@ -20,6 +20,7 @@ export default class Variable {
       this.type = type;
       this.value = data[3];
     }
+    this.orphaned = false;
     this.global = global;
   }
 
@@ -125,6 +126,7 @@ export default class Variable {
   toString() {
     if (this.isFree()) return `(Freed) ${this.name || ""}`.trim();
     if (this.global) return `(Global) ${this.type} ${this.name || ""}`.trim();
+    if (this.orphaned) return `(Orphaned) ${this.name.substring(this.name.indexOf("*"))}`.trim();
     return `${this.type} ${this.name || ""}`.trim();
   }
 
