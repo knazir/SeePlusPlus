@@ -6,7 +6,7 @@ export default class TraceStep {
   constructor({ event, exception_msg, func_name, line, globals, ordered_globals, heap, stack_to_render, stdout }) {
     this.event = event;
 
-    if (event === "uncaught_exception") {
+    if (this.encounteredException()) {
       this.exceptionMessage = exception_msg;
       return;
     }
@@ -43,5 +43,9 @@ export default class TraceStep {
     return [...this.getGlobalVariables(),
       ...this.getCurrentStackFrame().getLocalVariables(),
       ...this.getHeapVariables()];
+  }
+
+  encounteredException() {
+    return this.event === "exception" || this.event === "uncaught_exception";
   }
 }
