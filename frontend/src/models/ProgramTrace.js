@@ -73,6 +73,6 @@ export default class ProgramTrace {
 
   encounteredException() {
     return this.getCurrentStep() &&
-      (this.getCurrentStep().event === "uncaught_exception" || this.getCurrentStep() === "exception");
+      (this.getCurrentStep().event === "uncaught_exception" || this.getCurrentStep().event === "exception");
   }
 }
