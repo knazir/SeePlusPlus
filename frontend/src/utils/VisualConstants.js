@@ -73,6 +73,7 @@ module.exports = {
     TITLE_HEIGHT: 31
   },
   Visualization: {
-    PADDING: 80
+    PADDING: 80,
+    KONVA_PADDING: 2
   }
 };

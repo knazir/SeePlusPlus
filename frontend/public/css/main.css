@@ -41,6 +41,10 @@ h3 {
   padding: 10px;
 }
 
+.visualization canvas {
+  border-radius: 0 0 20px 20px;
+}
+
 .vis-panel {
   display: flex;
   flex-direction: column;
