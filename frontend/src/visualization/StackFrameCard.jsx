@@ -69,7 +69,7 @@ export default class StackFrameCard extends Component {
   getTitleText() {
     return (
       <Text
-        text={this.props.stackFrame.funcName}
+        text={this.props.stackFrame.getFuncName()}
         x={this.props.x}
         y={this.props.y + 3}
         fontSize={VisualConstants.FONT.TITLE_SIZE}

@@ -20,7 +20,15 @@ export default class StackFrame {
     return this.orderedVarnames.map(varName => this.encodedLocals[varName].withName(varName));
   }
 
+  getFuncName() {
+    const parenIndex = this.funcName.indexOf("(");
+    if (parenIndex !== -1) {
+      return this.funcName.substring(0, parenIndex);
+    }
+    return this.funcName;
+  }
+
   toString() {
-    return `${this.funcName} ${this.frameId ? `(${this.frameId})` : ""}`.trim();
+    return `${this.getFuncName()} ${this.frameId ? `(${this.frameId})` : ""}`.trim();
   }
 }
