@@ -73,7 +73,10 @@ export default class Ide extends Component {
   }
 
   highlightActiveLine() {
-    if (this.props.trace.encounteredException()) return;
+    if (this.props.trace.encounteredException()) {
+      this.setState({ isVisualizing: false });
+      return;
+    }
     if (this.activeLine !== null) this.clearHighlightedLine();
     let lineNumber = this.props.trace.getCurrentStep().line - 1;
 

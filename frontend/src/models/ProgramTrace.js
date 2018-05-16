@@ -14,43 +14,20 @@ export default class ProgramTrace {
 
   atStart() {
     return this.traceIndex === 0;
-      //this.getCurrentStep().line === this.trace[0].line ||
-      //this.getCurrentStep().line === this.trace[0].line + 1;
   }
 
   isDone() {
     return this.traceIndex === this.trace.length - 1;
-      //this.getCurrentStep().line === this.trace[this.trace.length - 1].line;
   }
 
   stepNext() {
       this.prevVisualizedIndex = this.traceIndex;
       if (!this.isDone()) this.traceIndex++;
-
-    // let previousLine = this.getCurrentStep().line;
-    // while (!this.isDone()) {
-    //   this.traceIndex++;
-    //   if (this.getCurrentStep().line !== previousLine && !this.atStart()) {
-    //     break;
-    //   }
-    // }
   }
 
   stepPrev() {
       this.prevVisualizedIndex = this.traceIndex;
       if (!this.atStart()) this.traceIndex--;
-
-    // if (this.atStart()) return;
-    // this.traceIndex--;
-    // while (!this.atStart()) {
-    //   if (this.getCurrentStep().line !== this.trace[this.traceIndex - 1].line) {
-    //     break;
-    //   }
-    //   this.traceIndex--;
-    // }
-    // if (this.getCurrentStep().line === this.trace[0].line + 1) {
-    //   this.traceIndex = 0;
-    // }
   }
 
   stepStart() {
@@ -61,9 +38,6 @@ export default class ProgramTrace {
   stepEnd() {
     this.prevVisualizedIndex = this.traceIndex;
     this.traceIndex = this.trace.length - 1;
-    // while (this.getCurrentStep().line === this.trace[this.traceIndex - 1].line) {
-    //   this.traceIndex--;
-    // }
   }
 
   getPreviouslyVisualizedStep() {
@@ -75,8 +49,7 @@ export default class ProgramTrace {
   }
 
   encounteredException() {
-    return this.getCurrentStep() &&
-      (this.getCurrentStep().event === "uncaught_exception" || this.getCurrentStep() === "exception");
+    return this.getCurrentStep() && this.getCurrentStep().encounteredException();
   }
 
   calculateOrphanedMemory() {

@@ -6,7 +6,7 @@ export default class TraceStep {
   constructor({ event, exception_msg, func_name, line, globals, ordered_globals, heap, stack_to_render, stdout }) {
     this.event = event;
 
-    if (event === "uncaught_exception") {
+    if (this.encounteredException()) {
       this.exceptionMessage = exception_msg;
       return;
     }
@@ -17,19 +17,18 @@ export default class TraceStep {
 
     // need to create a "meta heap" to pass in to heap variables without being circular (not sure why though...)
     const metaHeap = Utils.mapValues(Variable, heap);
-    this.heap = Utils.mapValues(Variable, heap, varData => new Variable(varData, metaHeap));
+    this.heap = Utils.mapValues(Variable, heap, varData => new Variable(varData, metaHeap, false));
 
-    this.globals = Utils.mapValues(Variable, globals, varData => new Variable(varData, this.heap));
+    this.globals = Utils.mapValues(Variable, globals, varData => new Variable(varData, this.heap, true));
     Object.entries(this.heap).forEach(([key, value]) => value.withName(key));
 
-    this.stack = Utils.arrayOfType(StackFrame, stack_to_render, frameData => new StackFrame(frameData, this.heap))
-      .reverse(); // place current frame at index 0
+    this.stack = Utils.arrayOfType(StackFrame, stack_to_render, frameData => new StackFrame(frameData, this.heap));
     this.stdout = stdout;
     this.orphanedMemory = [];
   }
 
   getCurrentStackFrame() {
-    return this.stack[0];
+    return this.stack[this.stack.length - 1];
   }
 
   getGlobalVariables() {
@@ -41,8 +40,14 @@ export default class TraceStep {
   }
 
   getVariables() {
-    return [...this.getGlobalVariables(),
+    return [
+      ...this.getGlobalVariables(),
       ...this.getCurrentStackFrame().getLocalVariables(),
-      ...this.getHeapVariables()];
+      ...this.getHeapVariables()
+    ];
+  }
+
+  encounteredException() {
+    return this.event === "exception" || this.event === "uncaught_exception";
   }
 }

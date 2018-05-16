@@ -65,7 +65,7 @@ export default class Visualization extends Component {
       const dimensions = VisualizationTool.getVariableCardDimensions(v);
       return {
         ...dimensions,
-        component: <VariableCard key={v.getId()} variable={v} traceStep={step}
+        component: <VariableCard key={v.getId()} variable={v} traceStep={step} global
                                  updateVisualization={this.updateVisualizationOnDrag}/>
       };
     });
@@ -75,6 +75,7 @@ export default class Visualization extends Component {
     const currentStep = this.props.trace.getCurrentStep();
     return currentStep.stack.map(frame => {
       const active = frame === currentStep.getCurrentStackFrame();
+      VisualizationTool.updateStackFrameActiveness(frame, active);
       const dimensions = VisualizationTool.getStackFrameCardDimensions(frame, active);
       return {
         ...dimensions,
@@ -127,7 +128,7 @@ export default class Visualization extends Component {
       <div className="visualization" style={{ width: this.props.width, height: this.props.height }}>
         <DomCard splitTitle={true} height={height} title="Stack" title2="Heap" color="lightgray"
                  bodyStyle={{ width: this.props.width, height }}>
-          <Stage draggable width={this.props.width} height={this.props.height}>
+          <Stage draggable width={this.props.width - VisualConstants.KONVA_PADDING} height={height - VisualConstants.KONVA_PADDING}>
             <Layer>
               {!this.props.trace.encounteredException() && this.getAllNodes()}
             </Layer>

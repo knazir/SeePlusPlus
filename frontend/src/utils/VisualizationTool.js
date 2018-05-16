@@ -11,8 +11,6 @@ class VisualizationTool {
   }
 
   static getVariableCardDimensions(variable) {
-    const { type, name } = variable;
-
     let calculatedHeight = VisualConstants.VariableCard.SIZING.HEIGHT;
     let maxFieldWidth = 0;
 
@@ -34,7 +32,7 @@ class VisualizationTool {
 
     const valueHeight = calculatedHeight - VisualConstants.VariableCard.SIZING.TITLE_HEIGHT;
     const offsetToValueCenter = VisualConstants.VariableCard.SIZING.TITLE_HEIGHT + (valueHeight / 2.0);
-    const titleWidth = type.length + (name || "").length + 2;
+    const titleWidth = variable.toString().length + 2;
     const valueWidth = variable.getValue().toString().length * 1.25 + 2;
     const minWidth = VisualConstants.VariableCard.SIZING.MIN_WIDTH;
     let calculatedWidth = 0;
@@ -51,7 +49,7 @@ class VisualizationTool {
     };
   }
 
-  static getStackFrameCardDimensions(stackFrame, expanded = true) {
+  static getStackFrameCardDimensions(stackFrame) {
     const offsetY = VisualConstants.VariableCard.SIZING.SPACE_BETWEEN;
     const dimensions = stackFrame.getLocalVariables().map(v => VisualizationTool.getVariableCardDimensions(v));
 
@@ -60,7 +58,7 @@ class VisualizationTool {
 
     let calculatedHeight = dimensions.map(d => d.height).reduce((total, height) => total + height + offsetY, 0);
     calculatedHeight += VisualConstants.StackFrameCard.SIZING.TITLE_HEIGHT + offsetY + offsetY;
-    if (!expanded) {
+    if (!VisualizationTool.isExpanded(stackFrame)) {
       calculatedHeight = VisualConstants.StackFrameCard.SIZING.TITLE_HEIGHT;
       maxVarWidth = 0;
     }
@@ -113,16 +111,37 @@ class VisualizationTool {
     });
   }
 
+  static registerStackFrame(frame, expanded, active) {
+    VisualizationTool.stackFrames[frame.uniqueHash] = { expanded, active };
+  }
+
+  static isExpanded(frame) {
+    const stackFrameInfo = VisualizationTool.stackFrames[frame.uniqueHash];
+    return stackFrameInfo ? stackFrameInfo.expanded : false;
+  }
+
+  static updateStackFrameActiveness(frame, active) {
+    if (!VisualizationTool.stackFrames[frame.uniqueHash]) {
+      VisualizationTool.registerStackFrame(frame, active, active);
+    } else if (VisualizationTool.stackFrames[frame.uniqueHash].active !== active) {
+        VisualizationTool.stackFrames[frame.uniqueHash] = { "expanded": active, active };
+    }
+  }
+
+  static toggleStackFrame(frame) {
+    VisualizationTool.stackFrames[frame.uniqueHash].expanded = !VisualizationTool.isExpanded(frame);
+  }
+
   static getComponentByAddress(address) {
     return VisualizationTool.componentsByAddress[address];
   }
 
   static clearRegisteredComponents() {
     VisualizationTool.componentsByAddress = {};
-    window.componentsByAddress = VisualizationTool.componentsByAddress;
   }
 }
 
 VisualizationTool.componentsByAddress = {};
+VisualizationTool.stackFrames = {};
 
 export default VisualizationTool;

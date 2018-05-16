@@ -3,11 +3,12 @@
 }
 
 body {
-  margin: 15px;
-  padding: 0;
+  margin: 0 15px 15px 15px;
+  padding: 0 10px 10px 10px;
   font-family: Menlo, monospace;
   font-size: medium;
   background-color: whitesmoke;
+  overflow: hidden;
 }
 
 h3 {
@@ -38,6 +39,10 @@ h3 {
   width: calc(50% - 8px);
   height: 100%;
   padding: 10px;
+}
+
+.visualization canvas {
+  border-radius: 0 0 20px 20px;
 }
 
 .vis-panel {
@@ -174,6 +179,10 @@ button:hover:enabled {
 }
 
 @media only screen and (max-width: 650px) {
+  body {
+    overflow: auto;
+  }
+
   .App {
     height: 100%;
   }
