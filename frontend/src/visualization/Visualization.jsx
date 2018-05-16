@@ -82,7 +82,7 @@ export default class Visualization extends Component {
         component: <StackFrameCard key={frame.toString()} traceStep={currentStep} stackFrame={frame} active={active}
                                    updateVisualization={this.updateVisualizationOnDrag}/>
       };
-    });
+    }).reverse();
   }
 
   getStackNodes() {

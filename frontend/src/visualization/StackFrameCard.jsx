@@ -92,6 +92,15 @@ export default class StackFrameCard extends Component {
 
   getLocalVariableNodes() {
     const nodesToLayout = this.props.stackFrame.getLocalVariables().map(v => {
+      if (v.isPointer()) {
+        const pointeeComponent = VisualizationTool.getComponentByAddress(v.getValue());
+        if (pointeeComponent && pointeeComponent.variable.stackFrame) {
+          const stackFrameInfo = VisualizationTool.stackFrames[pointeeComponent.variable.stackFrame];
+          if (stackFrameInfo && !stackFrameInfo.expanded) {
+            VisualizationTool.stackFrames[pointeeComponent.variable.stackFrame].expanded = true;
+          }
+        }
+      }
       const component = <VariableCard key={v.getId()} variable={v} traceStep={this.props.traceStep} x={this.props.x + 40}
                                       y={this.props.y + 40} updateVisualization={this.props.updateVisualization}/>;
       return { ...VisualizationTool.getVariableCardDimensions(v), component };

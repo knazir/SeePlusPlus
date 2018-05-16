@@ -12,7 +12,7 @@ export default class StackFrame {
     this.isZombie = is_zombie;
     this.parentFrameIdList = parent_frame_id_list;
     this.uniqueHash = unique_hash;
-    this.encodedLocals = Utils.mapValues(Variable, encoded_locals, varData => new Variable(varData, heap));
+    this.encodedLocals = Utils.mapValues(Variable, encoded_locals, varData => new Variable(varData, heap, unique_hash));
     this.orderedVarnames = ordered_varnames;
   }
 
