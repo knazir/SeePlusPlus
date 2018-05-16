@@ -82,7 +82,7 @@ export default class Visualization extends Component {
         component: <StackFrameCard key={frame.toString()} traceStep={currentStep} stackFrame={frame} active={active}
                                    updateVisualization={this.updateVisualizationOnDrag}/>
       };
-    }).reverse();
+    });
   }
 
   getStackNodes() {
@@ -93,7 +93,7 @@ export default class Visualization extends Component {
       offset: { x: 0, y: 15 },
       traceStep: this.props.trace.getCurrentStep(),
       layout: VisualizationTool.Layouts.COLUMN
-    });
+    }).reverse();
   }
 
   getHeapNodes() {

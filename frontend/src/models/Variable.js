@@ -5,9 +5,9 @@ export default class Variable {
     return { ARRAY: "C_ARRAY", DATA: "C_DATA", STRUCT: "C_STRUCT", STRUCT_ARRAY: "C_STRUCT_ARRAY"};
   }
 
-  constructor(data, heap = {}, stackFrame, global = false) {
+  constructor(data, heap = {}, stackFrameHash, global = false) {
     this.name = null;
-    this.stackFrame = stackFrame;
+    this.stackFrameHash = stackFrameHash;
     const [ cType, address, type ] = data;
     this.cType = cType;
     this.address = address;

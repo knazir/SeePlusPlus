@@ -115,19 +115,31 @@ class VisualizationTool {
 
   static isExpanded(frame) {
     const stackFrameInfo = VisualizationTool.stackFrames[frame.uniqueHash];
-    return stackFrameInfo ? stackFrameInfo.expanded : false;
+    return stackFrameInfo && (stackFrameInfo.expanded || (stackFrameInfo.pointee && !stackFrameInfo.closedPointee));
   }
 
   static updateStackFrameActiveness(frame, active) {
     if (!VisualizationTool.stackFrames[frame.uniqueHash]) {
       VisualizationTool.registerStackFrame(frame, active, active);
     } else if (VisualizationTool.stackFrames[frame.uniqueHash].active !== active) {
-        VisualizationTool.stackFrames[frame.uniqueHash] = { "expanded": active, active };
+        VisualizationTool.stackFrames[frame.uniqueHash] = { "expanded": active, active,
+          "pointee": false, "closedPointee": false };
     }
   }
 
   static toggleStackFrame(frame) {
-    VisualizationTool.stackFrames[frame.uniqueHash].expanded = !VisualizationTool.isExpanded(frame);
+    const frameInfo = VisualizationTool.stackFrames[frame.uniqueHash];
+    if (frameInfo.pointee) {
+      VisualizationTool.stackFrames[frame.uniqueHash].closedPointee = !frameInfo.closedPointee;
+    } else {
+      VisualizationTool.stackFrames[frame.uniqueHash].expanded = !frameInfo.expanded;
+    }
+  }
+
+  static resetViewedFrames() {
+    for (let hash in VisualizationTool.stackFrames) {
+      VisualizationTool.stackFrames[hash].pointee = false;
+    }
   }
 
   static getComponentByAddress(address) {

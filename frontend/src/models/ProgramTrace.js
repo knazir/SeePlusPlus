@@ -1,5 +1,6 @@
 import TraceStep from "./TraceStep";
 import Utils from "../utils/Utils";
+import VisualizationTool from "../utils/VisualizationTool";
 
 export default class ProgramTrace {
   constructor({ code, trace }) {
@@ -19,22 +20,26 @@ export default class ProgramTrace {
   }
 
   stepNext() {
-      this.prevVisualizedIndex = this.traceIndex;
-      if (!this.isDone()) this.traceIndex++;
+    this.prevVisualizedIndex = this.traceIndex;
+    VisualizationTool.resetViewedFrames();
+    if (!this.isDone()) this.traceIndex++;
   }
 
   stepPrev() {
-      this.prevVisualizedIndex = this.traceIndex;
-      if (!this.atStart()) this.traceIndex--;
+    this.prevVisualizedIndex = this.traceIndex;
+    VisualizationTool.resetViewedFrames();
+    if (!this.atStart()) this.traceIndex--;
   }
 
   stepStart() {
-      this.prevVisualizedIndex = this.traceIndex;
-      this.traceIndex = 0;
+    this.prevVisualizedIndex = this.traceIndex;
+    VisualizationTool.resetViewedFrames();
+    this.traceIndex = 0;
   }
 
   stepEnd() {
     this.prevVisualizedIndex = this.traceIndex;
+    VisualizationTool.resetViewedFrames();
     this.traceIndex = this.trace.length - 1;
   }
 
