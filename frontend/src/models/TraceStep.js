@@ -22,13 +22,12 @@ export default class TraceStep {
     this.globals = Utils.mapValues(Variable, globals, varData => new Variable(varData, this.heap));
     Object.entries(this.heap).forEach(([key, value]) => value.withName(key));
 
-    this.stack = Utils.arrayOfType(StackFrame, stack_to_render, frameData => new StackFrame(frameData, this.heap))
-      .reverse(); // place current frame at index 0
+    this.stack = Utils.arrayOfType(StackFrame, stack_to_render, frameData => new StackFrame(frameData, this.heap));
     this.stdout = stdout;
   }
 
   getCurrentStackFrame() {
-    return this.stack[0];
+    return this.stack[this.stack.length - 1];
   }
 
   getGlobalVariables() {
@@ -40,9 +39,11 @@ export default class TraceStep {
   }
 
   getVariables() {
-    return [...this.getGlobalVariables(),
+    return [
+      ...this.getGlobalVariables(),
       ...this.getCurrentStackFrame().getLocalVariables(),
-      ...this.getHeapVariables()];
+      ...this.getHeapVariables()
+    ];
   }
 
   encounteredException() {
