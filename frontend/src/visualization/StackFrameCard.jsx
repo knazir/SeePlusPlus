@@ -21,22 +21,12 @@ export default class StackFrameCard extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      expanded: this.props.active,
-      prevActive: this.props.active,
-      ...VisualizationTool.getStackFrameCardDimensions(this.props.stackFrame, this.props.active)
+      ...VisualizationTool.getStackFrameCardDimensions(this.props.stackFrame)
     };
   }
 
   componentWillReceiveProps({ stackFrame, active }) {
-    if (this.state.prevActive === active) {
-      this.setState({ ...VisualizationTool.getStackFrameCardDimensions(stackFrame, this.state.expanded) });
-    } else {
-      this.setState({
-        expanded: active,
-        prevActive: active,
-        ...VisualizationTool.getStackFrameCardDimensions(stackFrame, active)
-      });
-    }
+    this.setState({ ...VisualizationTool.getStackFrameCardDimensions(stackFrame) });
   }
 
   getOutline() {
@@ -116,9 +106,9 @@ export default class StackFrameCard extends Component {
   }
 
   toggleOpen() {
+    VisualizationTool.toggleStackFrame(this.props.stackFrame);
     this.setState({
-      expanded: !this.state.expanded,
-      ...VisualizationTool.getStackFrameCardDimensions(this.props.stackFrame, !this.state.expanded)
+      ...VisualizationTool.getStackFrameCardDimensions(this.props.stackFrame)
     }, () => {
       VisualizationTool.clearRegisteredComponents();
       this.props.updateVisualization();
@@ -130,7 +120,7 @@ export default class StackFrameCard extends Component {
       <Group draggable>
         {this.getOutline()}
         {this.getTitleSegment()}
-        {this.state.expanded && this.getLocalVariableNodes()}
+        {VisualizationTool.isExpanded(this.props.stackFrame) && this.getLocalVariableNodes()}
       </Group>
     );
   }

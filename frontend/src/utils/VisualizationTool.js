@@ -51,7 +51,7 @@ class VisualizationTool {
     };
   }
 
-  static getStackFrameCardDimensions(stackFrame, expanded = true) {
+  static getStackFrameCardDimensions(stackFrame) {
     const offsetY = VisualConstants.VariableCard.SIZING.SPACE_BETWEEN;
     const dimensions = stackFrame.getLocalVariables().map(v => VisualizationTool.getVariableCardDimensions(v));
 
@@ -60,7 +60,7 @@ class VisualizationTool {
 
     let calculatedHeight = dimensions.map(d => d.height).reduce((total, height) => total + height + offsetY, 0);
     calculatedHeight += VisualConstants.StackFrameCard.SIZING.TITLE_HEIGHT + offsetY + offsetY;
-    if (!expanded) {
+    if (!VisualizationTool.isExpanded(stackFrame)) {
       calculatedHeight = VisualConstants.StackFrameCard.SIZING.TITLE_HEIGHT;
       maxVarWidth = 0;
     }
@@ -110,6 +110,27 @@ class VisualizationTool {
     });
   }
 
+  static registerStackFrame(frame, expanded, active) {
+    VisualizationTool.stackFrames[frame.uniqueHash] = { expanded, active };
+  }
+
+  static isExpanded(frame) {
+    const stackFrameInfo = VisualizationTool.stackFrames[frame.uniqueHash];
+    return stackFrameInfo ? stackFrameInfo.expanded : false;
+  }
+
+  static updateStackFrameActiveness(frame, active) {
+    if (!VisualizationTool.stackFrames[frame.uniqueHash]) {
+      VisualizationTool.registerStackFrame(frame, active, active);
+    } else if (VisualizationTool.stackFrames[frame.uniqueHash].active !== active) {
+        VisualizationTool.stackFrames[frame.uniqueHash] = { "expanded": active, active };
+    }
+  }
+
+  static toggleStackFrame(frame) {
+    VisualizationTool.stackFrames[frame.uniqueHash].expanded = !VisualizationTool.isExpanded(frame);
+  }
+
   static getComponentByAddress(address) {
     return VisualizationTool.componentsByAddress[address];
   }
@@ -121,5 +142,6 @@ class VisualizationTool {
 }
 
 VisualizationTool.componentsByAddress = {};
+VisualizationTool.stackFrames = {};
 
 export default VisualizationTool;
