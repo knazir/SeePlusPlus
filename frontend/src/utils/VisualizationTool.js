@@ -141,5 +141,6 @@ class VisualizationTool {
 
 VisualizationTool.componentsByAddress = {};
 VisualizationTool.stackFrames = {};
+VisualizationTool.arrowsToDraw = [];
 
 export default VisualizationTool;
