@@ -1,6 +1,6 @@
 import React, { Component } from "react";
 import PropTypes from "prop-types";
-import { Rect, Text, Group, Arrow, Circle } from "react-konva";
+import { Rect, Text, Group, Arrow, Circle, Line } from "react-konva";
 
 import Variable from "../models/Variable";
 import VisualizationTool from "../utils/VisualizationTool";
@@ -133,16 +133,19 @@ export default class VariableCard extends Component {
           points = [origin.x, origin.y, this.getPointerIntermediateXCoordinate(origin.x, targetX), origin.y, targetX, targetY];
         }
       } else if (this.props.variable.getValue() === "0x0") {
+        let content_height = this.state.height - VisualConstants.SIZING.TITLE_UPPER_RECT_HEIGHT;
         return (
-          <Text
-            text="NULL"
-            x={this.props.x}
-            y={this.props.y + 23}
-            fontSize={VisualConstants.FONT.BODY_SIZE}
-            align={VisualConstants.ALIGNMENT.VALUE}
-            fontFamily={VisualConstants.FONT.FAMILY}
-            width={this.state.width}
-            fontStyle={this.state.highlight ? "bold" : "normal"}
+          <Line
+            points={[
+              origin.x + this.state.width/2.0,
+              origin.y - content_height/2.0 + VisualConstants.SIZING.ROUNDED_PADDING,
+              origin.x - this.state.width/2.0 + VisualConstants.SIZING.ROUNDED_PADDING,
+              origin.y + content_height/2.0 - VisualConstants.SIZING.ROUNDED_PADDING
+            ]}
+            stroke={VisualConstants.POINTER.COLOR}
+            strokeWidth={this.state.highlight ? VisualConstants.POINTER.BOLD_WIDTH
+              : VisualConstants.POINTER.NORMAL_WIDTH}
+            fill={VisualConstants.POINTER.COLOR}
           />
         );
       }

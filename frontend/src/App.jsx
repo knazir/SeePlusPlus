@@ -90,13 +90,16 @@ export default class App extends Component {
     return (
       <div className="App">
         <div className="split-view">
-          <div className="split-panel code-panel">
-            <Ide ref={ide => this.ide = ide} onLoadTrace={trace => this.loadTrace(trace)} trace={this.state.trace}
-                 stepNext={() => this.stepNext()} stepPrev={() => this.stepPrev()}
-                 stepStart={() => this.stepStart()} stepEnd={() => this.stepEnd()}/>
+          <div className="split-panel code-panel" style={{ width: "40%" }}>
+            <ContainerDimensions>
+              {({ width, height }) => <Ide ref={ide => this.ide = ide} onLoadTrace={trace => this.loadTrace(trace)}
+                                           trace={this.state.trace} height={height}
+                                           stepNext={() => this.stepNext()} stepPrev={() => this.stepPrev()}
+                                           stepStart={() => this.stepStart()} stepEnd={() => this.stepEnd()}/>}
+            </ContainerDimensions>
           </div>
           <div className ="split-bar" />
-          <div className="split-panel vis-panel">
+          <div className="split-panel vis-panel" style={{ width: "60%" }}>
             <ContainerDimensions>
               {({ width, height }) => <Visualization width={width} height={height * 0.8} trace={this.state.trace}/>}
             </ContainerDimensions>

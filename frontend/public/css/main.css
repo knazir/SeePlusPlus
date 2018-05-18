@@ -3,8 +3,8 @@
 }
 
 body {
-  margin: 15px;
-  padding: 10px;
+  margin: 0 15px 15px 15px;
+  padding: 0 10px 10px 10px;
   font-family: Menlo, monospace;
   font-size: medium;
   background-color: whitesmoke;
@@ -179,6 +179,10 @@ button:hover:enabled {
 }
 
 @media only screen and (max-width: 650px) {
+  body {
+    overflow: auto;
+  }
+
   .App {
     height: 100%;
   }

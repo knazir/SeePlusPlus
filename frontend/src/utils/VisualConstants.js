@@ -9,7 +9,8 @@ module.exports = {
       OUTLINE_WIDTH: 1,
       CORNER_RADIUS: 15,
       SPACE_BETWEEN: 10,
-      ARRAY_SPACE_BETWEEN: 0
+      ARRAY_SPACE_BETWEEN: 0,
+      ROUNDED_PADDING: 5
     },
     ALIGNMENT: {
       TITLE: "center",
@@ -28,8 +29,9 @@ module.exports = {
         "double": "#df9be9",
         "int": "#9ccafd",
         "long int": "#beafff",
-        "pointer": "#89e1df",
+        "ptr": "#89e1df",
         "string": "#ffcead",
+        ORPHANED: "#ea9e9d",
         DEFAULT: "#b3ea99"
       }
     },

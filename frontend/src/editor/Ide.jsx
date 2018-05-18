@@ -12,6 +12,7 @@ import VisualizationTool from "../utils/VisualizationTool";
 export default class Ide extends Component {
   static get propTypes() {
     return {
+      height: PropTypes.number.isRequired,
       onLoadTrace: PropTypes.func.isRequired,
       stepNext: PropTypes.func.isRequired,
       stepPrev: PropTypes.func.isRequired,
