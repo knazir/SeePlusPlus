@@ -104,7 +104,7 @@ export default class App extends Component {
             </ContainerDimensions>
           </div>
         </div>
-        <p style={{ fontSize: "small", textAlign: "center" }}>&copy; 2018 by SeePlusPlus</p>
+        <p style={{ fontSize: "x-small", textAlign: "center" }}>&copy; 2018 by SeePlusPlus</p>
       </div>
     );
   }
