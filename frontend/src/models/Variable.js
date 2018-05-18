@@ -5,9 +5,10 @@ export default class Variable {
     return { ARRAY: "C_ARRAY", DATA: "C_DATA", STRUCT: "C_STRUCT", STRUCT_ARRAY: "C_STRUCT_ARRAY"};
   }
 
-  constructor(data, heap = {}, global = false) {
+  constructor(data, heap = {}, stackFrameHash, global = false) {
     this.name = null;
-    const [cType, address, type] = data;
+    this.stackFrameHash = stackFrameHash;
+    const [ cType, address, type ] = data;
     this.cType = cType;
     this.address = address;
     this.heap = heap;
@@ -132,5 +133,4 @@ export default class Variable {
     if (this.orphaned) return `(Orphaned) ${this.name.substring(this.name.indexOf("*"))}`.trim();
     return `${this.type} ${this.name || ""}`.trim();
   }
-
 }
