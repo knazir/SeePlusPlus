@@ -11,6 +11,7 @@ export default class Variable {
     this.cType = cType;
     this.address = address;
     this.heap = heap;
+    this.tree = false;
     if (cType === Variable.CTypes.ARRAY) {
       this.setupArray(data);
     } else if (cType === Variable.CTypes.STRUCT) {
@@ -41,12 +42,29 @@ export default class Variable {
     this.type = data[2];
     const fieldList = data.slice(3);
     this.value = {};
+    let pointerCount = 0;
+    let prev = false;
+    let next = false;
     Utils.arrayOfType(Variable, fieldList, field => new Variable(field[1], this.heap).withName(field[0]))
-      .forEach((elem) => this.value[elem.name] = elem);
+      .forEach((elem) => {
+        this.value[elem.name] = elem;
+        if (elem.isPointer()) {
+          pointerCount++;
+          if (elem.name.toLowerCase().startsWith("pr")) {
+            prev = true;
+          } else if (elem.name.toLowerCase().startsWith("next")) {
+            next = true;
+          }
+        }
+      });
+    if (pointerCount > 2 || (pointerCount === 2 && !prev && !next)) {
+      this.tree = true;
+    }
   }
 
   setupString(data) {
     this.cType = Variable.CTypes.DATA;
+    this.tree = false;
 
     // first check to see if the C string pointer is initialized
     const cStrPointer = this.value["_M_dataplus"].value["_M_p"];
