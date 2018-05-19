@@ -34,7 +34,7 @@ export default class Ide extends Component {
   }
 
   visualizeCode() {
-    VisualizationTool.arrowsToDraw = [];
+    VisualizationTool.clearPointerArrows();
     VisualizationTool.clearRegisteredComponents();
     this.setState({ loading: true }, async () => {
       const trace = await Api.getCodeTrace("c++", this.state.code);
@@ -50,7 +50,7 @@ export default class Ide extends Component {
   stopVisualizing() {
     if (this.activeLine !== null) this.clearHighlightedLine();
     this.setState({ isVisualizing: false });
-    VisualizationTool.arrowsToDraw = [];
+    VisualizationTool.clearPointerArrows();
   }
 
   clearHighlightedLine() {

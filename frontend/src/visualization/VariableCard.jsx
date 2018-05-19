@@ -150,7 +150,7 @@ export default class VariableCard extends Component {
         );
       }
       VisualizationTool.arrowsToDraw.push(
-        <Group key={this.props.variable.toString() + this.props.variable.address + pointerTarget.variable.toString()}>
+        <Group key={this.props.variable.toString() + this.props.variable.address}>
           <Circle
             x={origin.x}
             y={origin.y}

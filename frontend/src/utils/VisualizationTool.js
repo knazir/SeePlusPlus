@@ -149,6 +149,14 @@ class VisualizationTool {
   static clearRegisteredComponents() {
     VisualizationTool.componentsByAddress = {};
   }
+
+  static clearPointerArrows() {
+    VisualizationTool.arrowsToDraw = [];
+  }
+
+  static getArrowComponents() {
+    return VisualizationTool.arrowsToDraw;
+  }
 }
 
 VisualizationTool.componentsByAddress = {};
