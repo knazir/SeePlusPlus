@@ -115,7 +115,7 @@ export default class Visualization extends Component {
     const height = this.props.height - VisualConstants.PADDING;
     return (
       <div className="visualization" style={{ width: this.props.width, height: this.props.height }}>
-        <DomCard splitTitle={true} height={height} title="Stack" title2="Heap" color="lightgray"
+        <DomCard splitTitle height={height} title="Stack" secondTitle="Heap" color="lightgray"
                  bodyStyle={{ width: this.props.width, height }}/>
       </div>
     );
@@ -126,9 +126,10 @@ export default class Visualization extends Component {
     if (!this.props.trace) return this.getEmptyVisualization();
     return (
       <div className="visualization" style={{ width: this.props.width, height: this.props.height }}>
-        <DomCard splitTitle={true} height={height} title="Stack" title2="Heap" color="lightgray"
+        <DomCard splitTitle height={height} title="Stack" secondTitle="Heap" color="lightgray"
                  bodyStyle={{ width: this.props.width, height }}>
-          <Stage draggable width={this.props.width - VisualConstants.KONVA_PADDING} height={height - VisualConstants.KONVA_PADDING}>
+          <Stage draggable width={this.props.width - VisualConstants.KONVA_PADDING}
+                 height={height - VisualConstants.KONVA_PADDING}>
             <Layer>
               {!this.props.trace.encounteredException() && this.getAllNodes()}
             </Layer>

@@ -45,12 +45,17 @@ h3 {
   border-radius: 0 0 20px 20px;
 }
 
+.code-panel {
+  width: 40%;
+}
+
 .vis-panel {
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
   margin-right: 10px;
+  width: 60%;
 }
 
 .box-title {
@@ -96,6 +101,11 @@ h3 {
 
 .cm-s-default {
   border-radius: 0 0 20px 20px;
+}
+
+.button-panel {
+  display: flex;
+  justify-content: center;
 }
 
 .control-buttons {
@@ -176,6 +186,15 @@ button:hover:enabled {
 
 .active-code {
   background-color: #fbff98;
+}
+
+.exception-message {
+  color: red;
+}
+
+.copyright{
+  font-size: small;
+  text-align: center;
 }
 
 @media only screen and (max-width: 650px) {

@@ -15,14 +15,14 @@ export default class ProgramTrace {
     return this.traceIndex === 0;
   }
 
-  isDone() {
+  atEnd() {
     return this.traceIndex === this.trace.length - 1;
   }
 
   stepNext() {
     this.prevVisualizedIndex = this.traceIndex;
     VisualizationTool.resetViewedFrames();
-    if (!this.isDone()) this.traceIndex++;
+    if (!this.atEnd()) this.traceIndex++;
   }
 
   stepPrev() {
@@ -53,6 +53,12 @@ export default class ProgramTrace {
 
   encounteredException() {
     return this.getCurrentStep() && this.getCurrentStep().encounteredException();
+  }
+
+  getOutput() {
+    const currentStep = this.getCurrentStep();
+    if (!currentStep) return "";
+    return this.encounteredException() ? currentStep.exceptionMessage : currentStep.stdout;
   }
 
   calculateOrphanedMemory() {
