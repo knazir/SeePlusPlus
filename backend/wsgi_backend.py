@@ -7,10 +7,12 @@
 import json
 import os
 import re
+import shutil
 import sys
 
 from cgi import parse_qs, escape
 from subprocess import Popen, PIPE
+from tempfile import mkdtemp
 
 
 def pluck(d, *args):
@@ -20,11 +22,12 @@ def pluck(d, *args):
 def preprocess_code(code):
     return "#define union struct\n" + code
 
+
 def setup_options(env):
     query_params = parse_qs(env['QUERY_STRING'])
     opts = {
         'VALGRIND_MSG_RE': re.compile('==\d+== (.*)$'),
-        'PROGRAM_DIR': '/var/spp/programs',
+        'PROGRAM_DIR': mkdtemp(prefix='/var/spp/programs/'),
         'LIB_DIR': '/var/spp/lib',
         'USER_PROGRAM': preprocess_code(query_params['code'][0]),
         'LANG': query_params['lang'][0],
@@ -47,14 +50,8 @@ def setup_options(env):
 
 
 def prep_dir(opts):
-    F_PATH, VGTRACE_PATH, EXE_PATH, USER_PROGRAM = pluck(opts, 'F_PATH', 'VGTRACE_PATH', 'EXE_PATH', 'USER_PROGRAM')
-    # get rid of stray files so that we don't accidentally use one
-    for f in (F_PATH, VGTRACE_PATH, EXE_PATH):
-        if os.path.exists(f):
-            os.remove(f)
-    # write USER_PROGRAM into F_PATH
-    with open(F_PATH, 'w') as f:
-        f.write(USER_PROGRAM)
+    with open(opts['F_PATH'], 'w') as f:
+        f.write(opts['USER_PROGRAM'])
 
 
 def compile(opts):
@@ -175,14 +172,16 @@ def handle_gcc_error(opts, gcc_stderr):
     return stderr, json.dumps(ret)
 
 
+def cleanup(opts):
+    shutil.rmtree(opts['PROGRAM_DIR'])
+
+
 def application(env, start_response):
     opts = setup_options(env)
     prep_dir(opts)
     (gcc_retcode, gcc_stdout, gcc_stderr) = compile(opts)
     (stderr, stdout) = generate_trace(opts, gcc_stderr) if gcc_retcode == 0 else handle_gcc_error(opts, gcc_stderr)
+    cleanup(opts)
     start_response('200 OK', [('Content-type', 'application/json')])
-
     # TODO: Figure out how to handle stderr
     return [stdout]
-
-
