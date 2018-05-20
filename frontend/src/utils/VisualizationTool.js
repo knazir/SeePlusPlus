@@ -150,6 +150,14 @@ class VisualizationTool {
     VisualizationTool.componentsByAddress = {};
   }
 
+  static clearPointerArrows() {
+    VisualizationTool.arrowsToDraw = [];
+  }
+
+  static getArrowComponents() {
+    return VisualizationTool.arrowsToDraw;
+  }
+
   static clearHeapRegisteredComponents() {
     const components = VisualizationTool.componentsByAddress;
     VisualizationTool.clearRegisteredComponents();
@@ -164,5 +172,6 @@ class VisualizationTool {
 
 VisualizationTool.componentsByAddress = {};
 VisualizationTool.stackFrames = {};
+VisualizationTool.arrowsToDraw = [];
 
 export default VisualizationTool;
