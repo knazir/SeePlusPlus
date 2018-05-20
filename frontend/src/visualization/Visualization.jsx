@@ -26,9 +26,7 @@ export default class Visualization extends Component {
     this.forceUpdate();
   }
 
-  getHeapVariableNodes() {
-    const prevStep = this.props.trace.getPreviouslyVisualizedStep();
-    const step = this.props.trace.getCurrentStep();
+  resolveHeapDifferences(prevStep, step) {
     if (prevStep.getHeapVariables().length !== step.getHeapVariables().length) {
       VisualizationTool.clearHeapRegisteredComponents();
       this.props.trace.prevVisualizedIndex = this.props.trace.traceIndex;
@@ -43,6 +41,12 @@ export default class Visualization extends Component {
         }
       }
     }
+  }
+
+  getHeapVariableNodes() {
+    const prevStep = this.props.trace.getPreviouslyVisualizedStep();
+    const step = this.props.trace.getCurrentStep();
+    if (!prevStep.encounteredException()) this.resolveHeapDifferences(prevStep, step)
     const heapVars = step.getHeapVariables();
     heapVars.forEach((elem) => elem.orphaned = false);
     step.orphanedMemory.forEach((elem) => {

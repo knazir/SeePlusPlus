@@ -14,6 +14,7 @@ export default class ProgramTrace {
   //////////// Mutator Methods ////////////
 
   stepNext() {
+    if (this.encounteredException()) return;
     this.prevVisualizedIndex = this.traceIndex;
     VisualizationTool.resetViewedFrames();
     if (!this.atEnd()) this.traceIndex++;
@@ -32,6 +33,7 @@ export default class ProgramTrace {
   }
 
   stepEnd() {
+    if (this.encounteredException()) return;
     this.prevVisualizedIndex = this.traceIndex;
     VisualizationTool.resetViewedFrames();
     this.traceIndex = this.trace.length - 1;

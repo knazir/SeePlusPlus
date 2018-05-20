@@ -94,7 +94,7 @@ export default class Ide extends Component {
   }
 
   highlightActiveLine() {
-    if (this.props.trace.encounteredException()) return this.setState({ isVisualizing: false });
+    if (this.props.trace.encounteredException()) return;
     if (this.activeLine !== null) this.clearHighlightedLine();
     let lineNumber = this.props.trace.getCurrentStep().line - 1;
     this.highlightLine(lineNumber);
@@ -154,7 +154,8 @@ export default class Ide extends Component {
 
   getControlButtons() {
     const atStart = this.props.trace.atStart();
-    const atEnd = this.props.trace.atEnd();
+    const encounteredException = this.props.trace.encounteredException();
+    const atEnd = this.props.trace.atEnd() || encounteredException;
     return (
       <div className="control-buttons">
         <div className="step-button-bar">
