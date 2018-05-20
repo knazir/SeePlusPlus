@@ -5,10 +5,10 @@ import { DomCard as VisualConstants } from "../utils/VisualConstants";
 export default class DomCard extends Component {
   static get propTypes() {
     return {
-      splitTitle: PropTypes.bool,
       title: PropTypes.string.isRequired,
-      title2: PropTypes.string,
       color: PropTypes.string.isRequired,
+      splitTitle: PropTypes.bool,
+      secondTitle: PropTypes.string,
       titleStyle: PropTypes.object,
       style: PropTypes.object,
       bodyStyle: PropTypes.object,
@@ -20,12 +20,13 @@ export default class DomCard extends Component {
     return { titleStyle: {}, bodyStyle: {} };
   }
 
-  getTitle(titleStyle) {
+  getTitle() {
+    const titleStyle = Object.assign({}, this.props.titleStyle, { backgroundColor: this.props.color });
     if (this.props.splitTitle) {
       return (
         <div className="box-title split" style={titleStyle}>
           <h3>{this.props.title}</h3>
-          <h3>{this.props.title2}</h3>
+          <h3>{this.props.secondTitle}</h3>
         </div>
       );
     } else {
@@ -44,12 +45,11 @@ export default class DomCard extends Component {
   }
 
   render() {
-    const titleStyle = Object.assign({}, this.props.titleStyle, { backgroundColor: this.props.color });
     const bodyStyle = Object.assign({}, this.props.bodyStyle, { borderColor: this.props.color });
     return (
       <div style={this.props.style}>
         {this.getSplitLine()}
-        {this.getTitle(titleStyle)}
+        {this.getTitle()}
         <div className="box-content" style={bodyStyle}>
           {this.props.children}
         </div>

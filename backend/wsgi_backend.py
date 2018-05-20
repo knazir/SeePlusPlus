@@ -19,18 +19,22 @@ def pluck(d, *args):
     return (d[arg] for arg in args)
 
 
+def parse_request(env):
+    return parse_qs(env['QUERY_STRING'])
+
+
 def preprocess_code(code):
     return "#define union struct\n" + code
 
 
 def setup_options(env):
-    query_params = parse_qs(env['QUERY_STRING'])
+    request_info = parse_request(env)
     opts = {
         'VALGRIND_MSG_RE': re.compile('==\d+== (.*)$'),
         'PROGRAM_DIR': mkdtemp(prefix='/var/spp/programs/'),
         'LIB_DIR': '/var/spp/lib',
-        'USER_PROGRAM': preprocess_code(query_params['code'][0]),
-        'LANG': query_params['lang'][0],
+        'USER_PROGRAM': preprocess_code(request_info['code'][0]),
+        'LANG': request_info['lang'][0],
         'PRETTY_DUMP': False
     }
     if opts['LANG'] == 'c':
@@ -84,13 +88,6 @@ def check_for_valgrind_errors(opts, valgrind_stderr):
 
 def run_valgrind(opts):
     VALGRIND_EXE = os.path.join(opts['LIB_DIR'], 'valgrind-3.11.0/inst/bin/valgrind')
-    sys.stderr.write("%s\n" % ['stdbuf', '-o0',  # VERY IMPORTANT to disable stdout buffering so that stdout is traced properly
-         VALGRIND_EXE,
-         '--tool=memcheck',
-         '--source-filename=' + opts['FN'],
-         '--trace-filename=' + opts['VGTRACE_PATH'],
-         opts['EXE_PATH']
-         ])
     valgrind_p = Popen(
         ['stdbuf', '-o0',  # VERY IMPORTANT to disable stdout buffering so that stdout is traced properly
          VALGRIND_EXE,

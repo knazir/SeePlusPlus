@@ -133,14 +133,14 @@ export default class VariableCard extends Component {
           points = [origin.x, origin.y, this.getPointerIntermediateXCoordinate(origin.x, targetX), origin.y, targetX, targetY];
         }
       } else if (this.props.variable.getValue() === "0x0") {
-        let content_height = this.state.height - VisualConstants.SIZING.TITLE_UPPER_RECT_HEIGHT;
+        let contentHeight = this.state.height - VisualConstants.SIZING.TITLE_UPPER_RECT_HEIGHT;
         return (
           <Line
             points={[
-              origin.x + this.state.width/2.0,
-              origin.y - content_height/2.0 + VisualConstants.SIZING.ROUNDED_PADDING,
-              origin.x - this.state.width/2.0 + VisualConstants.SIZING.ROUNDED_PADDING,
-              origin.y + content_height/2.0 - VisualConstants.SIZING.ROUNDED_PADDING
+              origin.x + this.state.width / 2.0,
+              origin.y - contentHeight / 2.0 + VisualConstants.SIZING.ROUNDED_PADDING,
+              origin.x - this.state.width / 2.0 + VisualConstants.SIZING.ROUNDED_PADDING,
+              origin.y + contentHeight / 2.0 - VisualConstants.SIZING.ROUNDED_PADDING
             ]}
             stroke={VisualConstants.POINTER.COLOR}
             strokeWidth={this.state.highlight ? VisualConstants.POINTER.BOLD_WIDTH

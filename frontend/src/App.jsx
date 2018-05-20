@@ -12,6 +12,8 @@ export default class App extends Component {
     this.state = { trace: null };
   }
 
+  //////////// React lifecycle ////////////
+
   componentDidMount() {
     window.addEventListener("keydown", this.handleKeyCommands);
   }
@@ -19,6 +21,8 @@ export default class App extends Component {
   componentWillUnmount() {
     window.removeEventListener("keydown", this.handleKeyCommands);
   }
+
+  //////////// Event handling ////////////
 
   handleKeyCommands(event) {
     // disable saving web page through shortcut
@@ -45,6 +49,8 @@ export default class App extends Component {
       default: break;
     }
   }
+
+  //////////// State management ////////////
 
   loadTrace(trace) {
     window.trace = trace;
@@ -76,39 +82,49 @@ export default class App extends Component {
     this.forceUpdate();
   }
 
+  //////////// DOM elements ////////////
+
   getOutput() {
-    if (this.state.trace) {
-      if (this.state.trace.encounteredException()) {
-        return <div style={{ color: "red" }}>{this.state.trace.getCurrentStep().exceptionMessage}</div>;
-      } else {
-        return <div>{this.state.trace.getCurrentStep().stdout}</div>;
-      }
-    }
+    if (!this.state.trace) return;
+    const encounteredException = this.state.trace.encounteredException();
+    return <div className={`${encounteredException ? "exception-message" : ""}`}>{this.state.trace.getOutput()}</div>;
+  }
+
+  getEditorPanel() {
+    return (
+      <div className="split-panel code-panel">
+        <ContainerDimensions>
+          {({ width, height }) => <Ide ref={ide => this.ide = ide} onLoadTrace={trace => this.loadTrace(trace)}
+                                       trace={this.state.trace} height={height}
+                                       stepNext={() => this.stepNext()} stepPrev={() => this.stepPrev()}
+                                       stepStart={() => this.stepStart()} stepEnd={() => this.stepEnd()}/>}
+        </ContainerDimensions>
+      </div>
+    );
+  }
+
+  getVisualizationPanel() {
+    return (
+      <div className="split-panel vis-panel">
+        <ContainerDimensions>
+          {({ width, height }) => <Visualization width={width} height={height * 0.8} trace={this.state.trace}/>}
+        </ContainerDimensions>
+        <ContainerDimensions>
+          {({ width, height }) => <Output width="calc(100% + 20px)" height={height * 0.2}>{this.getOutput()}</Output>}
+        </ContainerDimensions>
+      </div>
+    );
   }
 
   render() {
     return (
       <div className="App">
         <div className="split-view">
-          <div className="split-panel code-panel" style={{ width: "40%" }}>
-            <ContainerDimensions>
-              {({ width, height }) => <Ide ref={ide => this.ide = ide} onLoadTrace={trace => this.loadTrace(trace)}
-                                           trace={this.state.trace} height={height}
-                                           stepNext={() => this.stepNext()} stepPrev={() => this.stepPrev()}
-                                           stepStart={() => this.stepStart()} stepEnd={() => this.stepEnd()}/>}
-            </ContainerDimensions>
-          </div>
-          <div className ="split-bar" />
-          <div className="split-panel vis-panel" style={{ width: "60%" }}>
-            <ContainerDimensions>
-              {({ width, height }) => <Visualization width={width} height={height * 0.8} trace={this.state.trace}/>}
-            </ContainerDimensions>
-            <ContainerDimensions>
-              {({ width, height }) => <Output width={"calc(100% + 20px)"} height={height * 0.2}>{this.getOutput()}</Output>}
-            </ContainerDimensions>
-          </div>
+          {this.getEditorPanel()}
+          <div className ="split-bar"/>
+          {this.getVisualizationPanel()}
         </div>
-        <p style={{ fontSize: "small", textAlign: "center" }}>&copy; 2018 by SeePlusPlus</p>
+        <p className="copyright">&copy; 2018 by See++</p>
       </div>
     );
   }

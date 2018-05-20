@@ -16,16 +16,15 @@ export default class StackFrame {
     this.orderedVarnames = ordered_varnames;
   }
 
+  //////////// Getters ////////////
+
   getLocalVariables() {
     return this.orderedVarnames.map(varName => this.encodedLocals[varName].withName(varName));
   }
 
   getFuncName() {
     const parenIndex = this.funcName.indexOf("(");
-    if (parenIndex !== -1) {
-      return this.funcName.substring(0, parenIndex);
-    }
-    return this.funcName;
+    return parenIndex !== -1 ? this.funcName.substring(0, parenIndex) : this.funcName;
   }
 
   toString() {
