@@ -30,14 +30,14 @@ export default class Visualization extends Component {
     const prevStep = this.props.trace.getPreviouslyVisualizedStep();
     const step = this.props.trace.getCurrentStep();
     if (prevStep.getHeapVariables().length !== step.getHeapVariables().length) {
-      VisualizationTool.clearRegisteredComponents();
+      VisualizationTool.clearHeapRegisteredComponents();
       this.props.trace.prevVisualizedIndex = this.props.trace.traceIndex;
     } else {
       for (let i = 0; i < prevStep.getHeapVariables().length; i++) {
         const prevElem = prevStep.getHeapVariables()[i];
         const currElem = step.getHeapVariables()[i];
         if (prevElem.getId() !== currElem.getId() || prevElem.isFree() !== currElem.isFree()) {
-          VisualizationTool.clearRegisteredComponents();
+          VisualizationTool.clearHeapRegisteredComponents();
           this.props.trace.prevVisualizedIndex = this.props.trace.traceIndex;
           break;
         }

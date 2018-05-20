@@ -149,6 +149,17 @@ class VisualizationTool {
   static clearRegisteredComponents() {
     VisualizationTool.componentsByAddress = {};
   }
+
+  static clearHeapRegisteredComponents() {
+    const components = VisualizationTool.componentsByAddress;
+    VisualizationTool.clearRegisteredComponents();
+    for (const address in components) {
+      const variable = components[address].variable;
+      if (variable.stackFrameHash || variable.global) {
+        VisualizationTool.componentsByAddress[address] = components[address];
+      }
+    }
+  }
 }
 
 VisualizationTool.componentsByAddress = {};
