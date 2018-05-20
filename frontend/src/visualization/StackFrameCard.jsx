@@ -99,6 +99,7 @@ export default class StackFrameCard extends Component {
           if (stackFrameInfo && !stackFrameInfo.pointee && !stackFrameInfo.closedPointee) {
             VisualizationTool.stackFrames[pointeeComponent.variable.stackFrameHash].pointee = true;
             this.props.updateVisualization();
+            this.props.updateVisualization();
           }
         }
       }
@@ -121,6 +122,7 @@ export default class StackFrameCard extends Component {
       ...VisualizationTool.getStackFrameCardDimensions(this.props.stackFrame)
     }, () => {
       VisualizationTool.clearRegisteredComponents();
+      this.props.updateVisualization();
       this.props.updateVisualization();
     });
   }
