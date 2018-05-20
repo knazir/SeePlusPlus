@@ -25,12 +25,48 @@ export default class Ide extends Component {
   constructor(props) {
     super(props);
     this.setupCodeMirrorInstance = this.setupCodeMirrorInstance.bind(this);
+    this.onFileDrop = this.onFileDrop.bind(this);
     this.activeLine = null;
     this.state = {
       code: starterCode,
       isVisualizing: false,
       loading: false
     };
+  }
+
+  //////////// Event handling ////////////
+
+  readFileAsText(file) {
+    const fileReader = new FileReader();
+    return new Promise((resolve, reject) => {
+      fileReader.onerror = () => {
+        fileReader.abort();
+        reject(new Error("Problem parsing input file."));
+      };
+      fileReader.onload = () => resolve(fileReader.result);
+      fileReader.readAsText(file);
+    });
+  }
+
+  async onFileDrop(data, event) {
+    const files = event.dataTransfer.files;
+    if (!window.File || !window.FileReader || files.length === 0) {
+      return;
+    } else if (files.length === 1) {
+      this.setState({ code: await this.readFileAsText(files[0]) });
+    } else {
+      let code = "";
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const fileContents = (await this.readFileAsText(file)).trim();
+        if (!fileContents) continue;
+        if (i !== 0) code += "\n\n";
+        code += `/********* ${file.name} *********/\n\n`;
+        code += fileContents;
+      }
+      this.setState({ code });
+    }
+    return false; // equivalent to preventDefault and stopPropagation
   }
 
   //////////// CodeMirror instance ////////////
