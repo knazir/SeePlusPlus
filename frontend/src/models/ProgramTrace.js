@@ -8,16 +8,10 @@ export default class ProgramTrace {
     this.trace = Utils.arrayOfType(TraceStep, trace);
     this.traceIndex = 0;
     this.prevVisualizedIndex = 0;
-    if (this.trace) this.calculateOrphanedMemory();
+    if (this.trace) this._calculateOrphanedMemory();
   }
 
-  atStart() {
-    return this.traceIndex === 0;
-  }
-
-  atEnd() {
-    return this.traceIndex === this.trace.length - 1;
-  }
+  //////////// Mutator Methods ////////////
 
   stepNext() {
     this.prevVisualizedIndex = this.traceIndex;
@@ -43,6 +37,8 @@ export default class ProgramTrace {
     this.traceIndex = this.trace.length - 1;
   }
 
+  //////////// Getters ////////////
+
   getPreviouslyVisualizedStep() {
     return this.trace[this.prevVisualizedIndex] || null;
   }
@@ -51,30 +47,39 @@ export default class ProgramTrace {
     return this.trace[this.traceIndex] || null;
   }
 
-  encounteredException() {
-    return this.getCurrentStep() && this.getCurrentStep().encounteredException();
-  }
-
   getOutput() {
     const currentStep = this.getCurrentStep();
     if (!currentStep) return "";
     return this.encounteredException() ? currentStep.exceptionMessage : currentStep.stdout;
   }
 
-  calculateOrphanedMemory() {
+  encounteredException() {
+    return this.getCurrentStep() && this.getCurrentStep().encounteredException();
+  }
+
+  //////////// Property Querying ////////////
+
+  atStart() {
+    return this.traceIndex === 0;
+  }
+
+  atEnd() {
+    return this.traceIndex === this.trace.length - 1;
+  }
+
+  //////////// Helper Methods ////////////
+
+  _calculateOrphanedMemory() {
     for (let i = 1; i < this.trace.length; i++) {
-      for (let orphan in this.trace[i - 1].orphanedMemory) {
+      for (const orphan in this.trace[i - 1].orphanedMemory) {
         this.trace[i].orphanedMemory.push(this.trace[i - 1].orphanedMemory[orphan]);
       }
       const currHeapVars = this.trace[i].heap;
       const prevHeapVars = this.trace[i - 1].heap;
-      for (let heapAddr in prevHeapVars) {
-          if (!prevHeapVars[heapAddr].isFree()) {
-              if (!(heapAddr in currHeapVars)) {
-                  this.trace[i].orphanedMemory.push(prevHeapVars[heapAddr]);
-              }
-          }
-      }
+      Object.entries(prevHeapVars).forEach(([address, prevHeapVar]) => {
+        if (prevHeapVar.isFree() || (address in currHeapVars)) return;
+        this.trace[i].orphanedMemory.push(prevHeapVar);
+      });
     }
   }
 }

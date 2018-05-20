@@ -34,7 +34,7 @@ export default class Ide extends Component {
     };
   }
 
-  //////////// Event handling ////////////
+  //////////// Event Handling ////////////
 
   readFileAsText(file) {
     const fileReader = new FileReader();
@@ -69,7 +69,7 @@ export default class Ide extends Component {
     return false; // equivalent to preventDefault and stopPropagation
   }
 
-  //////////// CodeMirror instance ////////////
+  //////////// CodeMirror Instance ////////////
 
   clearHighlightedLine() {
     this.cm.removeLineClass(this.activeLine);
@@ -101,7 +101,7 @@ export default class Ide extends Component {
     this.scrollToLine(lineNumber);
   }
 
-  //////////// State management ////////////
+  //////////// State Management ////////////
 
   visualizeCode() {
     VisualizationTool.clearRegisteredComponents();
@@ -121,7 +121,7 @@ export default class Ide extends Component {
     this.setState({ isVisualizing: false });
   }
 
-  //////////// DOM elements ////////////
+  //////////// DOM Elements ////////////
 
   getCodeEditor() {
     const options = {
