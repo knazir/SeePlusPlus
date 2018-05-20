@@ -104,6 +104,7 @@ export default class Ide extends Component {
   //////////// State Management ////////////
 
   visualizeCode() {
+    if (this.isVisualizing()) return;
     VisualizationTool.clearRegisteredComponents();
     this.setState({ loading: true }, async () => {
       const trace = await Api.getCodeTrace("c++", this.state.code);
@@ -117,6 +118,7 @@ export default class Ide extends Component {
   }
 
   stopVisualizing() {
+    if (!this.isVisualizing()) return;
     if (this.activeLine !== null) this.clearHighlightedLine();
     this.setState({ isVisualizing: false });
   }
