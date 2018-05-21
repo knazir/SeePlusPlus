@@ -1,87 +1,36 @@
 import Utils from "../utils/Utils";
 
 export default class Variable {
+
+  //////////// Static Properties ////////////
+
   static get CTypes() {
     return { ARRAY: "C_ARRAY", DATA: "C_DATA", STRUCT: "C_STRUCT", STRUCT_ARRAY: "C_STRUCT_ARRAY"};
   }
 
-  constructor(data, heap = {}, global = false) {
+  //////////// Class ////////////
+
+  constructor(data, heap = {}, stackFrameHash, global = false) {
     this.name = null;
-    const [cType, address, type] = data;
+    this.stackFrameHash = stackFrameHash;
+    const [ cType, address, type ] = data;
     this.cType = cType;
     this.address = address;
     this.heap = heap;
     if (cType === Variable.CTypes.ARRAY) {
-      this.setupArray(data);
+      this._setupArray(data, stackFrameHash);
     } else if (cType === Variable.CTypes.STRUCT) {
-      this.setupStruct(data);
-      if (type === "string") this.setupString(data);
-    } else if (type === "pointer") {
-      this.type = "ptr";
-      this.value = data[3];
+      this._setupStruct(data, stackFrameHash);
+      if (type === "string") this._setupString(data);
     } else {
-      this.type = type;
+      this.type = type === "pointer" ? "ptr" : type;
       this.value = data[3];
     }
     this.orphaned = false;
     this.global = global;
   }
 
-  setupArray(data) {
-    this.type = "array";
-    this.value = Utils.arrayOfType(Variable, data.slice(2), element => new Variable(element, this.heap));
-    if (this.value.length === 1) {
-      Object.assign(this, this.value[0]);
-    } else if (this.value.length > 0) {
-      this.cType = Variable.CTypes.STRUCT_ARRAY;
-    }
-  }
-
-  setupStruct(data) {
-    this.type = data[2];
-    const fieldList = data.slice(3);
-    this.value = {};
-    Utils.arrayOfType(Variable, fieldList, field => new Variable(field[1], this.heap).withName(field[0]))
-      .forEach((elem) => this.value[elem.name] = elem);
-  }
-
-  setupString(data) {
-    this.cType = Variable.CTypes.DATA;
-
-    // first check to see if the C string pointer is initialized
-    const cStrPointer = this.value["_M_dataplus"].value["_M_p"];
-
-    if (cStrPointer.isUninitialized()) { // string not yet initialized
-      this.value = "<UNINITIALIZED>";
-    } else if (!this.heap[cStrPointer.value]) { // doesn't exist on heap, string was optimized to be on stack
-      const localBuffer = this.formatString(this.value["<anon_field>"].value["_M_local_buf"].value);
-      this.value = `"${localBuffer}"`;
-    } else { // string is on the heap, get value and make sure it's not rendered as part of the heap
-      const heapValue = this.formatString(this.heap[cStrPointer.value].value);
-      this.value = `"${heapValue}"`;
-      delete this.heap[cStrPointer.value];
-    }
-  }
-
-  formatString(value) {
-    return value.filter(charVar => !charVar.isUninitialized())
-      .filter(charVar => charVar.value !== "\\0")
-      .map(charVar => charVar.value)
-      .join("");
-  }
-
-  withName(name) {
-    this.name = name;
-    return this;
-  }
-
-  isUninitialized() {
-    return this.value === "<UNINITIALIZED>" || this.value === "<UNALLOCATED>";
-  }
-
-  isNull() {
-    return (this.type === "ptr" || this.type === "array") && this.value === "0x0";
-  }
+  //////////// Getters ////////////
 
   getValue() {
     if (this.isUninitialized()) {
@@ -106,6 +55,8 @@ export default class Variable {
     return `${this.toString()} ${this.address}`;
   }
 
+  //////////// Property Querying ////////////
+
   isComplexType() {
     return Variable.CTypes[this.cType] !== Variable.CTypes.DATA;
   }
@@ -126,6 +77,37 @@ export default class Variable {
     return this.type === "ptr";
   }
 
+  isUninitialized() {
+    return this.value === "<UNINITIALIZED>" || this.value === "<UNALLOCATED>";
+  }
+
+  isNull() {
+    return (this.type === "ptr" || this.type === "array") && this.value === "0x0";
+  }
+
+  hasSameValue(other) {
+    if (this.type !== other.type) {
+      return false;
+    }
+    if (!this.isComplexType() || this.isPointer() || this.type === "string") {
+      return this.value === other.value;
+    }
+    if (this.isArray()) {
+      for (let i = 0; i < this.value.length; i++) {
+        if (!this.value[i].hasSameValue(other.value[i])) {
+          return false;
+        }
+      }
+    } else if (this.isStruct()) {
+      for (const field in this.value) {
+        if (!other.value[field] || !this.value[field].hasSameValue(other.value[field])) {
+          return false;
+        }
+      }
+    }
+    return true;
+  }
+
   toString() {
     if (this.isFree()) return `(Freed) ${this.name || ""}`.trim();
     if (this.global) return `(Global) ${this.type} ${this.name || ""}`.trim();
@@ -133,4 +115,54 @@ export default class Variable {
     return `${this.type} ${this.name || ""}`.trim();
   }
 
+  //////////// Mutator Methods ////////////
+
+  withName(name) {
+    this.name = name;
+    return this;
+  }
+
+  //////////// Helper Methods ////////////
+
+  _setupArray(data, stackFrameHash) {
+    this.type = "array";
+    this.value = Utils.arrayOfType(Variable, data.slice(2),
+        element => new Variable(element, this.heap, stackFrameHash));
+    if (this.value.length === 1) Object.assign(this, this.value[0]);
+    else if (this.value.length > 0) this.cType = Variable.CTypes.STRUCT_ARRAY;
+  }
+
+  _setupStruct(data, stackFrameHash) {
+    this.type = data[2];
+    const fieldList = data.slice(3);
+    this.value = {};
+    Utils.arrayOfType(
+      Variable, fieldList, field => new Variable(field[1], this.heap, stackFrameHash).withName(field[0]))
+      .forEach((elem) => this.value[elem.name] = elem);
+  }
+
+  _setupString(data) {
+    this.cType = Variable.CTypes.DATA;
+
+    // first check to see if the C string pointer is initialized
+    const cStrPointer = this.value["_M_dataplus"].value["_M_p"];
+
+    if (cStrPointer.isUninitialized()) { // string not yet initialized
+      this.value = "<UNINITIALIZED>";
+    } else if (!this.heap[cStrPointer.value]) { // doesn't exist on heap, string was optimized to be on stack
+      const localBuffer = this._formatString(this.value["<anon_field>"].value["_M_local_buf"].value);
+      this.value = `"${localBuffer}"`;
+    } else { // string is on the heap, get value and make sure it's not rendered as part of the heap
+      const heapValue = this._formatString(this.heap[cStrPointer.value].value);
+      this.value = `"${heapValue}"`;
+      delete this.heap[cStrPointer.value];
+    }
+  }
+
+  _formatString(value) {
+    return value.filter(charVar => !charVar.isUninitialized())
+      .filter(charVar => charVar.value !== "\\0")
+      .map(charVar => charVar.value)
+      .join("");
+  }
 }

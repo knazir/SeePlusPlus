@@ -56,7 +56,11 @@ module.exports = {
       MIN_HEIGHT: 50,
       TITLE_HEIGHT: 20,
       OUTLINE_WIDTH: 1,
-      CORNER_RADIUS: 15
+      CORNER_RADIUS: 15,
+      OFFSET: 10,
+      RECT_LOWER_HEIGHT: 15,
+      RECT_UPPER_HEIGHT: 20,
+      ORIGIN_Y_OFFSET: 35
     },
     ALIGNMENT: {
       TITLE: "center"

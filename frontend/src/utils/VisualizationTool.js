@@ -64,7 +64,7 @@ class VisualizationTool {
     }
 
     return {
-      width: Math.max(Math.max(stackFrame.funcName.length * 15, minWidth), maxVarWidth),
+      width: Math.max(Math.max(stackFrame.getFuncName().length * 15, minWidth), maxVarWidth),
       height: Math.max(calculatedHeight, VisualConstants.StackFrameCard.SIZING.MIN_HEIGHT)
     };
   }
@@ -115,19 +115,31 @@ class VisualizationTool {
 
   static isExpanded(frame) {
     const stackFrameInfo = VisualizationTool.stackFrames[frame.uniqueHash];
-    return stackFrameInfo ? stackFrameInfo.expanded : false;
+    return stackFrameInfo && (stackFrameInfo.expanded || (stackFrameInfo.pointee && !stackFrameInfo.closedPointee));
   }
 
   static updateStackFrameActiveness(frame, active) {
     if (!VisualizationTool.stackFrames[frame.uniqueHash]) {
       VisualizationTool.registerStackFrame(frame, active, active);
     } else if (VisualizationTool.stackFrames[frame.uniqueHash].active !== active) {
-        VisualizationTool.stackFrames[frame.uniqueHash] = { "expanded": active, active };
+        VisualizationTool.stackFrames[frame.uniqueHash] = { "expanded": active, active,
+          "pointee": false, "closedPointee": false };
     }
   }
 
   static toggleStackFrame(frame) {
-    VisualizationTool.stackFrames[frame.uniqueHash].expanded = !VisualizationTool.isExpanded(frame);
+    const frameInfo = VisualizationTool.stackFrames[frame.uniqueHash];
+    if (frameInfo.pointee) {
+      VisualizationTool.stackFrames[frame.uniqueHash].closedPointee = !frameInfo.closedPointee;
+    } else {
+      VisualizationTool.stackFrames[frame.uniqueHash].expanded = !frameInfo.expanded;
+    }
+  }
+
+  static resetViewedFrames() {
+    for (let hash in VisualizationTool.stackFrames) {
+      VisualizationTool.stackFrames[hash].pointee = false;
+    }
   }
 
   static getComponentByAddress(address) {
@@ -137,9 +149,29 @@ class VisualizationTool {
   static clearRegisteredComponents() {
     VisualizationTool.componentsByAddress = {};
   }
+
+  static clearPointerArrows() {
+    VisualizationTool.arrowsToDraw = [];
+  }
+
+  static getArrowComponents() {
+    return VisualizationTool.arrowsToDraw;
+  }
+
+  static clearHeapRegisteredComponents() {
+    const components = VisualizationTool.componentsByAddress;
+    VisualizationTool.clearRegisteredComponents();
+    for (const address in components) {
+      const variable = components[address].variable;
+      if (variable.stackFrameHash || variable.global) {
+        VisualizationTool.componentsByAddress[address] = components[address];
+      }
+    }
+  }
 }
 
 VisualizationTool.componentsByAddress = {};
 VisualizationTool.stackFrames = {};
+VisualizationTool.arrowsToDraw = [];
 
 export default VisualizationTool;

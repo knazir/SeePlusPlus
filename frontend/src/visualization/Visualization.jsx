@@ -26,23 +26,27 @@ export default class Visualization extends Component {
     this.forceUpdate();
   }
 
-  getHeapVariableNodes() {
-    const prevStep = this.props.trace.getPreviouslyVisualizedStep();
-    const step = this.props.trace.getCurrentStep();
+  resolveHeapDifferences(prevStep, step) {
     if (prevStep.getHeapVariables().length !== step.getHeapVariables().length) {
-      VisualizationTool.clearRegisteredComponents();
+      VisualizationTool.clearHeapRegisteredComponents();
       this.props.trace.prevVisualizedIndex = this.props.trace.traceIndex;
     } else {
       for (let i = 0; i < prevStep.getHeapVariables().length; i++) {
         const prevElem = prevStep.getHeapVariables()[i];
         const currElem = step.getHeapVariables()[i];
         if (prevElem.getId() !== currElem.getId() || prevElem.isFree() !== currElem.isFree()) {
-          VisualizationTool.clearRegisteredComponents();
+          VisualizationTool.clearHeapRegisteredComponents();
           this.props.trace.prevVisualizedIndex = this.props.trace.traceIndex;
           break;
         }
       }
     }
+  }
+
+  getHeapVariableNodes() {
+    const prevStep = this.props.trace.getPreviouslyVisualizedStep();
+    const step = this.props.trace.getCurrentStep();
+    if (!prevStep.encounteredException()) this.resolveHeapDifferences(prevStep, step)
     const heapVars = step.getHeapVariables();
     heapVars.forEach((elem) => elem.orphaned = false);
     step.orphanedMemory.forEach((elem) => {
@@ -93,7 +97,7 @@ export default class Visualization extends Component {
       offset: { x: 0, y: 10 },
       traceStep: this.props.trace.getCurrentStep(),
       layout: VisualizationTool.Layouts.COLUMN
-    });
+    }).reverse();
   }
 
   getHeapNodes() {
@@ -108,14 +112,16 @@ export default class Visualization extends Component {
 
   getAllNodes() {
     // note that order is important here, we need heap nodes to be registered first
-    return [...this.getHeapNodes(), ...this.getStackNodes()];
+    const toReturn = [...this.getHeapNodes(), ...this.getStackNodes(), ...VisualizationTool.getArrowComponents()];
+    VisualizationTool.clearPointerArrows();
+    return toReturn;
   }
 
   getEmptyVisualization() {
     const height = this.props.height - VisualConstants.PADDING;
     return (
       <div className="visualization" style={{ width: this.props.width, height: this.props.height }}>
-        <DomCard splitTitle={true} height={height} title="Stack" title2="Heap" color="lightgray"
+        <DomCard splitTitle height={height} title="Stack" secondTitle="Heap" color="lightgray"
                  bodyStyle={{ width: this.props.width, height }}/>
       </div>
     );
@@ -126,9 +132,10 @@ export default class Visualization extends Component {
     if (!this.props.trace) return this.getEmptyVisualization();
     return (
       <div className="visualization" style={{ width: this.props.width, height: this.props.height }}>
-        <DomCard splitTitle={true} height={height} title="Stack" title2="Heap" color="lightgray"
+        <DomCard splitTitle height={height} title="Stack" secondTitle="Heap" color="lightgray"
                  bodyStyle={{ width: this.props.width, height }}>
-          <Stage draggable width={this.props.width - VisualConstants.KONVA_PADDING} height={height - VisualConstants.KONVA_PADDING}>
+          <Stage draggable width={this.props.width - VisualConstants.KONVA_PADDING}
+                 height={height - VisualConstants.KONVA_PADDING}>
             <Layer>
               {!this.props.trace.encounteredException() && this.getAllNodes()}
             </Layer>
