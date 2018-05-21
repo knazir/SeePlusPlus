@@ -24,7 +24,9 @@ export default class StackFrame {
 
   getFuncName() {
     const parenIndex = this.funcName.indexOf("(");
-    return parenIndex !== -1 ? this.funcName.substring(0, parenIndex) : this.funcName;
+    const noParenName = parenIndex !== -1 ? this.funcName.substring(0, parenIndex) : this.funcName;
+    const namespaceEnd = noParenName.indexOf("::");
+    return namespaceEnd === -1 ? noParenName.substring(namespaceEnd + 2) : noParenName;
   }
 
   toString() {

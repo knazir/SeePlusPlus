@@ -18,9 +18,9 @@ export default class Variable {
     this.address = address;
     this.heap = heap;
     if (cType === Variable.CTypes.ARRAY) {
-      this._setupArray(data);
+      this._setupArray(data, stackFrameHash);
     } else if (cType === Variable.CTypes.STRUCT) {
-      this._setupStruct(data);
+      this._setupStruct(data, stackFrameHash);
       if (type === "string") this._setupString(data);
     } else {
       this.type = type === "pointer" ? "ptr" : type;
@@ -85,6 +85,29 @@ export default class Variable {
     return (this.type === "ptr" || this.type === "array") && this.value === "0x0";
   }
 
+  hasSameValue(other) {
+    if (this.type !== other.type) {
+      return false;
+    }
+    if (!this.isComplexType() || this.isPointer() || this.type === "string") {
+      return this.value === other.value;
+    }
+    if (this.isArray()) {
+      for (let i = 0; i < this.value.length; i++) {
+        if (!this.value[i].hasSameValue(other.value[i])) {
+          return false;
+        }
+      }
+    } else if (this.isStruct()) {
+      for (const field in this.value) {
+        if (!other.value[field] || !this.value[field].hasSameValue(other.value[field])) {
+          return false;
+        }
+      }
+    }
+    return true;
+  }
+
   toString() {
     if (this.isFree()) return `(Freed) ${this.name || ""}`.trim();
     if (this.global) return `(Global) ${this.type} ${this.name || ""}`.trim();
@@ -101,18 +124,20 @@ export default class Variable {
 
   //////////// Helper Methods ////////////
 
-  _setupArray(data) {
+  _setupArray(data, stackFrameHash) {
     this.type = "array";
-    this.value = Utils.arrayOfType(Variable, data.slice(2), element => new Variable(element, this.heap));
+    this.value = Utils.arrayOfType(Variable, data.slice(2),
+        element => new Variable(element, this.heap, stackFrameHash));
     if (this.value.length === 1) Object.assign(this, this.value[0]);
     else if (this.value.length > 0) this.cType = Variable.CTypes.STRUCT_ARRAY;
   }
 
-  _setupStruct(data) {
+  _setupStruct(data, stackFrameHash) {
     this.type = data[2];
     const fieldList = data.slice(3);
     this.value = {};
-    Utils.arrayOfType(Variable, fieldList, field => new Variable(field[1], this.heap).withName(field[0]))
+    Utils.arrayOfType(
+      Variable, fieldList, field => new Variable(field[1], this.heap, stackFrameHash).withName(field[0]))
       .forEach((elem) => this.value[elem.name] = elem);
   }
 
