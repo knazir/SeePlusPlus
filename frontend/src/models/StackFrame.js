@@ -12,9 +12,11 @@ export default class StackFrame {
     this.isZombie = is_zombie;
     this.parentFrameIdList = parent_frame_id_list;
     this.uniqueHash = unique_hash;
-    this.encodedLocals = Utils.mapValues(Variable, encoded_locals, varData => new Variable(varData, heap));
+    this.encodedLocals = Utils.mapValues(Variable, encoded_locals, varData => new Variable(varData, heap, unique_hash));
     this.orderedVarnames = ordered_varnames;
   }
+
+  //////////// Getters ////////////
 
   getLocalVariables() {
     return this.orderedVarnames.map(varName => this.encodedLocals[varName].withName(varName));
@@ -22,10 +24,9 @@ export default class StackFrame {
 
   getFuncName() {
     const parenIndex = this.funcName.indexOf("(");
-    if (parenIndex !== -1) {
-      return this.funcName.substring(0, parenIndex);
-    }
-    return this.funcName;
+    const noParenName = parenIndex !== -1 ? this.funcName.substring(0, parenIndex) : this.funcName;
+    const namespaceEnd = noParenName.indexOf("::");
+    return namespaceEnd !== -1 ? noParenName.substring(namespaceEnd + 2) : noParenName;
   }
 
   toString() {

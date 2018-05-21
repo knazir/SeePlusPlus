@@ -26,6 +26,19 @@ export default class StackFrameCard extends Component {
   }
 
   componentWillReceiveProps({ stackFrame, active }) {
+    if (!active && !VisualizationTool.isExpanded(stackFrame)) {
+      const localNodes = this.props.stackFrame.getLocalVariables();
+      if (localNodes.length !== stackFrame.getLocalVariables().length) {
+        VisualizationTool.registerStackFrame(stackFrame, true, active);
+      } else {
+        for (let i = 0; i < localNodes.length; i++) {
+          if (!localNodes[i].hasSameValue(stackFrame.getLocalVariables()[i])) {
+            VisualizationTool.registerStackFrame(stackFrame, true, active);
+            break;
+          }
+        }
+      }
+    }
     this.setState({ ...VisualizationTool.getStackFrameCardDimensions(stackFrame) });
   }
 
@@ -92,6 +105,17 @@ export default class StackFrameCard extends Component {
 
   getLocalVariableNodes() {
     const nodesToLayout = this.props.stackFrame.getLocalVariables().map(v => {
+      if (v.isPointer()) {
+        const pointeeComponent = VisualizationTool.getComponentByAddress(v.getValue());
+        if (pointeeComponent && pointeeComponent.variable.stackFrameHash) {
+          const stackFrameInfo = VisualizationTool.stackFrames[pointeeComponent.variable.stackFrameHash];
+          if (stackFrameInfo && !stackFrameInfo.pointee && !stackFrameInfo.closedPointee) {
+            VisualizationTool.stackFrames[pointeeComponent.variable.stackFrameHash].pointee = true;
+            this.props.updateVisualization();
+            this.props.updateVisualization();
+          }
+        }
+      }
       const component = <VariableCard key={v.getId()} variable={v} traceStep={this.props.traceStep} x={this.props.x + 35}
                                       y={this.props.y + VisualConstants.SIZING.ORIGIN_Y_OFFSET} updateVisualization={this.props.updateVisualization}/>;
       return { ...VisualizationTool.getVariableCardDimensions(v), component };
@@ -111,6 +135,7 @@ export default class StackFrameCard extends Component {
       ...VisualizationTool.getStackFrameCardDimensions(this.props.stackFrame)
     }, () => {
       VisualizationTool.clearRegisteredComponents();
+      this.props.updateVisualization();
       this.props.updateVisualization();
     });
   }

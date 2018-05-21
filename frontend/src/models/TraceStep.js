@@ -14,18 +14,14 @@ export default class TraceStep {
     this.funcName = func_name;
     this.line = line - 1; // IMPORTANT: we do line - 1 to discount the #define for fixing unions TODO kn: Do on backend
     this.orderedGlobals = ordered_globals;
-
-    // need to create a "meta heap" to pass in to heap variables without being circular (not sure why though...)
-    const metaHeap = Utils.mapValues(Variable, heap);
-    this.heap = Utils.mapValues(Variable, heap, varData => new Variable(varData, metaHeap, false));
-
-    this.globals = Utils.mapValues(Variable, globals, varData => new Variable(varData, this.heap, true));
-    Object.entries(this.heap).forEach(([key, value]) => value.withName(key));
-
+    this.heap = this._mapHeap(heap);
+    this.globals = this._mapGlobals(globals);
     this.stack = Utils.arrayOfType(StackFrame, stack_to_render, frameData => new StackFrame(frameData, this.heap));
     this.stdout = stdout;
     this.orphanedMemory = [];
   }
+
+  //////////// Getters ////////////
 
   getCurrentStackFrame() {
     return this.stack[this.stack.length - 1];
@@ -47,7 +43,23 @@ export default class TraceStep {
     ];
   }
 
+  //////////// Property Querying ////////////
+
   encounteredException() {
     return this.event === "exception" || this.event === "uncaught_exception";
+  }
+
+  //////////// Helper Methods ////////////
+
+  _mapHeap(heap) {
+    // need to create a "meta heap" to pass in to heap variables without being circular (not sure why though...)
+    const metaHeap = Utils.mapValues(Variable, heap);
+    const resultingHeap = Utils.mapValues(Variable, heap, varData => new Variable(varData, metaHeap, false));
+    Object.entries(resultingHeap).forEach(([key, value]) => value.withName(key));
+    return resultingHeap;
+  }
+
+  _mapGlobals(globals) {
+    return Utils.mapValues(Variable, globals, varData => new Variable(varData, this.heap, true));
   }
 }

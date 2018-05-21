@@ -3,7 +3,7 @@
 int fib(int a) {
     int answer;
 	if (a == 0 || a == 1) {
-        answer = 0;
+        answer = a;
     } else {
         answer = a * fib(a - 1);
     }
