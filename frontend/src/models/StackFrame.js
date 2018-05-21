@@ -26,7 +26,7 @@ export default class StackFrame {
     const parenIndex = this.funcName.indexOf("(");
     const noParenName = parenIndex !== -1 ? this.funcName.substring(0, parenIndex) : this.funcName;
     const namespaceEnd = noParenName.indexOf("::");
-    return namespaceEnd === -1 ? noParenName.substring(namespaceEnd + 2) : noParenName;
+    return namespaceEnd !== -1 ? noParenName.substring(namespaceEnd + 2) : noParenName;
   }
 
   toString() {
