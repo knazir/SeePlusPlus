@@ -64,7 +64,7 @@ export default class StackFrameCard extends Component {
           x={this.props.x}
           y={this.props.y}
           width={this.state.width}
-          height={30}
+          height={VisualConstants.SIZING.RECT_UPPER_HEIGHT}
           fill={VisualizationTool.getColor(this)}
           cornerRadius={VisualConstants.SIZING.CORNER_RADIUS}
         />
@@ -72,7 +72,7 @@ export default class StackFrameCard extends Component {
           x={this.props.x}
           y={this.props.y + 10}
           width={this.state.width}
-          height={20}
+          height={VisualConstants.SIZING.RECT_LOWER_HEIGHT}
           fill={VisualizationTool.getColor(this)}
         />
       </Group>
@@ -116,14 +116,14 @@ export default class StackFrameCard extends Component {
           }
         }
       }
-      const component = <VariableCard key={v.getId()} variable={v} traceStep={this.props.traceStep} x={this.props.x + 40}
-                                      y={this.props.y + 40} updateVisualization={this.props.updateVisualization}/>;
+      const component = <VariableCard key={v.getId()} variable={v} traceStep={this.props.traceStep} x={this.props.x + 35}
+                                      y={this.props.y + VisualConstants.SIZING.ORIGIN_Y_OFFSET} updateVisualization={this.props.updateVisualization}/>;
       return { ...VisualizationTool.getVariableCardDimensions(v), component };
     });
     return VisualizationTool.layoutNodes({
       nodes: nodesToLayout,
-      origin: { x: this.props.x + 7, y: this.props.y + 40 },
-      offset: { x: 0, y: 15 },
+      origin: { x: this.props.x + 7, y: this.props.y + VisualConstants.SIZING.ORIGIN_Y_OFFSET },
+      offset: { x: 0, y: VisualConstants.SIZING.OFFSET },
       traceStep: this.props.traceStep,
       layout: VisualizationTool.Layouts.COLUMN
     });

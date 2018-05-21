@@ -1,9 +1,9 @@
 module.exports = {
   VariableCard: {
     SIZING: {
-      HEIGHT: 44,
+      HEIGHT: 38,
       MIN_WIDTH: 5,
-      TITLE_UPPER_RECT_HEIGHT: 20,
+      TITLE_UPPER_RECT_HEIGHT: 10,
       TITLE_LOWER_RECT_HEIGHT: 10,
       TITLE_HEIGHT: 20,
       OUTLINE_WIDTH: 1,
@@ -18,8 +18,8 @@ module.exports = {
     },
     FONT: {
       FAMILY: "Menlo, monospace",
-      TITLE_SIZE: 15,
-      BODY_SIZE: 20
+      TITLE_SIZE: 12,
+      BODY_SIZE: 15
     },
     COLORS: {
       BODY: "white",
@@ -45,8 +45,8 @@ module.exports = {
       ARROW_OFFSET: 3,
       THRESHOLD_SUPER_CLOSE_Y: 50,
       THRESHOLD_SUPER_CLOSE_X: 100,
-      BOLD_WIDTH: 4,
-      NORMAL_WIDTH: 2
+      BOLD_WIDTH: 2,
+      NORMAL_WIDTH: 1
     }
 
   },
@@ -54,16 +54,20 @@ module.exports = {
     SIZING: {
       MIN_WIDTH: 20,
       MIN_HEIGHT: 50,
-      TITLE_HEIGHT: 30,
+      TITLE_HEIGHT: 20,
       OUTLINE_WIDTH: 1,
-      CORNER_RADIUS: 15
+      CORNER_RADIUS: 15,
+      OFFSET: 10,
+      RECT_LOWER_HEIGHT: 15,
+      RECT_UPPER_HEIGHT: 20,
+      ORIGIN_Y_OFFSET: 35
     },
     ALIGNMENT: {
       TITLE: "center"
     },
     FONT: {
       FAMILY: "Menlo, monospace",
-      TITLE_SIZE: 20
+      TITLE_SIZE: 18
     },
     COLORS: {
       BODY: "white",
@@ -75,7 +79,7 @@ module.exports = {
     TITLE_HEIGHT: 31
   },
   Visualization: {
-    PADDING: 80,
+    PADDING: 70,
     KONVA_PADDING: 2
   }
 };

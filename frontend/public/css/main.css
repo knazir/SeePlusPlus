@@ -6,7 +6,7 @@ body {
   margin: 0 15px 15px 15px;
   padding: 0 10px 10px 10px;
   font-family: Menlo, monospace;
-  font-size: medium;
+  font-size: small;
   background-color: whitesmoke;
   overflow: hidden;
 }
@@ -36,7 +36,7 @@ h3 {
 }
 
 .split-panel {
-  width: calc(50% - 8px);
+  width: calc(50% - 2px);
   height: 100%;
   padding: 10px;
 }
@@ -120,13 +120,13 @@ h3 {
 }
 
 .smaller-button {
-  font-size: small;
+  font-size: x-small;
   border-radius: 20px;
   margin: 5px;
 }
 
 .bigger-button {
-  font-size: 28px;
+  font-size: medium;
   border-radius: 20px;
   margin: 5px;
   padding: 5px 10px;
@@ -141,7 +141,7 @@ button {
   display: inline-block;
   margin: 5px 5px 0 5px;
   padding: 7px;
-  font-size: medium;
+  font-size: small;
   font-family: Menlo, monospace;
   cursor: pointer;
   user-select: none;

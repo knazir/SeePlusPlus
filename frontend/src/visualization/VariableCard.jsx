@@ -57,7 +57,7 @@ export default class VariableCard extends Component {
           x={this.props.x}
           y={this.props.y}
           width={this.state.width}
-          height={20}
+          height={VisualConstants.SIZING.TITLE_HEIGHT}
           fill={VisualizationTool.getColor(this)}
           cornerRadius={this.props.squareCorners ? 0 : VisualConstants.SIZING.CORNER_RADIUS}
         />
@@ -65,7 +65,7 @@ export default class VariableCard extends Component {
           x={this.props.x}
           y={this.props.y + 10}
           width={this.state.width}
-          height={10}
+          height={VisualConstants.SIZING.TITLE_UPPER_RECT_HEIGHT}
           fill={VisualizationTool.getColor(this)}
         />
       </Group>
@@ -133,13 +133,13 @@ export default class VariableCard extends Component {
           points = [origin.x, origin.y, this.getPointerIntermediateXCoordinate(origin.x, targetX), origin.y, targetX, targetY];
         }
       } else if (this.props.variable.getValue() === "0x0") {
-        let contentHeight = this.state.height - VisualConstants.SIZING.TITLE_UPPER_RECT_HEIGHT;
+        let contentHeight = this.state.height - VisualConstants.SIZING.TITLE_HEIGHT;
         return (
           <Line
             points={[
               origin.x + this.state.width / 2.0,
-              origin.y - contentHeight / 2.0 + VisualConstants.SIZING.ROUNDED_PADDING,
-              origin.x - this.state.width / 2.0 + VisualConstants.SIZING.ROUNDED_PADDING,
+              origin.y - contentHeight / 2.0,
+              origin.x - this.state.width / 2.0 + 1.5 * VisualConstants.SIZING.ROUNDED_PADDING,
               origin.y + contentHeight / 2.0 - VisualConstants.SIZING.ROUNDED_PADDING
             ]}
             stroke={VisualConstants.POINTER.COLOR}
@@ -191,7 +191,7 @@ export default class VariableCard extends Component {
     return VisualizationTool.layoutNodes({
       nodes: nodesToLayout,
       origin: { x: this.props.x + 7, y: this.props.y + 25 },
-      offset: this.props.variable.cType === Variable.CTypes.STRUCT_ARRAY ? { x: 0, y: 0 } : { x: 0, y: 15 },
+      offset: this.props.variable.cType === Variable.CTypes.STRUCT_ARRAY ? { x: 0, y: 0 } : { x: 0, y: 5 },
       traceStep: this.props.traceStep,
       layout: this.props.variable.cType === Variable.CTypes.STRUCT_ARRAY ? ROW : COLUMN
     });

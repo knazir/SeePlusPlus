@@ -94,7 +94,7 @@ export default class Visualization extends Component {
     return VisualizationTool.layoutNodes({
       nodes: stackNodes,
       origin: { x: 10, y: 40 },
-      offset: { x: 0, y: 15 },
+      offset: { x: 0, y: 10 },
       traceStep: this.props.trace.getCurrentStep(),
       layout: VisualizationTool.Layouts.COLUMN
     }).reverse();
@@ -104,7 +104,7 @@ export default class Visualization extends Component {
     return VisualizationTool.layoutNodes({
       nodes: this.getHeapVariableNodes(),
       origin: { x: (this.props.width / 2.0) + 10, y: 40 },
-      offset: { x: 0, y: 15 },
+      offset: { x: 0, y: 10 },
       traceStep: this.props.trace.getCurrentStep(),
       layout: VisualizationTool.Layouts.COLUMN
     }).reverse();
