@@ -24,14 +24,17 @@ export default class VariableCard extends Component {
 
   constructor(props) {
     super(props);
-    this.state = { ...VisualizationTool.getVariableCardDimensions(this.props.variable) };
+    this.state = { highlight: false, prevHighlight: false,
+      ...VisualizationTool.getVariableCardDimensions(this.props.variable) };
   }
 
   componentWillReceiveProps({ variable }) {
     if (variable.getValue() !== this.props.variable.getValue()) {
-      this.setState({ highlight: true, ...VisualizationTool.getVariableCardDimensions(variable) });
+      this.setState({ prevHighlight: this.state.highlight, highlight: true,
+        ...VisualizationTool.getVariableCardDimensions(variable) });
     } else {
-      this.setState({ highlight: false, ...VisualizationTool.getVariableCardDimensions(variable) });
+      this.setState({ prevHighlight: this.state.highlight, highlight: false,
+        ...VisualizationTool.getVariableCardDimensions(variable) });
     }
   }
 
@@ -110,7 +113,7 @@ export default class VariableCard extends Component {
           fontSize={VisualConstants.FONT.BODY_SIZE}
           align={VisualConstants.ALIGNMENT.VALUE}
           fontFamily={VisualConstants.FONT.FAMILY}
-          fontStyle={this.state.highlight ? "bold" : "normal"}
+          fontStyle={this.shouldHighlight() ? "bold" : "normal"}
           width={this.state.width}
         />
       );
@@ -143,7 +146,7 @@ export default class VariableCard extends Component {
               origin.y + contentHeight / 2.0 - VisualConstants.SIZING.ROUNDED_PADDING
             ]}
             stroke={VisualConstants.POINTER.COLOR}
-            strokeWidth={this.state.highlight ? VisualConstants.POINTER.BOLD_WIDTH
+            strokeWidth={this.shouldHighlight() ? VisualConstants.POINTER.BOLD_WIDTH
               : VisualConstants.POINTER.NORMAL_WIDTH}
             fill={VisualConstants.POINTER.COLOR}
           />
@@ -160,7 +163,7 @@ export default class VariableCard extends Component {
           <Arrow
             points={points}
             stroke={VisualConstants.POINTER.COLOR}
-            strokeWidth={this.state.highlight ? VisualConstants.POINTER.BOLD_WIDTH
+            strokeWidth={this.shouldHighlight() ? VisualConstants.POINTER.BOLD_WIDTH
               : VisualConstants.POINTER.NORMAL_WIDTH}
             tension={VisualConstants.POINTER.TENSION}
             pointerLength={VisualConstants.POINTER.LENGTH}
@@ -195,6 +198,10 @@ export default class VariableCard extends Component {
       traceStep: this.props.traceStep,
       layout: this.props.variable.cType === Variable.CTypes.STRUCT_ARRAY ? ROW : COLUMN
     });
+  }
+
+  shouldHighlight() {
+    return this.state.highlight || this.state.prevHighlight;
   }
 
   render() {
