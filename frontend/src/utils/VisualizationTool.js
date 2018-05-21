@@ -64,7 +64,7 @@ class VisualizationTool {
     }
 
     return {
-      width: Math.max(Math.max(stackFrame.funcName.length * 15, minWidth), maxVarWidth),
+      width: Math.max(Math.max(stackFrame.getFuncName().length * 15, minWidth), maxVarWidth),
       height: Math.max(calculatedHeight, VisualConstants.StackFrameCard.SIZING.MIN_HEIGHT)
     };
   }
