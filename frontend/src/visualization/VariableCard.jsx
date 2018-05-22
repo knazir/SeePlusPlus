@@ -96,7 +96,7 @@ export default class VariableCard extends Component {
   }
 
   getPointerIntermediateXCoordinate(originX, targetX) {
-    let length = Math.max(Math.abs((originX - targetX) / 2.0), this.state.width / 2.0);
+    let length = Math.max(Math.abs((originX - targetX) / 2.0), (this.state.width + VisualConstants.POINTER.INTERMEDIATE_PADDING) / 2.0);
     return targetX > originX ? originX + length : originX - length;
   }
 
@@ -190,7 +190,7 @@ export default class VariableCard extends Component {
     });
     return VisualizationTool.layoutNodes({
       nodes: nodesToLayout,
-      origin: { x: this.props.x + 7, y: this.props.y + 25 },
+      origin: { x: this.props.x + 7, y: this.props.y + VisualConstants.SIZING.ORIGIN_Y_OFFSET },
       offset: this.props.variable.cType === Variable.CTypes.STRUCT_ARRAY ? { x: 0, y: 0 } : { x: 0, y: 5 },
       traceStep: this.props.traceStep,
       layout: this.props.variable.cType === Variable.CTypes.STRUCT_ARRAY ? ROW : COLUMN

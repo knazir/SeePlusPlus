@@ -46,7 +46,7 @@ export default class Visualization extends Component {
   getHeapVariableNodes() {
     const prevStep = this.props.trace.getPreviouslyVisualizedStep();
     const step = this.props.trace.getCurrentStep();
-    if (!prevStep.encounteredException()) this.resolveHeapDifferences(prevStep, step)
+    if (!prevStep.encounteredException()) this.resolveHeapDifferences(prevStep, step);
     const heapVars = step.getHeapVariables();
     heapVars.forEach((elem) => elem.orphaned = false);
     step.orphanedMemory.forEach((elem) => {

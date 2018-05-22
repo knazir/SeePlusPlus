@@ -28,7 +28,7 @@ class RawApi {
   }
 
   static async post(path, body) {
-    return RawApi._send("POST", path, body)
+    return RawApi._send("POST", path, body);
   }
 }
 

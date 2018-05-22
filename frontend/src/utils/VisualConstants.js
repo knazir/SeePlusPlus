@@ -10,7 +10,8 @@ module.exports = {
       CORNER_RADIUS: 15,
       SPACE_BETWEEN: 10,
       ARRAY_SPACE_BETWEEN: 0,
-      ROUNDED_PADDING: 5
+      ROUNDED_PADDING: 5,
+      ORIGIN_Y_OFFSET: 32
     },
     ALIGNMENT: {
       TITLE: "center",
@@ -46,7 +47,8 @@ module.exports = {
       THRESHOLD_SUPER_CLOSE_Y: 50,
       THRESHOLD_SUPER_CLOSE_X: 100,
       BOLD_WIDTH: 2,
-      NORMAL_WIDTH: 1
+      NORMAL_WIDTH: 1,
+      INTERMEDIATE_PADDING: 50
     }
 
   },
