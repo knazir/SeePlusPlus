@@ -165,7 +165,7 @@ export default class Ide extends Component {
           <button className="smaller-button" disabled={atEnd} onClick={this.props.stepEnd}>&gt;|</button>
         </div>
         <div>
-          <button className="stop-button" onClick={() => this.stopVisualizing()}>Stop Visualization</button>
+          <button className="stop-button" onClick={() => this.stopVisualizing()}>&nbsp;&nbsp;Stop Visualization&nbsp;&nbsp;</button>
         </div>
       </div>
     );
@@ -174,7 +174,7 @@ export default class Ide extends Component {
   getButtonPanel() {
     let buttons;
     if (this.state.loading) buttons = <LoadingSpinner/>;
-    else if (!this.isVisualizing()) buttons = <button onClick={() => this.visualizeCode()}>Visualize Code</button>;
+    else if (!this.isVisualizing()) buttons = <button onClick={() => this.visualizeCode()}>&nbsp;&nbsp;Visualize Code&nbsp;&nbsp;</button>;
     else buttons = this.getControlButtons();
     return <div className="button-panel">{buttons}</div>;
   }
