@@ -10,7 +10,7 @@ class Output extends Component {
   render() {
     return (
       <div className="output" style={{ width: this.props.width, height: this.props.height }}>
-        <DomCard title="Output" color="lightgray" bodyStyle={{ padding: "10px" }}>
+        <DomCard title="Output" bodyStyle={{ padding: "10px" }}>
           <div className="output-text">
             {this.props.children}
           </div>

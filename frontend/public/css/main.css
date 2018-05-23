@@ -7,7 +7,7 @@ body {
   padding: 0 10px 10px 10px;
   font-family: Menlo, monospace;
   font-size: small;
-  background-color: whitesmoke;
+  background-color: #f7fbff;
   overflow: hidden;
 }
 
@@ -42,7 +42,7 @@ h3 {
 }
 
 .visualization canvas {
-  border-radius: 0 0 20px 20px;
+  border-radius: 0 0 10px 10px;
 }
 
 .code-panel {
@@ -59,12 +59,13 @@ h3 {
 }
 
 .box-title {
+  box-shadow: 0 3px 3px rgba(0, 0, 0, 0.05);
   display: flex;
   justify-content: center;
   align-items: center;
-  border-radius: 20px 20px 0 0;
+  border-radius: 10px 10px 0 0;
   width: 100%;
-  background-color: #3498db;
+  background-color: #e2e2e2;
   color: black;
   padding: 5px;
   margin-left: 5px;
@@ -81,16 +82,18 @@ h3 {
   position: absolute;
   left: 50%;
   margin-left: -3px;
-  color: rgba(1,1,1,.1);
+  color: #e2e2e2;
 
 }
 
 .box-content {
   width: 100%;
-  border: 1px solid #3498db;
-  border-radius: 0 0 20px 20px;
+  border: 1px solid #e2e2e2;
+  border-radius: 0 0 10px 10px;
   margin-left: 5px;
   background-color: white;
+  margin-bottom: 8px;
+  box-shadow: 0 3px 3px rgba(0, 0, 0, 0.05);
 }
 
 .output-text {
@@ -100,7 +103,7 @@ h3 {
 }
 
 .cm-s-default {
-  border-radius: 0 0 20px 20px;
+  border-radius: 0 0 10px 10px;
 }
 
 .button-panel {
@@ -121,21 +124,21 @@ h3 {
 
 .smaller-button {
   font-size: x-small;
-  border-radius: 20px;
+  border-radius: 10px;
   margin: 5px;
 }
 
 .bigger-button {
   font-size: medium;
-  border-radius: 20px;
+  border-radius: 10px;
   margin: 5px;
   padding: 5px 10px;
 }
 
 button {
-  border: solid 1px #3498db;
-  border-radius: 20px;
-  color: #3498db;
+  border: solid .5px #8db8e7;
+  border-radius: 10px;
+  color: #8DB8E7;
   text-align: center;
   text-decoration: none;
   display: inline-block;
@@ -145,15 +148,18 @@ button {
   font-family: Menlo, monospace;
   cursor: pointer;
   user-select: none;
+  box-shadow: 0 3px 3px rgba(0, 0, 0, 0.05);
 }
 
 button:disabled {
-  background-color: #efebeb;
+  background-color: #f4f4f4;
+  color: #e2e2e2;
+  border: solid .5px #e2e2e2;
   cursor: default;
 }
 
 .stop-button {
-  border: solid 1px rgb(255,127,127);
+  border: solid .5px rgb(255,127,127);
   color: rgb(255,127,127);
 }
 
@@ -162,21 +168,25 @@ button:focus {
 }
 
 button:hover:enabled {
-  background-color: lightcyan;
+  background-color: #8DB8E7;
+  color: #ffffff;
+
 }
 
 .stop-button:hover:enabled {
-  background-color: rgb(255,227,227);
+  background-color: rgb(255,127,127);
+  color: #ffffff;
 }
 
 .loader {
   margin: 10px 10px 0 10px; /* Same as button */
-  border: 4px solid #f3f3f3;
-  border-top: 4px solid #3498db;
+  border: 4px solid #8DB8E7;
+  border-top: 4px solid #f4f4f4;
   border-radius: 50%;
   width: 32px;
   height: 32px;
   animation: spin 2s linear infinite;
+  box-shadow: 0 3px 3px rgba(0, 0, 0, 0.1);
 }
 
 @keyframes spin {
