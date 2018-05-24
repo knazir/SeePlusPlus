@@ -63,6 +63,7 @@ class VisualizationTool {
 
     let calculatedHeight = dimensions.map(d => d.height).reduce((total, height) => total + height + offsetY, 0);
     calculatedHeight += VisualConstants.StackFrameCard.SIZING.TITLE_HEIGHT + offsetY + offsetY;
+
     if (!VisualizationTool.isExpanded(stackFrame)) {
       calculatedHeight = VisualConstants.StackFrameCard.SIZING.TITLE_HEIGHT;
       maxVarWidth = 0;

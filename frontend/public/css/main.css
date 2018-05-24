@@ -174,10 +174,9 @@ button:focus {
   outline: 0;
 }
 
-button:hover:enabled {
+button:hover:enabled, button.active {
   background-color: #8DB8E7;
   color: #ffffff;
-
 }
 
 .stop-button:hover:enabled {

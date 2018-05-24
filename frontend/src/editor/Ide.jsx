@@ -30,7 +30,13 @@ export default class Ide extends Component {
     this.state = {
       code: starterCode,
       isVisualizing: false,
-      loading: false
+      loading: false,
+      buttonClassNames: {
+        stepStart: "smaller-button",
+        stepPrev: "bigger-button",
+        stepNext: "bigger-button",
+        stepEnd: "smaller-button"
+      }
     };
   }
 
@@ -124,6 +130,29 @@ export default class Ide extends Component {
     this.setState({ isVisualizing: false });
   }
 
+  revertButtons() {
+    this.setState({
+      buttonClassNames: {
+        stepStart: "smaller-button",
+        stepPrev: "bigger-button",
+        stepNext: "bigger-button",
+        stepEnd: "smaller-button"
+      }
+    });
+  }
+
+  temporarilyUpdateButton(button) {
+    const originalClassName = this.state.buttonClassNames[button];
+    const buttonClassNames = this.state.buttonClassNames;
+    buttonClassNames[button] = `${originalClassName} active`;
+    this.setState({ buttonClassNames });
+    setTimeout(() => this.revertButtons(), 100);
+  }
+
+  highlightButton(button) {
+    this.temporarilyUpdateButton(button);
+  }
+
   //////////// DOM Elements ////////////
 
   getCodeEditor() {
@@ -151,20 +180,37 @@ export default class Ide extends Component {
     );
   }
 
+  getVisualizeButton() {
+    return (
+      <button onClick={() => this.visualizeCode()}>
+        &nbsp;&nbsp;Visualize Code&nbsp;&nbsp;
+      </button>
+    );
+  }
+
+  getStopVisualizingButton() {
+    return (
+      <button className="stop-button" onClick={() => this.stopVisualizing()}>
+        &nbsp;&nbsp;Stop Visualization&nbsp;&nbsp;
+      </button>
+    );
+  }
+
   getControlButtons() {
     const atStart = this.props.trace.atStart();
     const encounteredException = this.props.trace.encounteredException();
     const atEnd = this.props.trace.atEnd() || encounteredException;
+    const { stepStart, stepPrev, stepNext, stepEnd } = this.state.buttonClassNames;
     return (
       <div className="control-buttons">
         <div className="step-button-bar">
-          <button className="smaller-button" disabled={atStart} onClick={this.props.stepStart}>|&lt;</button>
-          <button className="bigger-button" disabled={atStart} onClick={this.props.stepPrev}>&lt;</button>
-          <button className="bigger-button" disabled={atEnd} onClick={this.props.stepNext}>&gt;</button>
-          <button className="smaller-button" disabled={atEnd} onClick={this.props.stepEnd}>&gt;|</button>
+          <button className={stepStart} disabled={atStart} onClick={this.props.stepStart}>|&lt;</button>
+          <button className={stepPrev} disabled={atStart} onClick={this.props.stepPrev}>&lt;</button>
+          <button className={stepNext} disabled={atEnd} onClick={this.props.stepNext}>&gt;</button>
+          <button className={stepEnd} disabled={atEnd} onClick={this.props.stepEnd}>&gt;|</button>
         </div>
         <div>
-          <button className="stop-button" onClick={() => this.stopVisualizing()}>&nbsp;&nbsp;Stop Visualization&nbsp;&nbsp;</button>
+          {this.getStopVisualizingButton()}
         </div>
       </div>
     );
@@ -173,7 +219,7 @@ export default class Ide extends Component {
   getButtonPanel() {
     let buttons;
     if (this.state.loading) buttons = <LoadingSpinner/>;
-    else if (!this.isVisualizing()) buttons = <button onClick={() => this.visualizeCode()}>&nbsp;&nbsp;Visualize Code&nbsp;&nbsp;</button>;
+    else if (!this.isVisualizing()) buttons = this.getVisualizeButton();
     else buttons = this.getControlButtons();
     return <div className="button-panel">{buttons}</div>;
   }

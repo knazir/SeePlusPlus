@@ -16,32 +16,30 @@ export default class ProgramTrace {
   //////////// Mutator Methods ////////////
 
   stepNext() {
-    if (this.encounteredException()) return;
-    this.prevVisualizedIndex = this.traceIndex;
-    if (!this.atEnd()) this.traceIndex++;
+    if (this.encounteredException() || this.atEnd()) return false;
+    this.traceIndex++;
+    return true;
   }
 
   stepPrev() {
-    this.prevVisualizedIndex = this.traceIndex;
-    if (!this.atStart()) this.traceIndex--;
+    if (this.atStart()) return false;
+    this.traceIndex--;
+    return true;
   }
 
   stepStart() {
-    this.prevVisualizedIndex = this.traceIndex;
+    if (this.atStart()) return false;
     this.traceIndex = 0;
+    return true;
   }
 
   stepEnd() {
-    if (this.encounteredException()) return;
-    this.prevVisualizedIndex = this.traceIndex;
+    if (this.encounteredException() || this.atEnd()) return false;
     this.traceIndex = this.trace.length - 1;
+    return true;
   }
 
   //////////// Getters ////////////
-
-  getPreviouslyVisualizedStep() {
-    return this.trace[this.prevVisualizedIndex] || null;
-  }
 
   getCurrentStep() {
     return this.trace[this.traceIndex] || null;
