@@ -29,17 +29,11 @@ export default class StackFrameCard extends Component {
 
   componentWillReceiveProps({ stackFrame, active }) {
     if (!active && !VisualizationTool.isExpanded(stackFrame)) {
-      const localNodes = this.props.stackFrame.getLocalVariables();
-      if (localNodes.length !== stackFrame.getLocalVariables().length) {
-        VisualizationTool.registerStackFrame(stackFrame, true, active);
-      } else {
-        for (let i = 0; i < localNodes.length; i++) {
-          if (!localNodes[i].hasSameValue(stackFrame.getLocalVariables()[i])) {
-            VisualizationTool.registerStackFrame(stackFrame, true, active);
-            break;
-          }
-        }
-      }
+      const oldLocals = this.props.stackFrame.getLocalVariables();
+      const newLocals = stackFrame.getLocalVariables();
+      const localValueAdded = oldLocals.length !== newLocals.length;
+      const localValueChanged = oldLocals.filter((localVar, index) => !localVar.hasSameValue(newLocals[index]))[0];
+      VisualizationTool.registerStackFrame(stackFrame, localValueAdded || localValueChanged, active);
     }
     this.setState({ ...VisualizationTool.getStackFrameCardDimensions(stackFrame) });
   }
@@ -48,9 +42,7 @@ export default class StackFrameCard extends Component {
 
   toggleOpen() {
     VisualizationTool.toggleStackFrame(this.props.stackFrame);
-    this.setState({
-      ...VisualizationTool.getStackFrameCardDimensions(this.props.stackFrame)
-    }, () => {
+    this.setState({ ...VisualizationTool.getStackFrameCardDimensions(this.props.stackFrame) }, () => {
       VisualizationTool.clearRegisteredComponents();
       this.props.updateVisualization();
     });
