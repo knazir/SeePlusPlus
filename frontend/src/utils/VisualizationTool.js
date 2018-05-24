@@ -6,9 +6,14 @@ import VariableCard from "../visualization/VariableCard";
 import VisualConstants from "./VisualConstants";
 
 class VisualizationTool {
+
+  //////////// Static Properties ////////////
+
   static get Layouts() {
     return { ROW: "ROW", COLUMN: "COLUMN" };
   }
+
+  //////////// Dimension Calculation ////////////
 
   static getVariableCardDimensions(variable) {
     let calculatedHeight = VisualConstants.VariableCard.SIZING.HEIGHT;
@@ -69,6 +74,8 @@ class VisualizationTool {
     };
   }
 
+  //////////// Color ////////////
+
   static getColor(component) {
     if (component instanceof VariableCard) {
       const COLOR_TYPES = VisualConstants.VariableCard.COLORS.TYPES;
@@ -80,11 +87,14 @@ class VisualizationTool {
     }
   }
 
-  // nodes: a list of node objects each expected to have { width, height, component }
-  // origin: a point of origin with fields { x, y } (considered to be the top left)
-  // offset: the amount to offset between each element with fields { x, y }
-  // layout: either row or column
-  // returns: a list of node components to be rendered by React's render() method
+  //////////// Layout ////////////
+
+  /* nodes: a list of node objects each expected to have { width, height, component }
+   * origin: a point of origin with fields { x, y } (considered to be the top left)
+   * offset: the amount to offset between each element with fields { x, y }
+   * layout: either row or column
+   * returns: a list of node components to be rendered by React's render() method
+   */
   static layoutNodes({ nodes, origin, offset, traceStep, otherNodes = [], layout }) {
     let x = origin.x;
     let y = origin.y;
@@ -100,6 +110,8 @@ class VisualizationTool {
     return layedOutNodes;
   }
 
+  //////////// "State" Management ////////////
+
   static registerComponents(components) {
     components.forEach(component => {
       const variable = component.props.variable;
@@ -113,22 +125,32 @@ class VisualizationTool {
     VisualizationTool.stackFrames[frame.getId()] = { expanded, active };
   }
 
-  static isExpanded(frame) {
-    const stackFrameInfo = VisualizationTool.stackFrames[frame.getId()];
-    return stackFrameInfo && (stackFrameInfo.expanded || (stackFrameInfo.pointee && !stackFrameInfo.closedPointee));
+  static clearRegisteredComponents() {
+    VisualizationTool.componentsByAddress = {};
   }
 
   static updateStackFrameActiveness(frame, active) {
     if (!VisualizationTool.stackFrames[frame.getId()]) {
       VisualizationTool.registerStackFrame(frame, active, active);
     } else if (VisualizationTool.stackFrames[frame.getId()].active !== active) {
-        VisualizationTool.stackFrames[frame.getId()] = {
-          expanded: active,
-          active: active,
-          pointee: false,
-          closedPointee: false
-        };
+      VisualizationTool.stackFrames[frame.getId()] = {
+        expanded: active,
+        active: active,
+        pointee: false,
+        closedPointee: false
+      };
     }
+  }
+
+  //////////// "State" Querying ////////////
+
+  static getComponentByAddress(address) {
+    return VisualizationTool.componentsByAddress[address];
+  }
+
+  static isExpanded(frame) {
+    const stackFrameInfo = VisualizationTool.stackFrames[frame.getId()];
+    return stackFrameInfo && (stackFrameInfo.expanded || (stackFrameInfo.pointee && !stackFrameInfo.closedPointee));
   }
 
   static toggleStackFrame(frame) {
@@ -138,14 +160,6 @@ class VisualizationTool {
     } else {
       VisualizationTool.stackFrames[frame.getId()].expanded = !frameInfo.expanded;
     }
-  }
-
-  static getComponentByAddress(address) {
-    return VisualizationTool.componentsByAddress[address];
-  }
-
-  static clearRegisteredComponents() {
-    VisualizationTool.componentsByAddress = {};
   }
 }
 
