@@ -116,9 +116,12 @@ export default class StackFrameCard extends Component {
           }
         }
       }
-      const component = <VariableCard key={v.getId()} variable={v} traceStep={this.props.traceStep} x={this.props.x + 35}
-                                      y={this.props.y + VisualConstants.SIZING.ORIGIN_Y_OFFSET} updateVisualization={this.props.updateVisualization}/>;
-      return { ...VisualizationTool.getVariableCardDimensions(v), component };
+      return {
+        ...VisualizationTool.getVariableCardDimensions(v),
+        component: <VariableCard key={v.getId()} variable={v} traceStep={this.props.traceStep} x={this.props.x + 35}
+                                 y={this.props.y + VisualConstants.SIZING.ORIGIN_Y_OFFSET}
+                                 updateVisualization={this.props.updateVisualization}/>
+      };
     });
     return VisualizationTool.layoutNodes({
       nodes: nodesToLayout,

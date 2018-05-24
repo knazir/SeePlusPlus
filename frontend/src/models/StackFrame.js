@@ -30,7 +30,7 @@ export default class StackFrame {
 
   getFuncName() {
     // regex to match function names in C++
-    const regex = /:?:?([a-zA-Z1-9_ ~+\-*<>&|=!%^\[\]]*)(\(|\[(?!]))/;
+    const regex = /:?:?([a-zA-Z1-9_ ~+\-*<>&|=!%^[\]]*)(\(|\[(?!]))/;
     const match = regex.exec(this.funcName);
     return match ? match[1] : this.funcName;
   }

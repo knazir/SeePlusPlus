@@ -20,6 +20,7 @@ export default class Visualization extends Component {
   constructor(props) {
     super(props);
     this.updateVisualization = this.updateVisualization.bind(this);
+    this.handleStageDrag = this.handleStageDrag.bind(this);
   }
 
   updateVisualization() {
@@ -99,6 +100,10 @@ export default class Visualization extends Component {
     );
   }
 
+  handleStageDrag(pos) {
+    return { x: 0, y: pos.y };
+  }
+
   render() {
     const height = this.props.height - VisualConstants.PADDING;
     if (!this.props.trace) return this.getEmptyVisualization();
@@ -106,7 +111,7 @@ export default class Visualization extends Component {
       <div className="visualization" style={{ width: this.props.width, height: this.props.height }}>
         <DomCard splitTitle height={height} title="Stack" secondTitle="Heap"
                  bodyStyle={{ width: this.props.width, height }}>
-          <Stage draggable width={this.props.width - VisualConstants.KONVA_PADDING}
+          <Stage draggable dragBoundFunc={this.handleStageDrag} width={this.props.width - VisualConstants.KONVA_PADDING}
                  height={height - VisualConstants.KONVA_PADDING}>
             <Layer>
               {!this.props.trace.encounteredException() && this.getAllNodes()}

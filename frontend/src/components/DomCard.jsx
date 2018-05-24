@@ -6,7 +6,6 @@ export default class DomCard extends Component {
   static get propTypes() {
     return {
       title: PropTypes.string.isRequired,
-      color: PropTypes.string.isRequired,
       splitTitle: PropTypes.bool,
       secondTitle: PropTypes.string,
       titleStyle: PropTypes.object,

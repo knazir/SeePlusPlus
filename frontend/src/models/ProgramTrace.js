@@ -1,6 +1,5 @@
 import TraceStep from "./TraceStep";
 import Utils from "../utils/Utils";
-import VisualizationTool from "../utils/VisualizationTool";
 
 export default class ProgramTrace {
   constructor({ code, trace }) {
