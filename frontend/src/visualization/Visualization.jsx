@@ -26,23 +26,6 @@ export default class Visualization extends Component {
     this.forceUpdate();
   }
 
-  resolveHeapDifferences(prevStep, step) {
-    if (prevStep.getHeapVariables().length !== step.getHeapVariables().length) {
-      VisualizationTool.clearHeapRegisteredComponents();
-      this.props.trace.prevVisualizedIndex = this.props.trace.traceIndex;
-    } else {
-      for (let i = 0; i < prevStep.getHeapVariables().length; i++) {
-        const prevElem = prevStep.getHeapVariables()[i];
-        const currElem = step.getHeapVariables()[i];
-        if (prevElem.getId() !== currElem.getId() || prevElem.isFree() !== currElem.isFree()) {
-          VisualizationTool.clearHeapRegisteredComponents();
-          this.props.trace.prevVisualizedIndex = this.props.trace.traceIndex;
-          break;
-        }
-      }
-    }
-  }
-
   getHeapVariableNodes() {
     const step = this.props.trace.getCurrentStep();
     return step.getHeapVariables().map(v => {
@@ -103,8 +86,7 @@ export default class Visualization extends Component {
 
   getAllNodes() {
     // note that order is important here, we need heap nodes to be registered first
-    const toReturn = [...this.getHeapNodes(), ...this.getStackNodes()];
-    return toReturn;
+    return [...this.getHeapNodes(), ...this.getStackNodes()];
   }
 
   getEmptyVisualization() {

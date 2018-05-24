@@ -12,7 +12,7 @@ export default class App extends Component {
     this.state = { trace: null };
   }
 
-  //////////// React lifecycle ////////////
+  //////////// React Lifecycle ////////////
 
   componentDidMount() {
     window.addEventListener("keydown", this.handleKeyCommands);
@@ -22,7 +22,7 @@ export default class App extends Component {
     window.removeEventListener("keydown", this.handleKeyCommands);
   }
 
-  //////////// Event handling ////////////
+  //////////// Event Handling ////////////
 
   handleKeyCommands(event) {
     // disable saving web page through shortcut
@@ -50,7 +50,7 @@ export default class App extends Component {
     }
   }
 
-  //////////// State management ////////////
+  //////////// State Management ////////////
 
   loadTrace(trace) {
     window.trace = trace;
@@ -82,7 +82,7 @@ export default class App extends Component {
     this.forceUpdate();
   }
 
-  //////////// DOM elements ////////////
+  //////////// DOM Elements ////////////
 
   getOutput() {
     if (!this.state.trace) return;

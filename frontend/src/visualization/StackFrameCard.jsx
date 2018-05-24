@@ -142,7 +142,7 @@ export default class StackFrameCard extends Component {
 
   render() {
     return (
-      <Group draggable>
+      <Group>
         {this.getOutline()}
         {this.getTitleSegment()}
         {VisualizationTool.isExpanded(this.props.stackFrame) && this.getLocalVariableNodes()}
