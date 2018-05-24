@@ -6,7 +6,6 @@ export default class ProgramTrace {
     this.code = code;
     this.trace = Utils.arrayOfType(TraceStep, trace);
     this.traceIndex = 0;
-    this.prevVisualizedIndex = 0;
     if (this.trace) {
       this._setupOrphanedMemory();
       this._setupPointerTargets();
