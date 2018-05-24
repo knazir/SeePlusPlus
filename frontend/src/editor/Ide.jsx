@@ -54,17 +54,25 @@ export default class Ide extends Component {
     });
   }
 
+  fileAllowed(filename) {
+    if (filename.indexOf(".") === -1) return false;
+    const extension = filename.substring(filename.lastIndexOf(".") + 1).toLowerCase();
+    return ["cpp", "cc", "c", "cxx", "c++", "h", "hh", "hxx", "hpp", "h++"].indexOf(extension) !== -1;
+  }
+
   async onFileDrop(data, event) {
     if (this.state.isVisualizing) return;
     const files = event.dataTransfer.files;
     if (!window.File || !window.FileReader || files.length === 0) {
       return;
     } else if (files.length === 1) {
+      if (!this.fileAllowed(files[0].name)) return;
       this.setState({ code: await this.readFileAsText(files[0]) });
     } else {
       let code = "";
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
+        if (!this.fileAllowed(file.name)) continue;
         const fileContents = (await this.readFileAsText(file)).trim();
         if (!fileContents) continue;
         if (i !== 0) code += "\n\n";
