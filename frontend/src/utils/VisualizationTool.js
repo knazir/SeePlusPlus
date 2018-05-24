@@ -122,22 +122,22 @@ class VisualizationTool {
     });
   }
 
-  static registerStackFrame(frame, expanded, active, targetStackFrame = null) {
-    VisualizationTool.stackFrames[frame.getId()] = { expanded, active, targetStackFrame };
+  static registerStackFrame(frame, expanded, active, targetStackFrames = []) {
+    VisualizationTool.stackFrames[frame.getId()] = { expanded, active, targetStackFrames };
   }
 
   static clearRegisteredComponents() {
     VisualizationTool.componentsByAddress = {};
   }
 
-  static updateStackFrameActiveness(frame, active, targetStackFrame) {
+  static updateStackFrameActiveness(frame, active, targetStackFrames) {
     if (!VisualizationTool.stackFrames[frame.getId()]) {
-      VisualizationTool.registerStackFrame(frame, active, active, targetStackFrame);
+      VisualizationTool.registerStackFrame(frame, active, active, targetStackFrames);
     } else if (VisualizationTool.stackFrames[frame.getId()].active !== active) {
       VisualizationTool.stackFrames[frame.getId()] = {
         expanded: active,
         active: active,
-        targetStackFrame: null
+        targetStackFrames: []
       };
     }
   }
@@ -151,9 +151,8 @@ class VisualizationTool {
   static isExpanded(frame) {
     const stackFrameInfo = VisualizationTool.stackFrames[frame.getId()];
     if (!stackFrameInfo) return false;
-    const { expanded, targetStackFrame } = stackFrameInfo;
-    if (!targetStackFrame) return expanded;
-    return expanded || VisualizationTool.isExpanded(targetStackFrame.getId());
+    const { expanded, targetStackFrames } = stackFrameInfo;
+    return expanded || targetStackFrames.filter(frame => VisualizationTool.isExpanded(frame.getId()))[0];
   }
 
   static toggleStackFrame(frame) {
