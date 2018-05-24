@@ -132,6 +132,26 @@ export default class VariableCard extends Component {
           targetY = y + VisualConstants.POINTER.ARROW_OFFSET;
           points = [origin.x, origin.y, this.getPointerIntermediateXCoordinate(origin.x, targetX), origin.y, targetX, targetY];
         }
+        return (
+          <Group key={this.props.variable.toString() + this.props.variable.address}>
+            <Circle
+              x={origin.x}
+              y={origin.y}
+              radius={VisualConstants.POINTER.RADIUS}
+              fill={VisualConstants.POINTER.COLOR}
+            />
+            <Arrow
+              points={points}
+              stroke={VisualConstants.POINTER.COLOR}
+              strokeWidth={this.state.highlight ? VisualConstants.POINTER.BOLD_WIDTH
+                : VisualConstants.POINTER.NORMAL_WIDTH}
+              tension={VisualConstants.POINTER.TENSION}
+              pointerLength={VisualConstants.POINTER.LENGTH}
+              pointerWidth ={VisualConstants.POINTER.WIDTH}
+              fill={VisualConstants.POINTER.COLOR}
+            />
+          </Group>
+        );
       } else if (this.props.variable.getValue() === "0x0") {
         let contentHeight = this.state.height - VisualConstants.SIZING.TITLE_HEIGHT;
         return (
@@ -149,26 +169,6 @@ export default class VariableCard extends Component {
           />
         );
       }
-      VisualizationTool.arrowsToDraw.push(
-        <Group key={this.props.variable.toString() + this.props.variable.address}>
-          <Circle
-            x={origin.x}
-            y={origin.y}
-            radius={VisualConstants.POINTER.RADIUS}
-            fill={VisualConstants.POINTER.COLOR}
-          />
-          <Arrow
-            points={points}
-            stroke={VisualConstants.POINTER.COLOR}
-            strokeWidth={this.state.highlight ? VisualConstants.POINTER.BOLD_WIDTH
-              : VisualConstants.POINTER.NORMAL_WIDTH}
-            tension={VisualConstants.POINTER.TENSION}
-            pointerLength={VisualConstants.POINTER.LENGTH}
-            pointerWidth ={VisualConstants.POINTER.WIDTH}
-            fill={VisualConstants.POINTER.COLOR}
-          />
-        </Group>
-      );
     }
   }
 

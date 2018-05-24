@@ -107,10 +107,10 @@ export default class StackFrameCard extends Component {
     const nodesToLayout = this.props.stackFrame.getLocalVariables().map(v => {
       if (v.isPointer()) {
         const pointeeComponent = VisualizationTool.getComponentByAddress(v.getValue());
-        if (pointeeComponent && pointeeComponent.variable.stackFrameHash) {
-          const stackFrameInfo = VisualizationTool.stackFrames[pointeeComponent.variable.stackFrameHash];
+        if (pointeeComponent && pointeeComponent.variable.stackFrame) {
+          const stackFrameInfo = VisualizationTool.stackFrames[pointeeComponent.variable.stackFrame];
           if (stackFrameInfo && !stackFrameInfo.pointee && !stackFrameInfo.closedPointee) {
-            VisualizationTool.stackFrames[pointeeComponent.variable.stackFrameHash].pointee = true;
+            VisualizationTool.stackFrames[pointeeComponent.variable.stackFrame.getId()].pointee = true;
             this.props.updateVisualization();
             this.props.updateVisualization();
           }

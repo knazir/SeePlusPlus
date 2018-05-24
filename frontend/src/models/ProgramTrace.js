@@ -8,7 +8,10 @@ export default class ProgramTrace {
     this.trace = Utils.arrayOfType(TraceStep, trace);
     this.traceIndex = 0;
     this.prevVisualizedIndex = 0;
-    if (this.trace) this._calculateOrphanedMemory();
+    if (this.trace) {
+      this._setupOrphanedMemory();
+      this._setupPointerTargets();
+    }
   }
 
   //////////// Mutator Methods ////////////
@@ -16,26 +19,22 @@ export default class ProgramTrace {
   stepNext() {
     if (this.encounteredException()) return;
     this.prevVisualizedIndex = this.traceIndex;
-    VisualizationTool.resetViewedFrames();
     if (!this.atEnd()) this.traceIndex++;
   }
 
   stepPrev() {
     this.prevVisualizedIndex = this.traceIndex;
-    VisualizationTool.resetViewedFrames();
     if (!this.atStart()) this.traceIndex--;
   }
 
   stepStart() {
     this.prevVisualizedIndex = this.traceIndex;
-    VisualizationTool.resetViewedFrames();
     this.traceIndex = 0;
   }
 
   stepEnd() {
     if (this.encounteredException()) return;
     this.prevVisualizedIndex = this.traceIndex;
-    VisualizationTool.resetViewedFrames();
     this.traceIndex = this.trace.length - 1;
   }
 
@@ -71,17 +70,32 @@ export default class ProgramTrace {
 
   //////////// Helper Methods ////////////
 
-  _calculateOrphanedMemory() {
-    for (let i = 1; i < this.trace.length; i++) {
-      for (const orphan in this.trace[i - 1].orphanedMemory) {
-        this.trace[i].orphanedMemory.push(this.trace[i - 1].orphanedMemory[orphan]);
-      }
-      const currHeapVars = this.trace[i].heap;
-      const prevHeapVars = this.trace[i - 1].heap;
-      Object.entries(prevHeapVars).forEach(([address, prevHeapVar]) => {
-        if (prevHeapVar.isFree() || (address in currHeapVars)) return;
-        this.trace[i].orphanedMemory.push(prevHeapVar);
+  _setupOrphanedMemory() {
+    for (let i = 1; i < this.trace.length; i++ ){
+      const prevStep = this.trace[i - 1];
+      const currentStep = this.trace[i];
+      prevStep.getHeapVariables().forEach(heapVar => {
+        if (heapVar.isOrphaned()) currentStep.addHeapVariable(heapVar);
       });
+      Object.entries(prevStep.heap).forEach(([address, prevHeapVar]) => {
+        if (prevHeapVar.isFree() || address in currentStep.heap) return;
+        currentStep.addHeapVariable(prevHeapVar.createOrphan());
+      })
     }
+  }
+
+  _setupPointerTargets() {
+    this.trace.forEach(traceStep => {
+      const variables = traceStep.getAllVariables();
+      variables.forEach(variable => {
+        if (!variable.isPointer()) return;
+        for (const otherVar of variables) {
+          if (otherVar.address === variable.getValue()) {
+            variable.setTarget(otherVar);
+            break;
+          }
+        }
+      });
+    });
   }
 }

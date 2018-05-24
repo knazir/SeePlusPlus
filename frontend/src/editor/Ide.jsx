@@ -49,6 +49,7 @@ export default class Ide extends Component {
   }
 
   async onFileDrop(data, event) {
+    if (this.state.isVisualizing) return;
     const files = event.dataTransfer.files;
     if (!window.File || !window.FileReader || files.length === 0) {
       return;
@@ -105,7 +106,6 @@ export default class Ide extends Component {
 
   visualizeCode() {
     if (this.isVisualizing()) return;
-    VisualizationTool.clearPointerArrows();
     VisualizationTool.clearRegisteredComponents();
     this.setState({ loading: true }, async () => {
       const trace = await Api.getCodeTrace("c++", this.state.code);
@@ -122,7 +122,6 @@ export default class Ide extends Component {
     if (!this.isVisualizing()) return;
     if (this.activeLine !== null) this.clearHighlightedLine();
     this.setState({ isVisualizing: false });
-    VisualizationTool.clearPointerArrows();
   }
 
   //////////// DOM Elements ////////////

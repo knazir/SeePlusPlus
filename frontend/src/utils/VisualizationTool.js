@@ -110,35 +110,33 @@ class VisualizationTool {
   }
 
   static registerStackFrame(frame, expanded, active) {
-    VisualizationTool.stackFrames[frame.uniqueHash] = { expanded, active };
+    VisualizationTool.stackFrames[frame.getId()] = { expanded, active };
   }
 
   static isExpanded(frame) {
-    const stackFrameInfo = VisualizationTool.stackFrames[frame.uniqueHash];
+    const stackFrameInfo = VisualizationTool.stackFrames[frame.getId()];
     return stackFrameInfo && (stackFrameInfo.expanded || (stackFrameInfo.pointee && !stackFrameInfo.closedPointee));
   }
 
   static updateStackFrameActiveness(frame, active) {
-    if (!VisualizationTool.stackFrames[frame.uniqueHash]) {
+    if (!VisualizationTool.stackFrames[frame.getId()]) {
       VisualizationTool.registerStackFrame(frame, active, active);
-    } else if (VisualizationTool.stackFrames[frame.uniqueHash].active !== active) {
-        VisualizationTool.stackFrames[frame.uniqueHash] = { "expanded": active, active,
-          "pointee": false, "closedPointee": false };
+    } else if (VisualizationTool.stackFrames[frame.getId()].active !== active) {
+        VisualizationTool.stackFrames[frame.getId()] = {
+          "expanded": active,
+          active: active,
+          "pointee": false,
+          "closedPointee": false
+        };
     }
   }
 
   static toggleStackFrame(frame) {
-    const frameInfo = VisualizationTool.stackFrames[frame.uniqueHash];
+    const frameInfo = VisualizationTool.stackFrames[frame.getId()];
     if (frameInfo.pointee) {
-      VisualizationTool.stackFrames[frame.uniqueHash].closedPointee = !frameInfo.closedPointee;
+      VisualizationTool.stackFrames[frame.getId()].closedPointee = !frameInfo.closedPointee;
     } else {
-      VisualizationTool.stackFrames[frame.uniqueHash].expanded = !frameInfo.expanded;
-    }
-  }
-
-  static resetViewedFrames() {
-    for (let hash in VisualizationTool.stackFrames) {
-      VisualizationTool.stackFrames[hash].pointee = false;
+      VisualizationTool.stackFrames[frame.getId()].expanded = !frameInfo.expanded;
     }
   }
 
@@ -150,20 +148,12 @@ class VisualizationTool {
     VisualizationTool.componentsByAddress = {};
   }
 
-  static clearPointerArrows() {
-    VisualizationTool.arrowsToDraw = [];
-  }
-
-  static getArrowComponents() {
-    return VisualizationTool.arrowsToDraw;
-  }
-
   static clearHeapRegisteredComponents() {
     const components = VisualizationTool.componentsByAddress;
     VisualizationTool.clearRegisteredComponents();
     for (const address in components) {
       const variable = components[address].variable;
-      if (variable.stackFrameHash || variable.global) {
+      if (variable.stackFrame || variable.global) {
         VisualizationTool.componentsByAddress[address] = components[address];
       }
     }
@@ -172,6 +162,5 @@ class VisualizationTool {
 
 VisualizationTool.componentsByAddress = {};
 VisualizationTool.stackFrames = {};
-VisualizationTool.arrowsToDraw = [];
 
 export default VisualizationTool;
