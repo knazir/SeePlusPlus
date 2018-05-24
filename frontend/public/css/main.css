@@ -47,6 +47,9 @@ h3 {
 
 .visualization {
   cursor: move;
+  cursor: grab;
+  cursor: -moz-grab;
+  cursor: -webkit-grab;
 }
 
 .code-panel {
