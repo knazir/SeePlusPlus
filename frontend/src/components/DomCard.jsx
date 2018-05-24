@@ -6,7 +6,6 @@ export default class DomCard extends Component {
   static get propTypes() {
     return {
       title: PropTypes.string.isRequired,
-      color: PropTypes.string.isRequired,
       splitTitle: PropTypes.bool,
       secondTitle: PropTypes.string,
       titleStyle: PropTypes.object,
@@ -21,17 +20,16 @@ export default class DomCard extends Component {
   }
 
   getTitle() {
-    const titleStyle = Object.assign({}, this.props.titleStyle, { backgroundColor: this.props.color });
     if (this.props.splitTitle) {
       return (
-        <div className="box-title split" style={titleStyle}>
+        <div className="box-title split" style={this.props.titleStyle}>
           <h3>{this.props.title}</h3>
           <h3>{this.props.secondTitle}</h3>
         </div>
       );
     } else {
       return (
-        <div className="box-title" style={titleStyle}>
+        <div className="box-title" style={this.props.titleStyle}>
           <h3 style={{ padding: 0 }}>{this.props.title}</h3>
         </div>
       );
@@ -45,12 +43,11 @@ export default class DomCard extends Component {
   }
 
   render() {
-    const bodyStyle = Object.assign({}, this.props.bodyStyle, { borderColor: this.props.color });
     return (
       <div style={this.props.style}>
         {this.getSplitLine()}
         {this.getTitle()}
-        <div className="box-content" style={bodyStyle}>
+        <div className="box-content" style={this.props.bodyStyle}>
           {this.props.children}
         </div>
       </div>

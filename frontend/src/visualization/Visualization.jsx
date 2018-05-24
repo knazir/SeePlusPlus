@@ -19,46 +19,21 @@ export default class Visualization extends Component {
 
   constructor(props) {
     super(props);
-    this.updateVisualizationOnDrag = this.updateVisualizationOnDrag.bind(this);
+    this.updateVisualization = this.updateVisualization.bind(this);
+    this.handleStageDrag = this.handleStageDrag.bind(this);
   }
 
-  updateVisualizationOnDrag() {
+  updateVisualization() {
     this.forceUpdate();
   }
 
-  resolveHeapDifferences(prevStep, step) {
-    if (prevStep.getHeapVariables().length !== step.getHeapVariables().length) {
-      VisualizationTool.clearHeapRegisteredComponents();
-      this.props.trace.prevVisualizedIndex = this.props.trace.traceIndex;
-    } else {
-      for (let i = 0; i < prevStep.getHeapVariables().length; i++) {
-        const prevElem = prevStep.getHeapVariables()[i];
-        const currElem = step.getHeapVariables()[i];
-        if (prevElem.getId() !== currElem.getId() || prevElem.isFree() !== currElem.isFree()) {
-          VisualizationTool.clearHeapRegisteredComponents();
-          this.props.trace.prevVisualizedIndex = this.props.trace.traceIndex;
-          break;
-        }
-      }
-    }
-  }
-
   getHeapVariableNodes() {
-    const prevStep = this.props.trace.getPreviouslyVisualizedStep();
     const step = this.props.trace.getCurrentStep();
-    if (!prevStep.encounteredException()) this.resolveHeapDifferences(prevStep, step);
-    const heapVars = step.getHeapVariables();
-    heapVars.forEach((elem) => elem.orphaned = false);
-    step.orphanedMemory.forEach((elem) => {
-        elem.orphaned = true;
-        heapVars.push(elem);
-    });
-    return heapVars.map(v => {
-      const dimensions = VisualizationTool.getVariableCardDimensions(v);
+    return step.getHeapVariables().map(v => {
+      const id = v.getId();
       return {
-        ...dimensions,
-        component: <VariableCard key={v.getId()} variable={v} traceStep={step}
-                                 updateVisualization={this.updateVisualizationOnDrag}/>
+        ...VisualizationTool.getVariableCardDimensions(v),
+        component: <VariableCard key={id} variable={v} traceStep={step} updateVisualization={this.updateVisualization}/>
       };
     });
   }
@@ -66,11 +41,11 @@ export default class Visualization extends Component {
   getGlobalVariableNodes() {
     const step = this.props.trace.getCurrentStep();
     return step.getGlobalVariables().map(v => {
-      const dimensions = VisualizationTool.getVariableCardDimensions(v);
+      const id = v.getId();
       return {
-        ...dimensions,
-        component: <VariableCard key={v.getId()} variable={v} traceStep={step} global
-                                 updateVisualization={this.updateVisualizationOnDrag}/>
+        ...VisualizationTool.getVariableCardDimensions(v),
+        component: <VariableCard key={id} variable={v} traceStep={step}
+                                 updateVisualization={this.updateVisualization} global/>
       };
     });
   }
@@ -84,7 +59,7 @@ export default class Visualization extends Component {
       return {
         ...dimensions,
         component: <StackFrameCard key={frame.toString()} traceStep={currentStep} stackFrame={frame} active={active}
-                                   updateVisualization={this.updateVisualizationOnDrag}/>
+                                   updateVisualization={this.updateVisualization}/>
       };
     });
   }
@@ -112,9 +87,7 @@ export default class Visualization extends Component {
 
   getAllNodes() {
     // note that order is important here, we need heap nodes to be registered first
-    const toReturn = [...this.getHeapNodes(), ...this.getStackNodes(), ...VisualizationTool.getArrowComponents()];
-    VisualizationTool.clearPointerArrows();
-    return toReturn;
+    return [...this.getHeapNodes(), ...this.getStackNodes()];
   }
 
   getEmptyVisualization() {
@@ -127,6 +100,10 @@ export default class Visualization extends Component {
     );
   }
 
+  handleStageDrag(pos) {
+    return { x: 0, y: pos.y };
+  }
+
   render() {
     const height = this.props.height - VisualConstants.PADDING;
     if (!this.props.trace) return this.getEmptyVisualization();
@@ -134,7 +111,7 @@ export default class Visualization extends Component {
       <div className="visualization" style={{ width: this.props.width, height: this.props.height }}>
         <DomCard splitTitle height={height} title="Stack" secondTitle="Heap"
                  bodyStyle={{ width: this.props.width, height }}>
-          <Stage draggable width={this.props.width - VisualConstants.KONVA_PADDING}
+          <Stage draggable dragBoundFunc={this.handleStageDrag} width={this.props.width - VisualConstants.KONVA_PADDING}
                  height={height - VisualConstants.KONVA_PADDING}>
             <Layer>
               {!this.props.trace.encounteredException() && this.getAllNodes()}

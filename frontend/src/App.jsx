@@ -12,7 +12,7 @@ export default class App extends Component {
     this.state = { trace: null };
   }
 
-  //////////// React lifecycle ////////////
+  //////////// React Lifecycle ////////////
 
   componentDidMount() {
     window.addEventListener("keydown", this.handleKeyCommands);
@@ -22,7 +22,7 @@ export default class App extends Component {
     window.removeEventListener("keydown", this.handleKeyCommands);
   }
 
-  //////////// Event handling ////////////
+  //////////// Event Handling ////////////
 
   handleKeyCommands(event) {
     // disable saving web page through shortcut
@@ -44,13 +44,13 @@ export default class App extends Component {
 
     if (!this.state.trace || !this.ide.isVisualizing()) return;
     switch (event.which) {
-      case 37: this.stepPrev(); break; // left arrow
-      case 39: this.stepNext(); break; // right arrow
+      case 37: this.stepPrev(true); break; // left arrow
+      case 39: this.stepNext(true); break; // right arrow
       default: break;
     }
   }
 
-  //////////// State management ////////////
+  //////////// State Management ////////////
 
   loadTrace(trace) {
     window.trace = trace;
@@ -58,31 +58,31 @@ export default class App extends Component {
     this.setState({ trace: null }, () => this.setState({ trace }));
   }
 
-  stepNext() {
-    this.state.trace.stepNext();
-    this.forceUpdate();
-    this.forceUpdate();
-  }
-
-  stepPrev() {
-    this.state.trace.stepPrev();
-    this.forceUpdate();
+  stepNext(keypress = false) {
+    if (!this.state.trace.stepNext()) return;
+    if (keypress) this.ide.highlightButton("stepNext");
     this.forceUpdate();
   }
 
-  stepStart() {
-    this.state.trace.stepStart();
-    this.forceUpdate();
-    this.forceUpdate();
-  }
-
-  stepEnd() {
-    this.state.trace.stepEnd();
-    this.forceUpdate();
+  stepPrev(keypress = false) {
+    if (!this.state.trace.stepPrev()) return;
+    if (keypress) this.ide.highlightButton("stepPrev");
     this.forceUpdate();
   }
 
-  //////////// DOM elements ////////////
+  stepStart(keypress = false) {
+    if (!this.state.trace.stepStart()) return;
+    if (keypress) this.ide.highlightButton("stepStart");
+    this.forceUpdate();
+  }
+
+  stepEnd(keypress = false) {
+    if (!this.state.trace.stepEnd()) return;
+    if (keypress) this.ide.highlightButton("stepEnd");
+    this.forceUpdate();
+  }
+
+  //////////// DOM Elements ////////////
 
   getOutput() {
     if (!this.state.trace) return;

@@ -25,22 +25,30 @@ export default class StackFrameCard extends Component {
     };
   }
 
+  //////////// React Lifecycle ////////////
+
   componentWillReceiveProps({ stackFrame, active }) {
     if (!active && !VisualizationTool.isExpanded(stackFrame)) {
-      const localNodes = this.props.stackFrame.getLocalVariables();
-      if (localNodes.length !== stackFrame.getLocalVariables().length) {
-        VisualizationTool.registerStackFrame(stackFrame, true, active);
-      } else {
-        for (let i = 0; i < localNodes.length; i++) {
-          if (!localNodes[i].hasSameValue(stackFrame.getLocalVariables()[i])) {
-            VisualizationTool.registerStackFrame(stackFrame, true, active);
-            break;
-          }
-        }
-      }
+      const oldLocals = this.props.stackFrame.getLocalVariables();
+      const newLocals = stackFrame.getLocalVariables();
+      const localValueAdded = oldLocals.length !== newLocals.length;
+      const localValueChanged = oldLocals.filter((localVar, index) => !localVar.hasSameValue(newLocals[index]))[0];
+      VisualizationTool.registerStackFrame(stackFrame, localValueAdded || localValueChanged, active);
     }
     this.setState({ ...VisualizationTool.getStackFrameCardDimensions(stackFrame) });
   }
+
+  //////////// State Management ////////////
+
+  toggleOpen() {
+    VisualizationTool.toggleStackFrame(this.props.stackFrame);
+    this.setState({ ...VisualizationTool.getStackFrameCardDimensions(this.props.stackFrame) }, () => {
+      VisualizationTool.clearRegisteredComponents();
+      this.props.updateVisualization();
+    });
+  }
+
+  //////////// DOM Elements ////////////
 
   getOutline() {
     return (
@@ -105,20 +113,12 @@ export default class StackFrameCard extends Component {
 
   getLocalVariableNodes() {
     const nodesToLayout = this.props.stackFrame.getLocalVariables().map(v => {
-      if (v.isPointer()) {
-        const pointeeComponent = VisualizationTool.getComponentByAddress(v.getValue());
-        if (pointeeComponent && pointeeComponent.variable.stackFrameHash) {
-          const stackFrameInfo = VisualizationTool.stackFrames[pointeeComponent.variable.stackFrameHash];
-          if (stackFrameInfo && !stackFrameInfo.pointee && !stackFrameInfo.closedPointee) {
-            VisualizationTool.stackFrames[pointeeComponent.variable.stackFrameHash].pointee = true;
-            this.props.updateVisualization();
-            this.props.updateVisualization();
-          }
-        }
-      }
-      const component = <VariableCard key={v.getId()} variable={v} traceStep={this.props.traceStep} x={this.props.x + 35}
-                                      y={this.props.y + VisualConstants.SIZING.ORIGIN_Y_OFFSET} updateVisualization={this.props.updateVisualization}/>;
-      return { ...VisualizationTool.getVariableCardDimensions(v), component };
+      return {
+        ...VisualizationTool.getVariableCardDimensions(v),
+        component: <VariableCard key={v.getId()} variable={v} traceStep={this.props.traceStep} x={this.props.x + 35}
+                                 y={this.props.y + VisualConstants.SIZING.ORIGIN_Y_OFFSET}
+                                 updateVisualization={this.props.updateVisualization}/>
+      };
     });
     return VisualizationTool.layoutNodes({
       nodes: nodesToLayout,
@@ -129,20 +129,9 @@ export default class StackFrameCard extends Component {
     });
   }
 
-  toggleOpen() {
-    VisualizationTool.toggleStackFrame(this.props.stackFrame);
-    this.setState({
-      ...VisualizationTool.getStackFrameCardDimensions(this.props.stackFrame)
-    }, () => {
-      VisualizationTool.clearRegisteredComponents();
-      this.props.updateVisualization();
-      this.props.updateVisualization();
-    });
-  }
-
   render() {
     return (
-      <Group draggable>
+      <Group>
         {this.getOutline()}
         {this.getTitleSegment()}
         {VisualizationTool.isExpanded(this.props.stackFrame) && this.getLocalVariableNodes()}

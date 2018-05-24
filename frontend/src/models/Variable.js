@@ -10,24 +10,23 @@ export default class Variable {
 
   //////////// Class ////////////
 
-  constructor(data, heap = {}, stackFrameHash, global = false) {
+  constructor(data, stackFrame, global, heap, orphaned = false) {
     this.name = null;
-    this.stackFrameHash = stackFrameHash;
+    this.stackFrame = stackFrame;
+    this.global = global;
+    this.heap = heap;
+    this.orphaned = orphaned;
+
     const [ cType, address, type ] = data;
     this.cType = cType;
     this.address = address;
-    this.heap = heap;
-    if (cType === Variable.CTypes.ARRAY) {
-      this._setupArray(data, stackFrameHash);
-    } else if (cType === Variable.CTypes.STRUCT) {
-      this._setupStruct(data, stackFrameHash);
-      if (type === "string") this._setupString(data);
-    } else {
-      this.type = type === "pointer" ? "ptr" : type;
-      this.value = data[3];
-    }
-    this.orphaned = false;
-    this.global = global;
+    this._setupValue(cType, type, data);
+
+    // used only for pointers
+    this.target = null;
+
+    // kept on hand for cloning
+    this.data = data;
   }
 
   //////////// Getters ////////////
@@ -43,7 +42,7 @@ export default class Variable {
         const str = chars.map(c => c.getValue()).join("");
         return `"${str}"`;
       }
-      return this.value.map((elem) => elem.getValue().toString()).join(", ");
+      return this.value.map(elem => elem.getValue().toString()).join(", ");
     } else if (this.type === "char") {
       return `'${this.value}'`;
     } else {
@@ -73,6 +72,10 @@ export default class Variable {
     return Boolean(this.heap[this.address]) && this.isArray() && this.value.length === 0;
   }
 
+  isOrphaned() {
+    return this.orphaned;
+  }
+
   isPointer() {
     return this.type === "ptr";
   }
@@ -86,58 +89,69 @@ export default class Variable {
   }
 
   hasSameValue(other) {
-    if (this.type !== other.type) {
-      return false;
-    }
-    if (!this.isComplexType() || this.isPointer() || this.type === "string") {
-      return this.value === other.value;
-    }
+    if (this.type !== other.type) return false;
+    if (!this.isComplexType() || this.isPointer() || this.type === "string") return this.value === other.value;
     if (this.isArray()) {
       for (let i = 0; i < this.value.length; i++) {
-        if (!this.value[i].hasSameValue(other.value[i])) {
-          return false;
-        }
+        if (!this.value[i].hasSameValue(other.value[i])) return false;
       }
     } else if (this.isStruct()) {
-      for (const field in this.value) {
-        if (!other.value[field] || !this.value[field].hasSameValue(other.value[field])) {
-          return false;
-        }
+      for (const fieldName of Object.keys(this.value)) {
+        if (!other.value[fieldName] || !this.value[fieldName].hasSameValue(other.value[fieldName])) return false;
       }
     }
     return true;
   }
 
-  toString() {
-    if (this.isFree()) return `(Freed) ${this.name || ""}`.trim();
-    if (this.global) return `(Global) ${this.type} ${this.name || ""}`.trim();
-    if (this.orphaned) return `(Orphaned) ${this.name.substring(this.name.indexOf("*"))}`.trim();
-    return `${this.type} ${this.name || ""}`.trim();
-  }
-
   //////////// Mutator Methods ////////////
 
-  withName(name) {
+  setName(name) {
     this.name = name;
+  }
+
+  withName(name) {
+    this.setName(name);
     return this;
+  }
+
+  setTarget(targetVar) {
+    this.target = targetVar;
+  }
+
+  createOrphan() {
+    return new Variable(this.data, this.stackFrame, this.global, this.heap, true).withName(this.name);
   }
 
   //////////// Helper Methods ////////////
 
-  _setupArray(data, stackFrameHash) {
+  _setupValue(cType, type, data) {
+    if (cType === Variable.CTypes.ARRAY) {
+      this._setupArray(data);
+    } else if (cType === Variable.CTypes.STRUCT) {
+      this._setupStruct(data);
+      if (type === "string") this._setupString(data);
+    } else {
+      this.type = type === "pointer" ? "ptr" : type;
+      this.value = data[3];
+    }
+  }
+
+  _setupArray(data) {
     this.type = "array";
     this.value = Utils.arrayOfType(Variable, data.slice(2),
-        element => new Variable(element, this.heap, stackFrameHash));
-    if (this.value.length === 1) Object.assign(this, this.value[0]);
+        varData => new Variable(varData, this.stackFrame, false, this.heap));
+    // note, very important to remember if the object was orphaned! took an obscene amount of time to debug
+    // is there a better way to do this?
+    if (this.value.length === 1) Object.assign(this, this.value[0], { orphaned: this.orphaned });
     else if (this.value.length > 0) this.cType = Variable.CTypes.STRUCT_ARRAY;
   }
 
-  _setupStruct(data, stackFrameHash) {
+  _setupStruct(data) {
     this.type = data[2];
     const fieldList = data.slice(3);
     this.value = {};
-    Utils.arrayOfType(
-      Variable, fieldList, field => new Variable(field[1], this.heap, stackFrameHash).withName(field[0]))
+    Utils.arrayOfType(Variable, fieldList,
+        field => new Variable(field[1], this.stackFrame, false, this.heap).withName(field[0]))
       .forEach((elem) => this.value[elem.name] = elem);
   }
 
@@ -164,5 +178,12 @@ export default class Variable {
       .filter(charVar => charVar.value !== "\\0")
       .map(charVar => charVar.value)
       .join("");
+  }
+
+  toString() {
+    if (this.isFree()) return `(Freed) ${this.name || ""}`.trim();
+    if (this.global) return `(Global) ${this.type} ${this.name || ""}`.trim();
+    if (this.isOrphaned()) return `(Orphaned) ${this.name.substring(this.name.indexOf("*"))}`.trim();
+    return `${this.type} ${this.name || ""}`.trim();
   }
 }

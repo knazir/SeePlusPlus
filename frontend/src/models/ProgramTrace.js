@@ -1,49 +1,44 @@
 import TraceStep from "./TraceStep";
 import Utils from "../utils/Utils";
-import VisualizationTool from "../utils/VisualizationTool";
 
 export default class ProgramTrace {
   constructor({ code, trace }) {
     this.code = code;
     this.trace = Utils.arrayOfType(TraceStep, trace);
     this.traceIndex = 0;
-    this.prevVisualizedIndex = 0;
-    if (this.trace) this._calculateOrphanedMemory();
+    if (this.trace) {
+      this._setupOrphanedMemory();
+      this._setupPointerTargets();
+    }
   }
 
   //////////// Mutator Methods ////////////
 
   stepNext() {
-    if (this.encounteredException()) return;
-    this.prevVisualizedIndex = this.traceIndex;
-    VisualizationTool.resetViewedFrames();
-    if (!this.atEnd()) this.traceIndex++;
+    if (this.encounteredException() || this.atEnd()) return false;
+    this.traceIndex++;
+    return true;
   }
 
   stepPrev() {
-    this.prevVisualizedIndex = this.traceIndex;
-    VisualizationTool.resetViewedFrames();
-    if (!this.atStart()) this.traceIndex--;
+    if (this.atStart()) return false;
+    this.traceIndex--;
+    return true;
   }
 
   stepStart() {
-    this.prevVisualizedIndex = this.traceIndex;
-    VisualizationTool.resetViewedFrames();
+    if (this.atStart()) return false;
     this.traceIndex = 0;
+    return true;
   }
 
   stepEnd() {
-    if (this.encounteredException()) return;
-    this.prevVisualizedIndex = this.traceIndex;
-    VisualizationTool.resetViewedFrames();
+    if (this.encounteredException() || this.atEnd()) return false;
     this.traceIndex = this.trace.length - 1;
+    return true;
   }
 
   //////////// Getters ////////////
-
-  getPreviouslyVisualizedStep() {
-    return this.trace[this.prevVisualizedIndex] || null;
-  }
 
   getCurrentStep() {
     return this.trace[this.traceIndex] || null;
@@ -71,17 +66,32 @@ export default class ProgramTrace {
 
   //////////// Helper Methods ////////////
 
-  _calculateOrphanedMemory() {
-    for (let i = 1; i < this.trace.length; i++) {
-      for (const orphan in this.trace[i - 1].orphanedMemory) {
-        this.trace[i].orphanedMemory.push(this.trace[i - 1].orphanedMemory[orphan]);
-      }
-      const currHeapVars = this.trace[i].heap;
-      const prevHeapVars = this.trace[i - 1].heap;
-      Object.entries(prevHeapVars).forEach(([address, prevHeapVar]) => {
-        if (prevHeapVar.isFree() || (address in currHeapVars)) return;
-        this.trace[i].orphanedMemory.push(prevHeapVar);
+  _setupOrphanedMemory() {
+    for (let i = 1; i < this.trace.length; i++ ){
+      const prevStep = this.trace[i - 1];
+      const currentStep = this.trace[i];
+      prevStep.getHeapVariables().forEach(heapVar => {
+        if (heapVar.isOrphaned()) currentStep.addHeapVariable(heapVar);
       });
+      Object.entries(prevStep.heap).forEach(([address, prevHeapVar]) => {
+        if (prevHeapVar.isFree() || address in currentStep.heap) return;
+        currentStep.addHeapVariable(prevHeapVar.createOrphan());
+      })
     }
+  }
+
+  _setupPointerTargets() {
+    this.trace.forEach(traceStep => {
+      const variables = traceStep.getAllVariables();
+      variables.forEach(variable => {
+        if (!variable.isPointer()) return;
+        for (const otherVar of variables) {
+          if (otherVar.address === variable.getValue()) {
+            variable.setTarget(otherVar);
+            break;
+          }
+        }
+      });
+    });
   }
 }
