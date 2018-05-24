@@ -8,7 +8,7 @@ export default class StackFrame {
     this.funcName = func_name;
     this.line = line;
     this.uniqueHash = unique_hash;
-    this.encodedLocals = Utils.mapValues(Variable, encoded_locals, varData => new Variable(varData, this, false, heap));
+    this.encodedLocals = this._mapLocals(encoded_locals, heap);
 
     // currently unused properties
     this.isHighlighted = is_highlighted;
@@ -37,6 +37,14 @@ export default class StackFrame {
 
   toString() {
     return `${this.getFuncName()} ${this.frameId ? `(${this.frameId})` : ""}`.trim();
+  }
+
+  //////////// Helper Methods ////////////
+
+  _mapLocals(encoded_locals, heap) {
+    const result = Utils.mapValues(Variable, encoded_locals, varData => new Variable(varData, this, false, heap));
+    Object.entries(result).forEach(([varName, localVar]) => localVar.setName(varName));
+    return result;
   }
 
 }
