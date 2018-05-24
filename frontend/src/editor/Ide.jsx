@@ -176,14 +176,16 @@ export default class Ide extends Component {
 
     return (
       <DomCard title="Code" bodyStyle={{ padding: "0px" }}>
-        <CodeMirror
-          ref={this.setupCodeMirrorInstance}
-          options={options}
-          value={this.state.code}
-          onBeforeChange={(editor, data, code) => this.setState({ code })}
-          onDrop={this.onFileDrop}
-          autoCursor autoScroll
-        />
+        <div class="codeArea">
+          <CodeMirror
+            ref={this.setupCodeMirrorInstance}
+            options={options}
+            value={this.state.code}
+            onBeforeChange={(editor, data, code) => this.setState({ code })}
+            onDrop={this.onFileDrop}
+            autoCursor autoScroll
+          />
+        </div>
       </DomCard>
     );
   }
