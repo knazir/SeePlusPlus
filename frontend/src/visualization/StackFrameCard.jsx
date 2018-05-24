@@ -25,6 +25,8 @@ export default class StackFrameCard extends Component {
     };
   }
 
+  //////////// React Lifecycle ////////////
+
   componentWillReceiveProps({ stackFrame, active }) {
     if (!active && !VisualizationTool.isExpanded(stackFrame)) {
       const localNodes = this.props.stackFrame.getLocalVariables();
@@ -41,6 +43,20 @@ export default class StackFrameCard extends Component {
     }
     this.setState({ ...VisualizationTool.getStackFrameCardDimensions(stackFrame) });
   }
+
+  //////////// State Management ////////////
+
+  toggleOpen() {
+    VisualizationTool.toggleStackFrame(this.props.stackFrame);
+    this.setState({
+      ...VisualizationTool.getStackFrameCardDimensions(this.props.stackFrame)
+    }, () => {
+      VisualizationTool.clearRegisteredComponents();
+      this.props.updateVisualization();
+    });
+  }
+
+  //////////// DOM Elements ////////////
 
   getOutline() {
     return (
@@ -105,17 +121,6 @@ export default class StackFrameCard extends Component {
 
   getLocalVariableNodes() {
     const nodesToLayout = this.props.stackFrame.getLocalVariables().map(v => {
-      if (v.isPointer()) {
-        const pointeeComponent = VisualizationTool.getComponentByAddress(v.getValue());
-        if (pointeeComponent && pointeeComponent.variable.stackFrame) {
-          const stackFrameInfo = VisualizationTool.stackFrames[pointeeComponent.variable.stackFrame];
-          if (stackFrameInfo && !stackFrameInfo.pointee && !stackFrameInfo.closedPointee) {
-            VisualizationTool.stackFrames[pointeeComponent.variable.stackFrame.getId()].pointee = true;
-            this.props.updateVisualization();
-            this.props.updateVisualization();
-          }
-        }
-      }
       return {
         ...VisualizationTool.getVariableCardDimensions(v),
         component: <VariableCard key={v.getId()} variable={v} traceStep={this.props.traceStep} x={this.props.x + 35}
@@ -129,17 +134,6 @@ export default class StackFrameCard extends Component {
       offset: { x: 0, y: VisualConstants.SIZING.OFFSET },
       traceStep: this.props.traceStep,
       layout: VisualizationTool.Layouts.COLUMN
-    });
-  }
-
-  toggleOpen() {
-    VisualizationTool.toggleStackFrame(this.props.stackFrame);
-    this.setState({
-      ...VisualizationTool.getStackFrameCardDimensions(this.props.stackFrame)
-    }, () => {
-      VisualizationTool.clearRegisteredComponents();
-      this.props.updateVisualization();
-      this.props.updateVisualization();
     });
   }
 

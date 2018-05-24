@@ -208,13 +208,12 @@ export default class VariableCard extends Component {
   }
 
   render() {
-    const cType = this.props.variable.cType;
-    const isComplexVar = cType === Variable.CTypes.STRUCT || cType === Variable.CTypes.STRUCT_ARRAY;
+    const variable = this.props.variable;
     return (
       <Group>
         {this.getOutline()}
         {this.getTitleSegment()}
-        {isComplexVar ? this.getStructValues() : this.getPrimitiveValue()}
+        {variable.isStruct() || variable.isArray() ? this.getStructValues() : this.getPrimitiveValue()}
       </Group>
     );
   }

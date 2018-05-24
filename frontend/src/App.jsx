@@ -61,24 +61,20 @@ export default class App extends Component {
   stepNext() {
     this.state.trace.stepNext();
     this.forceUpdate();
-    this.forceUpdate();
   }
 
   stepPrev() {
     this.state.trace.stepPrev();
-    this.forceUpdate();
     this.forceUpdate();
   }
 
   stepStart() {
     this.state.trace.stepStart();
     this.forceUpdate();
-    this.forceUpdate();
   }
 
   stepEnd() {
     this.state.trace.stepEnd();
-    this.forceUpdate();
     this.forceUpdate();
   }
 

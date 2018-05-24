@@ -123,10 +123,10 @@ class VisualizationTool {
       VisualizationTool.registerStackFrame(frame, active, active);
     } else if (VisualizationTool.stackFrames[frame.getId()].active !== active) {
         VisualizationTool.stackFrames[frame.getId()] = {
-          "expanded": active,
+          expanded: active,
           active: active,
-          "pointee": false,
-          "closedPointee": false
+          pointee: false,
+          closedPointee: false
         };
     }
   }
@@ -146,17 +146,6 @@ class VisualizationTool {
 
   static clearRegisteredComponents() {
     VisualizationTool.componentsByAddress = {};
-  }
-
-  static clearHeapRegisteredComponents() {
-    const components = VisualizationTool.componentsByAddress;
-    VisualizationTool.clearRegisteredComponents();
-    for (const address in components) {
-      const variable = components[address].variable;
-      if (variable.stackFrame || variable.global) {
-        VisualizationTool.componentsByAddress[address] = components[address];
-      }
-    }
   }
 }
 
