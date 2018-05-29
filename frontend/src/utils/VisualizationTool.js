@@ -116,7 +116,9 @@ class VisualizationTool {
   static registerComponents(components) {
     components.forEach(component => {
       const variable = component.props.variable;
-      if (!variable || VisualizationTool.componentsByAddress[variable.address]) return;
+      if (!variable) return;
+      const componentInfo = VisualizationTool.componentsByAddress[variable.address];
+      if (componentInfo && componentInfo.variable.getId() !== variable.getId()) return;
       const { x, y } = component.props;
       VisualizationTool.componentsByAddress[variable.address] = { x, y, variable, component };
     });

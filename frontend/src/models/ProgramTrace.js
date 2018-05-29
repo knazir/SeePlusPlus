@@ -82,6 +82,7 @@ export default class ProgramTrace {
 
   _setupPointerTargets() {
     this.trace.forEach(traceStep => {
+      if (traceStep.encounteredException()) return;
       const variables = traceStep.getAllVariables();
       variables.forEach(variable => {
         if (!variable.isPointer()) return;
