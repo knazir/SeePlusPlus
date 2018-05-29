@@ -74,8 +74,6 @@ export default class TraceStep {
   }
 
   _createStack(stack_to_render) {
-    const stack = Utils.arrayOfType(StackFrame, stack_to_render, frameData => new StackFrame(frameData, this.heap));
-    stack[stack.length - 1].setActive(true);
-    return stack;
+    return Utils.arrayOfType(StackFrame, stack_to_render, frameData => new StackFrame(frameData, this.heap));
   }
 }

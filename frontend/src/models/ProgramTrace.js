@@ -9,6 +9,7 @@ export default class ProgramTrace {
     if (this.trace) {
       this._setupOrphanedMemory();
       this._setupPointerTargets();
+      this._setupActiveStackFrames();
     }
   }
 
@@ -103,5 +104,9 @@ export default class ProgramTrace {
         }
       });
     });
+  }
+
+  _setupActiveStackFrames() {
+    this.trace.forEach(traceStep => traceStep.stack[traceStep.stack.length - 1].setActive(true));
   }
 }
