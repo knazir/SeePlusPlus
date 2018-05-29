@@ -9,10 +9,10 @@ import { StackFrameCard as VisualConstants } from "../utils/VisualConstants";
 export default class StackFrameCard extends Component {
   static get propTypes() {
     return {
+      trace: PropTypes.object.isRequired,
       traceStep: PropTypes.object.isRequired,
       stackFrame: PropTypes.object.isRequired,
       updateVisualization: PropTypes.func.isRequired,
-      active: PropTypes.bool,
       x: PropTypes.number,
       y: PropTypes.number
     };
@@ -27,13 +27,13 @@ export default class StackFrameCard extends Component {
 
   //////////// React Lifecycle ////////////
 
-  componentWillReceiveProps({ stackFrame, active }) {
-    if (!active && !VisualizationTool.isExpanded(stackFrame)) {
+  componentWillReceiveProps({ stackFrame }) {
+    if (!stackFrame.active && !stackFrame.expanded) {
       const oldLocals = this.props.stackFrame.getLocalVariables();
       const newLocals = stackFrame.getLocalVariables();
       const localValueAdded = oldLocals.length !== newLocals.length;
       const localValueChanged = oldLocals.filter((localVar, index) => !localVar.hasSameValue(newLocals[index]))[0];
-      VisualizationTool.registerStackFrame(stackFrame, localValueAdded || localValueChanged, active);
+      this.props.trace.setStackFrameExpanded(stackFrame, localValueAdded || localValueChanged);
     }
     this.setState({ ...VisualizationTool.getStackFrameCardDimensions(stackFrame) });
   }
@@ -41,7 +41,7 @@ export default class StackFrameCard extends Component {
   //////////// State Management ////////////
 
   toggleOpen() {
-    VisualizationTool.toggleStackFrame(this.props.stackFrame);
+    this.props.trace.setStackFrameExpanded(this.props.stackFrame, !this.props.stackFrame.expanded);
     this.setState({ ...VisualizationTool.getStackFrameCardDimensions(this.props.stackFrame) }, () => {
       VisualizationTool.clearRegisteredComponents();
       this.props.updateVisualization();
@@ -134,7 +134,7 @@ export default class StackFrameCard extends Component {
       <Group>
         {this.getOutline()}
         {this.getTitleSegment()}
-        {VisualizationTool.isExpanded(this.props.stackFrame) && this.getLocalVariableNodes()}
+        {this.props.stackFrame.expanded && this.getLocalVariableNodes()}
       </Group>
     );
   }

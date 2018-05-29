@@ -3,12 +3,16 @@ import Variable from "./Variable";
 
 export default class StackFrame {
   constructor({ frame_id, func_name, is_highlighted, is_parent, is_zombie, line, parent_frame_id_list, unique_hash,
-                encoded_locals, ordered_varnames }, heap) {
+                encoded_locals, ordered_varnames }, heap, active = false) {
     this.frameId = frame_id;
     this.funcName = func_name;
     this.line = line;
     this.uniqueHash = unique_hash;
     this.encodedLocals = this._mapLocals(encoded_locals, heap);
+
+    // for visualization
+    this.active = active; // whether it is the most recent stack frame
+    this.expanded = active; // whether the frame is expanded in the visual
 
     // currently unused properties
     this.isHighlighted = is_highlighted;
@@ -37,6 +41,21 @@ export default class StackFrame {
 
   toString() {
     return `${this.getFuncName()} ${this.frameId ? `(${this.frameId})` : ""}`.trim();
+  }
+
+  //////////// Mutator Methods ////////////
+
+  setActive(active) {
+    this.active = active;
+    this.setExpanded(active);
+  }
+
+  setExpanded(expanded) {
+    this.expanded = expanded;
+    this.getLocalVariables().forEach(localVar => {
+      if (!localVar.isPointer() || !localVar.target || !localVar.target.stackFrame) return;
+      localVar.target.stackFrame.setExpanded(expanded);
+    });
   }
 
   //////////// Helper Methods ////////////

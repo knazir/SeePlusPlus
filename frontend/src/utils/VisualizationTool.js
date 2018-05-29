@@ -64,7 +64,7 @@ class VisualizationTool {
     let calculatedHeight = dimensions.map(d => d.height).reduce((total, height) => total + height + offsetY, 0);
     calculatedHeight += VisualConstants.StackFrameCard.SIZING.TITLE_HEIGHT + offsetY + offsetY;
 
-    if (!VisualizationTool.isExpanded(stackFrame)) {
+    if (!stackFrame.expanded) {
       calculatedHeight = VisualConstants.StackFrameCard.SIZING.TITLE_HEIGHT;
       maxVarWidth = 0;
     }
@@ -84,7 +84,7 @@ class VisualizationTool {
       return COLOR_TYPES[component.props.variable.type] || COLOR_TYPES.DEFAULT;
     } else if (component instanceof StackFrameCard) {
       const { ACTIVE, INACTIVE } = VisualConstants.StackFrameCard.COLORS;
-      return component.props.active ? ACTIVE : INACTIVE;
+      return component.props.stackFrame.active ? ACTIVE : INACTIVE;
     }
   }
 
@@ -124,24 +124,8 @@ class VisualizationTool {
     });
   }
 
-  static registerStackFrame(frame, expanded, active, targetStackFrames = []) {
-    VisualizationTool.stackFrames[frame.getId()] = { expanded, active, targetStackFrames };
-  }
-
   static clearRegisteredComponents() {
     VisualizationTool.componentsByAddress = {};
-  }
-
-  static updateStackFrameActiveness(frame, active, targetStackFrames) {
-    if (!VisualizationTool.stackFrames[frame.getId()]) {
-      VisualizationTool.registerStackFrame(frame, active, active, targetStackFrames);
-    } else if (VisualizationTool.stackFrames[frame.getId()].active !== active) {
-      VisualizationTool.stackFrames[frame.getId()] = {
-        expanded: active,
-        active: active,
-        targetStackFrames: []
-      };
-    }
   }
 
   //////////// "State" Querying ////////////
@@ -149,21 +133,8 @@ class VisualizationTool {
   static getComponentByAddress(address) {
     return VisualizationTool.componentsByAddress[address];
   }
-
-  static isExpanded(frame) {
-    const stackFrameInfo = VisualizationTool.stackFrames[frame.getId()];
-    if (!stackFrameInfo) return false;
-    const { expanded, targetStackFrames } = stackFrameInfo;
-    return expanded || targetStackFrames.filter(frame => VisualizationTool.isExpanded(frame.getId()))[0];
-  }
-
-  static toggleStackFrame(frame) {
-    const frameInfo = VisualizationTool.stackFrames[frame.getId()];
-    VisualizationTool.stackFrames[frame.getId()].expanded = !frameInfo.expanded;
-  }
 }
 
 VisualizationTool.componentsByAddress = {};
-VisualizationTool.stackFrames = {};
 
 export default VisualizationTool;

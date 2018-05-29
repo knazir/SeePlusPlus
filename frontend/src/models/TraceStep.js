@@ -15,7 +15,7 @@ export default class TraceStep {
     this.line = line - 1; // IMPORTANT: we do line - 1 to discount the #define for fixing unions TODO kn: Do on backend
     this.heap = this._mapHeap(heap);
     this.globals = this._mapGlobals(globals);
-    this.stack = Utils.arrayOfType(StackFrame, stack_to_render, frameData => new StackFrame(frameData, this.heap));
+    this.stack = this._createStack(stack_to_render);
     this.stdout = stdout;
 
     // currently unused properties
@@ -24,7 +24,7 @@ export default class TraceStep {
 
   //////////// Getters ////////////
 
-  getCurrentStackFrame() {
+  getActiveStackFrame() {
     return this.stack[this.stack.length - 1];
   }
 
@@ -40,7 +40,7 @@ export default class TraceStep {
     return [
       ...this.getHeapVariables(),
       ...this.getGlobalVariables(),
-      ...this.getCurrentStackFrame().getLocalVariables()
+      ...this.getActiveStackFrame().getLocalVariables()
     ];
   }
 
@@ -71,5 +71,11 @@ export default class TraceStep {
     const result = Utils.mapValues(Variable, globals, varData => new Variable(varData, null, true, this.heap));
     Object.entries(result).forEach(([varName, globalVar]) => globalVar.setName(varName));
     return result;
+  }
+
+  _createStack(stack_to_render) {
+    const stack = Utils.arrayOfType(StackFrame, stack_to_render, frameData => new StackFrame(frameData, this.heap));
+    stack[stack.length - 1].setActive(true);
+    return stack;
   }
 }

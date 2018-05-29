@@ -64,6 +64,15 @@ export default class ProgramTrace {
     return this.traceIndex === this.trace.length - 1;
   }
 
+  //////////// Mutator Methods ////////////
+
+  setStackFrameExpanded(stackFrame, expanded) {
+    this.trace.forEach(traceStep => {
+      const targetFrame = traceStep.stack.filter(frame => frame.getId() === stackFrame.getId())[0];
+      if (targetFrame) targetFrame.setExpanded(expanded);
+    });
+  }
+
   //////////// Helper Methods ////////////
 
   _setupOrphanedMemory() {
