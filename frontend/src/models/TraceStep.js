@@ -40,7 +40,7 @@ export default class TraceStep {
     return [
       ...this.getHeapVariables(),
       ...this.getGlobalVariables(),
-      ...this.getActiveStackFrame().getLocalVariables()
+      ...this._getAllStackVariables()
     ];
   }
 
@@ -75,5 +75,12 @@ export default class TraceStep {
 
   _createStack(stack_to_render) {
     return Utils.arrayOfType(StackFrame, stack_to_render, frameData => new StackFrame(frameData, this.heap));
+  }
+
+  _getAllStackVariables() {
+    if (!this.stack) return [];
+    const allLocalVariables = [];
+    this.stack.forEach(frame => allLocalVariables.push(...frame.getLocalVariables()));
+    return allLocalVariables;
   }
 }

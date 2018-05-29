@@ -66,5 +66,4 @@ export default class StackFrame {
     Object.entries(result).forEach(([varName, localVar]) => localVar.setName(varName));
     return result;
   }
-
 }

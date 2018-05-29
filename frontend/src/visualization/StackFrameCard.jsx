@@ -31,9 +31,10 @@ export default class StackFrameCard extends Component {
     if (!stackFrame.active && !stackFrame.expanded) {
       const oldLocals = this.props.stackFrame.getLocalVariables();
       const newLocals = stackFrame.getLocalVariables();
-      const localValueAdded = oldLocals.length !== newLocals.length;
-      const localValueChanged = oldLocals.filter((localVar, index) => !localVar.hasSameValue(newLocals[index]))[0];
-      this.props.trace.setStackFrameExpanded(stackFrame, localValueAdded || localValueChanged);
+      const localAdded = oldLocals.length !== newLocals.length;
+      const localChanged = oldLocals.filter((localVar, index) => !localVar.hasSameValue(newLocals[index])).length > 0;
+      const shouldExpand = localAdded || localChanged;
+      if (!stackFrame.expanded && shouldExpand) this.props.trace.setStackFrameExpanded(stackFrame, true);
     }
     this.setState({ ...VisualizationTool.getStackFrameCardDimensions(stackFrame) });
   }
