@@ -54,6 +54,7 @@ export default class StackFrame {
     this.expanded = expanded;
     this.getLocalVariables().forEach(localVar => {
       if (!localVar.isPointer() || !localVar.target || !localVar.target.stackFrame) return;
+      if (!expanded && localVar.target.stackFrame.active) return; // don't close active frame
       localVar.target.stackFrame.setExpanded(expanded);
     });
   }
