@@ -121,14 +121,14 @@ export default class ProgramTrace {
       for (let j = 0; j < traceStep.stack.length; j++) {
         const stackFrame = traceStep.stack[j];
         if (stackFrame.active || stackFrame.expanded) continue;
-        const oldStackFrame = this.trace[i - 1][j];
+        const oldStackFrame = this.trace[i - 1].stack[j];
         if (!oldStackFrame || oldStackFrame.getId() !== stackFrame.getId()) continue;
         const oldLocals = oldStackFrame.getLocalVariables();
         const newLocals = stackFrame.getLocalVariables();
         const localAdded = oldLocals.length !== newLocals.length;
         const localChanged = oldLocals.filter((localVar, index) => !localVar.hasSameValue(newLocals[index])).length > 0;
         const shouldExpand = localAdded || localChanged;
-        if (!stackFrame.expanded && shouldExpand) this.trace.setStackFrameExpanded(stackFrame, true);
+        if (!stackFrame.expanded && shouldExpand) stackFrame.setExpanded(true);
       }
     }
   }

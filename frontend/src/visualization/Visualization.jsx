@@ -84,9 +84,7 @@ export default class Visualization extends Component {
 
   getAllNodes() {
     // note that order is important here, we need heap nodes to be registered first
-    const result = [...this.getHeapNodes(), ...this.getStackNodes(), ...VisualizationTool.getArrowComponents()];
-    VisualizationTool.clearArrowComponents();
-    return result;
+    return [...this.getHeapNodes(), ...this.getStackNodes(), ...VisualizationTool.getArrowComponents()];
   }
 
   getEmptyVisualization() {

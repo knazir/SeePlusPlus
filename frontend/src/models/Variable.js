@@ -124,9 +124,7 @@ export default class Variable {
 
   getTargets() {
     let toReturn = new Set();
-    if (this.type === "string") {
-      return;
-    }
+    if (this.type === "string") return toReturn;
     if (this.isPointer()) {
       if(!this.target || !this.target.stackFrame) return toReturn;
       toReturn.add(this.target.stackFrame);

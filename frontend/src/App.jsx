@@ -4,6 +4,7 @@ import ContainerDimensions from "react-container-dimensions";
 import Ide from "./editor/Ide";
 import Output from "./visualization/Output";
 import Visualization from "./visualization/Visualization";
+import VisualizationTool from "./utils/VisualizationTool";
 
 export default class App extends Component {
   constructor(props) {
@@ -58,32 +59,35 @@ export default class App extends Component {
     this.setState({ trace: null }, () => this.setState({ trace }));
   }
 
+  // TODO: One day we'll figure out why this works and how to not do it...
+  superHackyForceUpdate() {
+    VisualizationTool.clearArrowComponents();
+    this.forceUpdate();
+    this.forceUpdate();
+  }
+
   stepNext(keypress = false) {
     if (!this.state.trace.stepNext()) return;
     if (keypress) this.ide.highlightButton("stepNext");
-    this.forceUpdate();
-    this.forceUpdate();
+    this.superHackyForceUpdate();
   }
 
   stepPrev(keypress = false) {
     if (!this.state.trace.stepPrev()) return;
     if (keypress) this.ide.highlightButton("stepPrev");
-    this.forceUpdate();
-    this.forceUpdate();
+    this.superHackyForceUpdate();
   }
 
   stepStart(keypress = false) {
     if (!this.state.trace.stepStart()) return;
     if (keypress) this.ide.highlightButton("stepStart");
-    this.forceUpdate();
-    this.forceUpdate();
+    this.superHackyForceUpdate();
   }
 
   stepEnd(keypress = false) {
     if (!this.state.trace.stepEnd()) return;
     if (keypress) this.ide.highlightButton("stepEnd");
-    this.forceUpdate();
-    this.forceUpdate();
+    this.superHackyForceUpdate();
   }
 
   //////////// DOM Elements ////////////
