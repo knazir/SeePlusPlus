@@ -18,6 +18,8 @@ export default class Ide extends Component {
       stepPrev: PropTypes.func.isRequired,
       stepStart: PropTypes.func.isRequired,
       stepEnd: PropTypes.func.isRequired,
+      stepPlay: PropTypes.func.isRequired,
+      stepStop: PropTypes.func.isRequired,
       trace: PropTypes.object
     };
   }
@@ -34,10 +36,19 @@ export default class Ide extends Component {
       buttonClassNames: {
         stepStart: "smaller-button",
         stepPrev: "bigger-button",
+        stepPlay: "bigger-button",
+        stepStop: "bigger-button",
         stepNext: "bigger-button",
         stepEnd: "smaller-button"
       }
     };
+  }
+
+  componentWillReceiveProps(props) {
+    if (!props.trace) return;
+    const encounteredException = props.trace.encounteredException();
+    const atEnd = props.trace.atEnd() || encounteredException;
+    if (atEnd) this.setState({ isPlaying: false });
   }
 
   //////////// Event Handling ////////////
@@ -143,6 +154,8 @@ export default class Ide extends Component {
       buttonClassNames: {
         stepStart: "smaller-button",
         stepPrev: "bigger-button",
+        stepPlay: "bigger-button",
+        stepStop: "bigger-button",
         stepNext: "bigger-button",
         stepEnd: "smaller-button"
       }
@@ -210,12 +223,22 @@ export default class Ide extends Component {
     const atStart = this.props.trace.atStart();
     const encounteredException = this.props.trace.encounteredException();
     const atEnd = this.props.trace.atEnd() || encounteredException;
-    const { stepStart, stepPrev, stepNext, stepEnd } = this.state.buttonClassNames;
+    const { stepStart, stepPrev, stepPlay, stepStop, stepNext, stepEnd } = this.state.buttonClassNames;
     return (
       <div className="control-buttons">
         <div className="step-button-bar">
           <button className={stepStart} disabled={atStart} onClick={this.props.stepStart}>|&lt;</button>
           <button className={stepPrev} disabled={atStart} onClick={this.props.stepPrev}>&lt;</button>
+          {this.state.isPlaying
+            ? <button className={stepStop} disabled={atEnd} onClick={() => {
+              this.setState({ isPlaying: false });
+              this.props.stepStop();
+            }
+            }>stop</button>
+            : <button className={stepPlay} disabled={atEnd} onClick={() => {
+              this.setState({ isPlaying: true });
+              this.props.stepPlay();
+            }}>play</button>}
           <button className={stepNext} disabled={atEnd} onClick={this.props.stepNext}>&gt;</button>
           <button className={stepEnd} disabled={atEnd} onClick={this.props.stepEnd}>&gt;|</button>
         </div>

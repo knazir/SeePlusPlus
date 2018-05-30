@@ -10,7 +10,7 @@ export default class App extends Component {
   constructor(props) {
     super(props);
     this.handleKeyCommands = this.handleKeyCommands.bind(this);
-    this.state = { trace: null };
+    this.state = { trace: null, timer: null };
   }
 
   //////////// React Lifecycle ////////////
@@ -89,6 +89,26 @@ export default class App extends Component {
     this.superHackyForceUpdate();
   }
 
+  stepPlay() {
+    this.stepNext();
+    this.setState({
+      timer: setInterval(() => {
+        if (!this.state.trace.stepNext()) {
+          clearInterval(this.state.timer);
+          return;
+        }
+        this.superHackyForceUpdate();
+      }, 1500)
+    });
+  }
+
+  stepStop() {
+    if (this.state.timer) {
+      clearInterval(this.state.timer);
+      this.setState({ timer: null });
+    }
+  }
+
   //////////// DOM Elements ////////////
 
   getOutput() {
@@ -104,7 +124,8 @@ export default class App extends Component {
           {({ width, height }) => <Ide ref={ide => this.ide = ide} onLoadTrace={trace => this.loadTrace(trace)}
                                        trace={this.state.trace} height={height}
                                        stepNext={() => this.stepNext()} stepPrev={() => this.stepPrev()}
-                                       stepStart={() => this.stepStart()} stepEnd={() => this.stepEnd()}/>}
+                                       stepStart={() => this.stepStart()} stepEnd={() => this.stepEnd()}
+                                       stepPlay={() => this.stepPlay()} stepStop={() => this.stepStop()}/>}
         </ContainerDimensions>
       </div>
     );
