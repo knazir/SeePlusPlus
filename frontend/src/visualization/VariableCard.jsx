@@ -39,7 +39,8 @@ export default class VariableCard extends Component {
   //////////// Visualization Logic ////////////
 
   getPointerIntermediateXCoordinate(originX, targetX) {
-    let length = Math.max(Math.abs((originX - targetX) / 2.0), (this.state.width + VisualConstants.POINTER.INTERMEDIATE_PADDING) / 2.0);
+    let padding = ((originX - (this.state.width + VisualConstants.POINTER.INTERMEDIATE_PADDING) / 2.0)) > 0 ? VisualConstants.POINTER.INTERMEDIATE_PADDING : 0;
+    let length = Math.max(Math.abs((originX - targetX) / 2.0), (this.state.width + padding) / 2.0);
     return targetX > originX ? originX + length : originX - length;
   }
 
