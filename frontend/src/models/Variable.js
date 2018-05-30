@@ -57,7 +57,7 @@ export default class Variable {
   //////////// Property Querying ////////////
 
   isComplexType() {
-    return Variable.CTypes[this.cType] !== Variable.CTypes.DATA;
+    return this.cType !== Variable.CTypes.DATA;
   }
 
   isArray() {
@@ -120,6 +120,22 @@ export default class Variable {
 
   createOrphan() {
     return new Variable(this.data, this.stackFrame, this.global, this.heap, true).withName(this.name);
+  }
+
+  getTargets() {
+    let toReturn = new Set();
+    if (this.type === "string") {
+      return;
+    }
+    if (this.isPointer()) {
+      if(!this.target || !this.target.stackFrame) return toReturn;
+      toReturn.add(this.target.stackFrame);
+    } else if (this.isComplexType()) {
+      for (let i = 0; i < this.value.length; i++) {
+        this.value[i].getTargets().forEach(elem => toReturn.add(elem));
+      }
+    }
+    return toReturn;
   }
 
   //////////// Helper Methods ////////////
