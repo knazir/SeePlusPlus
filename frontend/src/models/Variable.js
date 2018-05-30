@@ -51,7 +51,7 @@ export default class Variable {
   }
 
   getId() {
-    return `${this.toString()} ${this.address}`;
+    return `${this.name} ${this.address}`;
   }
 
   //////////// Property Querying ////////////
