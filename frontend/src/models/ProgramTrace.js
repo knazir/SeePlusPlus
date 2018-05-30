@@ -9,6 +9,7 @@ export default class ProgramTrace {
     if (this.trace) {
       this._setupOrphanedMemory();
       this._setupPointerTargets();
+      this._setupActiveStackFrames();
     }
   }
 
@@ -64,6 +65,15 @@ export default class ProgramTrace {
     return this.traceIndex === this.trace.length - 1;
   }
 
+  //////////// Mutator Methods ////////////
+
+  setStackFrameExpanded(stackFrame, expanded) {
+    this.trace.forEach(traceStep => {
+      const targetFrame = traceStep.stack.filter(frame => frame.getId() === stackFrame.getId())[0];
+      if (targetFrame) targetFrame.setExpanded(expanded);
+    });
+  }
+
   //////////// Helper Methods ////////////
 
   _setupOrphanedMemory() {
@@ -94,5 +104,9 @@ export default class ProgramTrace {
         }
       });
     });
+  }
+
+  _setupActiveStackFrames() {
+    this.trace.forEach(traceStep => traceStep.stack[traceStep.stack.length - 1].setActive(true));
   }
 }

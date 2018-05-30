@@ -53,13 +53,10 @@ export default class Visualization extends Component {
   getStackFrameNodes() {
     const currentStep = this.props.trace.getCurrentStep();
     return currentStep.stack.map(frame => {
-      const active = frame === currentStep.getCurrentStackFrame();
-      VisualizationTool.updateStackFrameActiveness(frame, active);
-      const dimensions = VisualizationTool.getStackFrameCardDimensions(frame, active);
       return {
-        ...dimensions,
-        component: <StackFrameCard key={frame.toString()} traceStep={currentStep} stackFrame={frame} active={active}
-                                   updateVisualization={this.updateVisualization}/>
+        ...VisualizationTool.getStackFrameCardDimensions(frame, frame.active),
+        component: <StackFrameCard key={frame.toString()} trace={this.props.trace} traceStep={currentStep}
+                                   stackFrame={frame} updateVisualization={this.updateVisualization}/>
       };
     });
   }
