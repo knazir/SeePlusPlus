@@ -62,7 +62,7 @@ export default class App extends Component {
   // TODO: One day we'll figure out why this works and how to not do it...
   superHackyForceUpdate() {
     VisualizationTool.clearArrowComponents();
-    this.setState({}, () => this.setState({}));
+    this.forceUpdate(() => this.forceUpdate());
   }
 
   stepNext(keypress = false) {
