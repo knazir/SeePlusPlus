@@ -10,6 +10,7 @@ export default class ProgramTrace {
       this._setupOrphanedMemory();
       this._setupPointerTargets();
       this._setupActiveStackFrames();
+      this._setupChangedStackFrames();
     }
   }
 
@@ -111,5 +112,24 @@ export default class ProgramTrace {
     this.trace.forEach(traceStep => {
       if (!traceStep.encounteredException()) traceStep.stack[traceStep.stack.length - 1].setActive(true);
     });
+  }
+
+  _setupChangedStackFrames() {
+    for (let i = 1; i < this.trace.length; i++) {
+      const traceStep = this.trace[i];
+      if (traceStep.encounteredException()) continue;
+      for (let j = 0; j < traceStep.stack.length; j++) {
+        const stackFrame = traceStep.stack[j];
+        if (stackFrame.active || stackFrame.expanded) continue;
+        const oldStackFrame = this.trace[i - 1][j];
+        if (!oldStackFrame || oldStackFrame.getId() !== stackFrame.getId()) continue;
+        const oldLocals = oldStackFrame.getLocalVariables();
+        const newLocals = stackFrame.getLocalVariables();
+        const localAdded = oldLocals.length !== newLocals.length;
+        const localChanged = oldLocals.filter((localVar, index) => !localVar.hasSameValue(newLocals[index])).length > 0;
+        const shouldExpand = localAdded || localChanged;
+        if (!stackFrame.expanded && shouldExpand) this.trace.setStackFrameExpanded(stackFrame, true);
+      }
+    }
   }
 }
