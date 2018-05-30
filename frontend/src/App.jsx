@@ -62,11 +62,13 @@ export default class App extends Component {
     if (!this.state.trace.stepNext()) return;
     if (keypress) this.ide.highlightButton("stepNext");
     this.forceUpdate();
+    this.forceUpdate();
   }
 
   stepPrev(keypress = false) {
     if (!this.state.trace.stepPrev()) return;
     if (keypress) this.ide.highlightButton("stepPrev");
+    this.forceUpdate();
     this.forceUpdate();
   }
 
@@ -74,11 +76,13 @@ export default class App extends Component {
     if (!this.state.trace.stepStart()) return;
     if (keypress) this.ide.highlightButton("stepStart");
     this.forceUpdate();
+    this.forceUpdate();
   }
 
   stepEnd(keypress = false) {
     if (!this.state.trace.stepEnd()) return;
     if (keypress) this.ide.highlightButton("stepEnd");
+    this.forceUpdate();
     this.forceUpdate();
   }
 

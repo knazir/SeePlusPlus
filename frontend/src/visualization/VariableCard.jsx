@@ -141,21 +141,24 @@ export default class VariableCard extends Component {
 
   getPointerToTarget(origin, pointerTarget) {
     const points = this.getPointerLinePoints(origin, pointerTarget);
+    const arrowComponent = (
+      <Arrow
+        points={points}
+        stroke={VisualConstants.POINTER.COLOR}
+        strokeWidth={this.state.highlight ? VisualConstants.POINTER.BOLD_WIDTH : VisualConstants.POINTER.NORMAL_WIDTH}
+        tension={VisualConstants.POINTER.TENSION}
+        pointerLength={VisualConstants.POINTER.LENGTH}
+        pointerWidth ={VisualConstants.POINTER.WIDTH}
+        fill={VisualConstants.POINTER.COLOR}
+      />
+    );
+    VisualizationTool.registerArrowComponent(arrowComponent);
     return (
       <Group key={this.props.variable.toString() + this.props.variable.address}>
         <Circle
           x={origin.x}
           y={origin.y}
           radius={VisualConstants.POINTER.RADIUS}
-          fill={VisualConstants.POINTER.COLOR}
-        />
-        <Arrow
-          points={points}
-          stroke={VisualConstants.POINTER.COLOR}
-          strokeWidth={this.state.highlight ? VisualConstants.POINTER.BOLD_WIDTH : VisualConstants.POINTER.NORMAL_WIDTH}
-          tension={VisualConstants.POINTER.TENSION}
-          pointerLength={VisualConstants.POINTER.LENGTH}
-          pointerWidth ={VisualConstants.POINTER.WIDTH}
           fill={VisualConstants.POINTER.COLOR}
         />
       </Group>

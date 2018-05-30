@@ -128,13 +128,34 @@ class VisualizationTool {
     VisualizationTool.componentsByAddress = {};
   }
 
+  static registerArrowComponent(arrowComponent) {
+    const newComponent = React.cloneElement(arrowComponent, { key: VisualizationTool._getNextArrowId() });
+    VisualizationTool.arrowComponents.push(newComponent);
+  }
+
+  static clearArrowComponents() {
+    VisualizationTool.arrowComponents = [];
+  }
+
   //////////// "State" Querying ////////////
 
   static getComponentByAddress(address) {
     return VisualizationTool.componentsByAddress[address];
   }
+
+  static getArrowComponents() {
+    return VisualizationTool.arrowComponents;
+  }
+
+  //////////// Helper Methods ////////////
+
+  static _getNextArrowId() {
+    return VisualizationTool.arrowId++;
+  }
 }
 
 VisualizationTool.componentsByAddress = {};
+VisualizationTool.arrowComponents = [];
+VisualizationTool.arrowId = 0;
 
 export default VisualizationTool;
