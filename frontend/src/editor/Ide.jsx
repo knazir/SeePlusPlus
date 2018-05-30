@@ -176,7 +176,7 @@ export default class Ide extends Component {
 
     return (
       <DomCard title="Code" bodyStyle={{ padding: "0px" }}>
-        <div className="codeArea">
+        <div className="codeArea" style={{ background: this.state.isVisualizing ? "#f4f4f4" : "white" }}>
           <CodeMirror
             ref={this.setupCodeMirrorInstance}
             options={options}
