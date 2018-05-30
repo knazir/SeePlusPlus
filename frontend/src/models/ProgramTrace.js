@@ -69,6 +69,7 @@ export default class ProgramTrace {
 
   setStackFrameExpanded(stackFrame, expanded) {
     this.trace.forEach(traceStep => {
+      if (!traceStep.stack) return;
       const targetFrame = traceStep.stack.filter(frame => frame.getId() === stackFrame.getId())[0];
       if (targetFrame) targetFrame.setExpanded(expanded);
     });
@@ -107,6 +108,8 @@ export default class ProgramTrace {
   }
 
   _setupActiveStackFrames() {
-    this.trace.forEach(traceStep => traceStep.stack[traceStep.stack.length - 1].setActive(true));
+    this.trace.forEach(traceStep => {
+      if (!traceStep.encounteredException()) traceStep.stack[traceStep.stack.length - 1].setActive(true);
+    });
   }
 }
