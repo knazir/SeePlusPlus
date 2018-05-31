@@ -27,6 +27,7 @@ export default class Ide extends Component {
     super(props);
     this.setupCodeMirrorInstance = this.setupCodeMirrorInstance.bind(this);
     this.onFileDrop = this.onFileDrop.bind(this);
+    this.onGutterClick = this.onGutterClick.bind(this);
     this.activeLine = null;
     this.state = {
       code: starterCode,
@@ -85,6 +86,11 @@ export default class Ide extends Component {
     return false; // equivalent to preventDefault and stopPropagation
   }
 
+  onGutterClick(editor, lineNumber) {
+    if (!this.isVisualizing()) return;
+    this.props.stepLine(lineNumber + 1); // account for 0-indexed lines
+  }
+
   //////////// CodeMirror Instance ////////////
 
   clearHighlightedLine() {
@@ -126,7 +132,9 @@ export default class Ide extends Component {
     this.setState({ loading: true }, async () => {
       const trace = await Api.getCodeTrace("c++", this.state.code);
       this.props.onLoadTrace(trace);
-      this.setState({ isVisualizing: !trace.encounteredException(), loading: false });
+      this.setState({ isVisualizing: !trace.encounteredException(), loading: false }, () => {
+        if (this.state.isVisualizing) this.addLineNumberClasses();
+      });
     });
   }
 
@@ -137,7 +145,7 @@ export default class Ide extends Component {
   stopVisualizing() {
     if (!this.isVisualizing()) return;
     if (this.activeLine !== null) this.clearHighlightedLine();
-    this.setState({ isVisualizing: false });
+    this.setState({ isVisualizing: false }, () => this.removeLineNumberClasses());
   }
 
   revertButtons() {
@@ -163,6 +171,16 @@ export default class Ide extends Component {
     this.temporarilyUpdateButton(button);
   }
 
+  //////////// DOM Manipulation ////////////
+
+  addLineNumberClasses() {
+    document.querySelectorAll(".CodeMirror-gutter-elt").forEach(element => element.classList.add("clickable"));
+  }
+
+  removeLineNumberClasses() {
+    document.querySelectorAll("CodeMirror-gutter-elt").forEach(element => element.classList.remove("clickable"));
+  }
+
   //////////// DOM Elements ////////////
 
   getCodeEditor() {
@@ -185,7 +203,7 @@ export default class Ide extends Component {
             value={this.state.code}
             onBeforeChange={(editor, data, code) => this.setState({ code })}
             onDrop={this.onFileDrop}
-            onGutterClick={(editor, lineNumber) => this.props.stepLine(lineNumber + 1)} // account of 0-indexing
+            onGutterClick={this.onGutterClick}
             autoCursor autoScroll
           />
         </div>
