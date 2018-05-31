@@ -40,6 +40,17 @@ export default class ProgramTrace {
     return true;
   }
 
+  stepLine(lineNumber) {
+    for (let i = this.traceIndex + 1; i <= this.traceIndex + this.trace.length; i++) {
+      const newIndex = i % this.trace.length;
+      if (this.trace[newIndex].line === lineNumber) {
+        this.traceIndex = newIndex;
+        return true;
+      }
+    }
+    return false;
+  }
+
   //////////// Getters ////////////
 
   getCurrentStep() {

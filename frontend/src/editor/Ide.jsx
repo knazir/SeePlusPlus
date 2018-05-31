@@ -20,6 +20,7 @@ export default class Ide extends Component {
       stepEnd: PropTypes.func.isRequired,
       stepPlay: PropTypes.func.isRequired,
       stepStop: PropTypes.func.isRequired,
+      stepLine: PropTypes.func.isRequired,
       trace: PropTypes.object
     };
   }
@@ -131,6 +132,7 @@ export default class Ide extends Component {
 
   visualizeCode() {
     if (this.isVisualizing()) return;
+    VisualizationTool.clearArrowComponents();
     VisualizationTool.clearRegisteredComponents();
     this.setState({ loading: true }, async () => {
       const trace = await Api.getCodeTrace("c++", this.state.code);
@@ -196,6 +198,7 @@ export default class Ide extends Component {
             value={this.state.code}
             onBeforeChange={(editor, data, code) => this.setState({ code })}
             onDrop={this.onFileDrop}
+            onGutterClick={(editor, lineNumber) => this.props.stepLine(lineNumber + 1)} // account of 0-indexing
             autoCursor autoScroll
           />
         </div>

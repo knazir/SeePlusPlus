@@ -105,8 +105,13 @@ export default class App extends Component {
   stepStop() {
     if (this.state.timer) {
       clearInterval(this.state.timer);
-      this.setState({ timer: null });
+      this.setState({timer: null});
     }
+  }
+
+  stepLine(lineNumber) {
+    if (!this.state.trace || !this.state.trace.stepLine(lineNumber)) return;
+    this.superHackyForceUpdate();
   }
 
   //////////// DOM Elements ////////////
@@ -125,7 +130,8 @@ export default class App extends Component {
                                        trace={this.state.trace} height={height}
                                        stepNext={() => this.stepNext()} stepPrev={() => this.stepPrev()}
                                        stepStart={() => this.stepStart()} stepEnd={() => this.stepEnd()}
-                                       stepPlay={() => this.stepPlay()} stepStop={() => this.stepStop()}/>}
+                                       stepPlay={() => this.stepPlay()} stepStop={() => this.stepStop()}
+                                       stepLine={(lineNumber) => this.stepLine(lineNumber)}/>}
         </ContainerDimensions>
       </div>
     );
