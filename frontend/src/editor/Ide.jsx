@@ -63,7 +63,7 @@ export default class Ide extends Component {
   }
 
   async onFileDrop(data, event) {
-    if (this.state.isVisualizing) return;
+    if (this.isVisualizing()) return;
     const files = event.dataTransfer.files;
     if (!window.File || !window.FileReader || files.length === 0) {
       return;
@@ -133,7 +133,7 @@ export default class Ide extends Component {
       const trace = await Api.getCodeTrace("c++", this.state.code);
       this.props.onLoadTrace(trace);
       this.setState({ isVisualizing: !trace.encounteredException(), loading: false }, () => {
-        if (this.state.isVisualizing) this.addLineNumberClasses();
+        if (this.isVisualizing()) this.setupVisualizingDom();
       });
     });
   }
@@ -145,7 +145,7 @@ export default class Ide extends Component {
   stopVisualizing() {
     if (!this.isVisualizing()) return;
     if (this.activeLine !== null) this.clearHighlightedLine();
-    this.setState({ isVisualizing: false }, () => this.removeLineNumberClasses());
+    this.setState({ isVisualizing: false }, () => this.resetVisualizingDom());
   }
 
   revertButtons() {
@@ -173,12 +173,16 @@ export default class Ide extends Component {
 
   //////////// DOM Manipulation ////////////
 
-  addLineNumberClasses() {
+  setupVisualizingDom() {
     document.querySelectorAll(".CodeMirror-gutter-elt").forEach(element => element.classList.add("clickable"));
+    const codeMirrorLines = document.querySelector(".CodeMirror-lines");
+    if (codeMirrorLines) codeMirrorLines.classList.add("disabled");
   }
 
-  removeLineNumberClasses() {
+  resetVisualizingDom() {
     document.querySelectorAll("CodeMirror-gutter-elt").forEach(element => element.classList.remove("clickable"));
+    const codeMirrorLines = document.querySelector(".CodeMirror-lines");
+    if (codeMirrorLines) codeMirrorLines.classList.remove("disabled");
   }
 
   //////////// DOM Elements ////////////
@@ -189,14 +193,14 @@ export default class Ide extends Component {
       indentUnit: 4,
       lineNumbers: true,
       styleActiveLine: true,
-      readOnly: this.state.isVisualizing ? "nocursor" : false,
+      readOnly: this.isVisualizing() ? "nocursor" : false,
       dragDrop: true,
       allowDropFileTypes: ["c", "cpp", "cc", "h"]
     };
 
     return (
       <DomCard title="Code" bodyStyle={{ padding: "0px" }}>
-        <div className="codeArea" style={{ background: this.state.isVisualizing ? "#f4f4f4" : "white" }}>
+        <div className={`codeArea ${this.isVisualizing() ? "disabled" : ""}`}>
           <CodeMirror
             ref={this.setupCodeMirrorInstance}
             options={options}
@@ -256,7 +260,7 @@ export default class Ide extends Component {
   }
 
   render() {
-    if (this.state.isVisualizing && this.cm) this.highlightActiveLine();
+    if (this.isVisualizing() && this.cm) this.highlightActiveLine();
     return (
       <div className="ide">
         {this.getCodeEditor()}
