@@ -18,6 +18,7 @@ export default class Ide extends Component {
       stepPrev: PropTypes.func.isRequired,
       stepStart: PropTypes.func.isRequired,
       stepEnd: PropTypes.func.isRequired,
+      stepLine: PropTypes.func.isRequired,
       trace: PropTypes.object
     };
   }
@@ -184,6 +185,7 @@ export default class Ide extends Component {
             value={this.state.code}
             onBeforeChange={(editor, data, code) => this.setState({ code })}
             onDrop={this.onFileDrop}
+            onGutterClick={(editor, lineNumber) => this.props.stepLine(lineNumber + 1)} // account of 0-indexing
             autoCursor autoScroll
           />
         </div>

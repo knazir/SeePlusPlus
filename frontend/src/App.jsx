@@ -89,6 +89,11 @@ export default class App extends Component {
     this.superHackyForceUpdate();
   }
 
+  stepLine(lineNumber) {
+    if (!this.state.trace || !this.state.trace.stepLine(lineNumber)) return;
+    this.superHackyForceUpdate();
+  }
+
   //////////// DOM Elements ////////////
 
   getOutput() {
@@ -104,7 +109,8 @@ export default class App extends Component {
           {({ width, height }) => <Ide ref={ide => this.ide = ide} onLoadTrace={trace => this.loadTrace(trace)}
                                        trace={this.state.trace} height={height}
                                        stepNext={() => this.stepNext()} stepPrev={() => this.stepPrev()}
-                                       stepStart={() => this.stepStart()} stepEnd={() => this.stepEnd()}/>}
+                                       stepStart={() => this.stepStart()} stepEnd={() => this.stepEnd()}
+                                       stepLine={(lineNumber) => this.stepLine(lineNumber)}/>}
         </ContainerDimensions>
       </div>
     );
