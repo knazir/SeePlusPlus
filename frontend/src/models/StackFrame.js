@@ -51,7 +51,7 @@ export default class StackFrame {
   }
 
   setExpanded(expanded) {
-    if (this.expanded = expanded) return;
+    if (this.expanded === expanded) return;
     this.expanded = expanded;
     this.getLocalVariables().forEach(localVar => {
       for (const stackFrame of localVar.getTargets()) {
