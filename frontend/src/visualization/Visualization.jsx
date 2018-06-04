@@ -21,7 +21,28 @@ export default class Visualization extends Component {
     super(props);
     this.updateVisualization = this.updateVisualization.bind(this);
     this.handleStageDrag = this.handleStageDrag.bind(this);
+    this.onResize = this.onResize.bind(this);
   }
+
+  //////////// React Lifecycle ////////////
+
+  componentWillMount() {
+    window.addEventListener("resize", this.onResize);
+  }
+
+  componentWillUnmount() {
+    window.removeEventListener("resize", this.onResize);
+  }
+
+  //////////// Event Handling ////////////
+
+  onResize(event) {
+    event.stopPropagation();
+    VisualizationTool.clearArrowComponents();
+    this.updateVisualization();
+  }
+
+  //////////// Visualization ////////////
 
   updateVisualization() {
     this.forceUpdate();
