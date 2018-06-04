@@ -65,7 +65,7 @@ export default class Visualization extends Component {
     const stackNodes = [...this.getGlobalVariableNodes(), ...this.getStackFrameNodes()];
     return VisualizationTool.layoutNodes({
       nodes: stackNodes,
-      origin: { x: 10, y: 40 },
+      origin: { x: 10, y: 10 },
       offset: { x: 0, y: 10 },
       traceStep: this.props.trace.getCurrentStep(),
       layout: VisualizationTool.Layouts.COLUMN
