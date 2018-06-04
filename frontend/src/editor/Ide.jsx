@@ -47,13 +47,13 @@ export default class Ide extends Component {
       }
     };
   }
-  
+
   //////////// React Lifecycle ////////////
 
   componentDidMount() {
     this.resetVisualizingDom();
   }
-  
+
   componentWillReceiveProps(props) {
     if (!props.trace) return;
     const encounteredException = props.trace.encounteredException();

@@ -83,8 +83,11 @@ export default class Visualization extends Component {
   }
 
   getAllNodes() {
-    // note that order is important here, we need heap nodes to be registered first
-    return [...this.getHeapNodes(), ...this.getStackNodes(), ...VisualizationTool.getArrowComponents()];
+    if (this.props.trace.getCurrentStep().heap) {
+      // note that order is important here, we need heap nodes to be registered first
+      return [...this.getHeapNodes(), ...this.getStackNodes(), ...VisualizationTool.getArrowComponents()];
+    }
+    return [];
   }
 
   getEmptyVisualization() {
@@ -111,7 +114,7 @@ export default class Visualization extends Component {
           <Stage draggable dragBoundFunc={this.handleStageDrag} width={this.props.width - VisualConstants.KONVA_PADDING}
                  height={height - VisualConstants.KONVA_PADDING}>
             <Layer>
-              {!this.props.trace.encounteredException() && this.getAllNodes()}
+              {this.getAllNodes()}
             </Layer>
           </Stage>
         </DomCard>

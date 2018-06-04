@@ -105,7 +105,7 @@ export default class App extends Component {
   stepStop() {
     if (this.state.timer) {
       clearInterval(this.state.timer);
-      this.setState({timer: null});
+      this.setState({ timer: null });
     }
   }
 

@@ -6,7 +6,6 @@ import VariableCard from "../visualization/VariableCard";
 import VisualConstants from "./VisualConstants";
 
 class VisualizationTool {
-
   //////////// Static Properties ////////////
 
   static get Layouts() {

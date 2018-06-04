@@ -62,6 +62,17 @@ export default class TraceStep {
     this.heap[heapVar.name] = heapVar;
   }
 
+  loadStep(step) {
+    this.funcName = step.funcName;
+    this.heap = step.heap;
+    this.globals = step.globals;
+    this.stack = step.stack;
+    this.stdout = step.stdout;
+
+    // currently unused properties
+    this.orderedGlobals = step.orderedGlobals;
+  }
+
   //////////// Helper Methods ////////////
 
   _mapHeap(heap) {

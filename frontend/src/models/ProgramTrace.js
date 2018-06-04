@@ -12,6 +12,9 @@ export default class ProgramTrace {
       this._setupActiveStackFrames();
       this._setupChangedStackFrames();
     }
+    if (this.trace[this.trace.length - 1].encounteredException() && this.trace.length > 1) {
+      this.trace[this.trace.length - 1].loadStep(this.trace[this.trace.length - 2]);
+    }
   }
 
   //////////// Mutator Methods ////////////
@@ -93,6 +96,7 @@ export default class ProgramTrace {
     for (let i = 1; i < this.trace.length; i++ ){
       const prevStep = this.trace[i - 1];
       const currentStep = this.trace[i];
+      if (currentStep.encounteredException()) continue;
       prevStep.getHeapVariables().forEach(heapVar => {
         if (heapVar.isOrphaned()) currentStep.addHeapVariable(heapVar);
       });
