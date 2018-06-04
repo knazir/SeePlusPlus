@@ -27,14 +27,18 @@ def preprocess_code(code):
     return "#define union struct\n" + code
 
 
+def get_request_param(key, request_info):
+    return request_info[key][0]
+
+
 def setup_options(env):
     request_info = parse_request(env)
     opts = {
         'VALGRIND_MSG_RE': re.compile('==\d+== (.*)$'),
         'PROGRAM_DIR': mkdtemp(prefix='/var/spp/programs/'),
         'LIB_DIR': '/var/spp/lib',
-        'USER_PROGRAM': preprocess_code(request_info['code'][0]),
-        'LANG': request_info['lang'][0],
+        'USER_PROGRAM': preprocess_code(get_request_param('code', request_info)),
+        'LANG': get_request_param('lang', request_info),
         'PRETTY_DUMP': False
     }
     if opts['LANG'] == 'c':
@@ -178,7 +182,7 @@ def application(env, start_response):
     prep_dir(opts)
     (gcc_retcode, gcc_stdout, gcc_stderr) = compile(opts)
     (stderr, stdout) = generate_trace(opts, gcc_stderr) if gcc_retcode == 0 else handle_gcc_error(opts, gcc_stderr)
-    cleanup(opts)
+    # cleanup(opts)
     start_response('200 OK', [('Content-type', 'application/json')])
     # TODO: Figure out how to handle stderr
     return [stdout]
