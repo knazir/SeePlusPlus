@@ -20,6 +20,7 @@ export default class StackFrameCard extends Component {
 
   constructor(props) {
     super(props);
+    this.toggleOpen = this.toggleOpen.bind(this);
     this.state = {
       ...VisualizationTool.getStackFrameCardDimensions(this.props.stackFrame)
     };
@@ -68,6 +69,7 @@ export default class StackFrameCard extends Component {
           height={VisualConstants.SIZING.RECT_UPPER_HEIGHT}
           fill={VisualizationTool.getColor(this)}
           cornerRadius={VisualConstants.SIZING.CORNER_RADIUS}
+          onClick={this.toggleOpen}
         />
         <Rect
           x={this.props.x}
@@ -75,6 +77,7 @@ export default class StackFrameCard extends Component {
           width={this.state.width}
           height={VisualConstants.SIZING.RECT_LOWER_HEIGHT}
           fill={VisualizationTool.getColor(this)}
+          onClick={this.toggleOpen}
         />
       </Group>
     );
@@ -90,7 +93,7 @@ export default class StackFrameCard extends Component {
         fontFamily={VisualConstants.FONT.FAMILY}
         align={VisualConstants.ALIGNMENT.TITLE}
         width={this.state.width}
-        onClick={() => this.toggleOpen()}
+        onClick={this.toggleOpen}
       />
     );
   }

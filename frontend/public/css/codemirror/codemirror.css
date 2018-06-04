@@ -4,7 +4,6 @@
   /* Set height, width, borders, and global font properties here */
   font-family: Menlo, monospace;
   width: 100%;
-  height: 650px;
   font-size: small;
   color: black;
   direction: ltr;
@@ -228,8 +227,12 @@ div.CodeMirror span.CodeMirror-nonmatchingbracket {color: #a22;}
 }
 .CodeMirror-gutter-elt {
   position: absolute;
-  cursor: default;
+  cursor: pointer;
   z-index: 4;
+}
+
+.CodeMirror-gutter-elt:hover {
+  background-color: #e2e2e2;
 }
 .CodeMirror-gutter-wrapper ::selection { background-color: transparent }
 .CodeMirror-gutter-wrapper ::-moz-selection { background-color: transparent }

@@ -29,6 +29,7 @@ export default class Ide extends Component {
     super(props);
     this.setupCodeMirrorInstance = this.setupCodeMirrorInstance.bind(this);
     this.onFileDrop = this.onFileDrop.bind(this);
+    this.onGutterClick = this.onGutterClick.bind(this);
     this.activeLine = null;
     this.state = {
       code: starterCode,
@@ -44,7 +45,13 @@ export default class Ide extends Component {
       }
     };
   }
+  
+  //////////// React Lifecycle ////////////
 
+  componentDidMount() {
+    this.resetVisualizingDom();
+  }
+  
   componentWillReceiveProps(props) {
     if (!props.trace) return;
     const encounteredException = props.trace.encounteredException();
@@ -73,7 +80,7 @@ export default class Ide extends Component {
   }
 
   async onFileDrop(data, event) {
-    if (this.state.isVisualizing) return;
+    if (this.isVisualizing()) return;
     const files = event.dataTransfer.files;
     if (!window.File || !window.FileReader || files.length === 0) {
       return;
@@ -94,6 +101,11 @@ export default class Ide extends Component {
       this.setState({ code });
     }
     return false; // equivalent to preventDefault and stopPropagation
+  }
+
+  onGutterClick(editor, lineNumber) {
+    if (!this.isVisualizing()) return;
+    this.props.stepLine(lineNumber + 1); // account for 0-indexed lines
   }
 
   //////////// CodeMirror Instance ////////////
@@ -137,7 +149,9 @@ export default class Ide extends Component {
     this.setState({ loading: true }, async () => {
       const trace = await Api.getCodeTrace("c++", this.state.code);
       this.props.onLoadTrace(trace);
-      this.setState({ isVisualizing: !trace.encounteredException(), loading: false });
+      this.setState({ isVisualizing: !trace.encounteredException(), loading: false }, () => {
+        if (this.isVisualizing()) this.setupVisualizingDom();
+      });
     });
   }
 
@@ -148,7 +162,7 @@ export default class Ide extends Component {
   stopVisualizing() {
     if (!this.isVisualizing()) return;
     if (this.activeLine !== null) this.clearHighlightedLine();
-    this.setState({ isVisualizing: false });
+    this.setState({ isVisualizing: false }, () => this.resetVisualizingDom());
   }
 
   revertButtons() {
@@ -176,6 +190,20 @@ export default class Ide extends Component {
     this.temporarilyUpdateButton(button);
   }
 
+  //////////// DOM Manipulation ////////////
+
+  setupVisualizingDom() {
+    document.querySelectorAll(".CodeMirror-gutter-elt").forEach(element => element.classList.remove("unclickable"));
+    const codeMirrorLines = document.querySelector(".CodeMirror-lines");
+    if (codeMirrorLines) codeMirrorLines.classList.add("disabled");
+  }
+
+  resetVisualizingDom() {
+    document.querySelectorAll(".CodeMirror-gutter-elt").forEach(element => element.classList.add("unclickable"));
+    const codeMirrorLines = document.querySelector(".CodeMirror-lines");
+    if (codeMirrorLines) codeMirrorLines.classList.remove("disabled");
+  }
+
   //////////// DOM Elements ////////////
 
   getCodeEditor() {
@@ -184,21 +212,25 @@ export default class Ide extends Component {
       indentUnit: 4,
       lineNumbers: true,
       styleActiveLine: true,
-      readOnly: this.state.isVisualizing ? "nocursor" : false,
+      readOnly: this.isVisualizing() ? "nocursor" : false,
       dragDrop: true,
-      allowDropFileTypes: ["c", "cpp", "cc", "h"]
+      allowDropFileTypes: ["c", "cpp", "cc", "h"],
+      viewportMargin: Infinity
     };
 
+    const cardStyle = { height: "95%", marginBottom: "8px" };
+    const bodyStyle = { padding: "0px", height: "calc(100% - 28px)" };
+
     return (
-      <DomCard title="Code" bodyStyle={{ padding: "0px" }}>
-        <div className="codeArea" style={{ background: this.state.isVisualizing ? "#f4f4f4" : "white" }}>
+      <DomCard title="Code" style={cardStyle} bodyStyle={bodyStyle}>
+        <div className={`codeArea ${this.isVisualizing() ? "disabled" : ""}`}>
           <CodeMirror
             ref={this.setupCodeMirrorInstance}
             options={options}
             value={this.state.code}
             onBeforeChange={(editor, data, code) => this.setState({ code })}
             onDrop={this.onFileDrop}
-            onGutterClick={(editor, lineNumber) => this.props.stepLine(lineNumber + 1)} // account of 0-indexing
+            onGutterClick={this.onGutterClick}
             autoCursor autoScroll
           />
         </div>
@@ -261,7 +293,7 @@ export default class Ide extends Component {
   }
 
   render() {
-    if (this.state.isVisualizing && this.cm) this.highlightActiveLine();
+    if (this.isVisualizing() && this.cm) this.highlightActiveLine();
     return (
       <div className="ide">
         {this.getCodeEditor()}
