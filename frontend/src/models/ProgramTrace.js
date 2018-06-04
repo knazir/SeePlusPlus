@@ -60,7 +60,7 @@ export default class ProgramTrace {
   getOutput() {
     const currentStep = this.getCurrentStep();
     if (!currentStep) return "";
-    return this.encounteredException() ? currentStep.exceptionMessage : currentStep.stdout;
+    return this.encounteredException() ? currentStep.getExceptionMessage() : currentStep.stdout;
   }
 
   encounteredException() {

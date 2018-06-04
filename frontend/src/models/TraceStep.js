@@ -8,6 +8,7 @@ export default class TraceStep {
 
     if (this.encounteredException()) {
       this.exceptionMessage = exception_msg;
+      this.line = line - 1;
       return;
     }
 
@@ -42,6 +43,11 @@ export default class TraceStep {
       ...this.getGlobalVariables(),
       ...this._getAllStackVariables()
     ];
+  }
+
+  getExceptionMessage() {
+    if (!this.line) return this.exceptionMessage;
+    return `${this.exceptionMessage} at line ${this.line};`
   }
 
   //////////// Property Querying ////////////
