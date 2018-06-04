@@ -195,11 +195,15 @@ export default class Ide extends Component {
       styleActiveLine: true,
       readOnly: this.isVisualizing() ? "nocursor" : false,
       dragDrop: true,
-      allowDropFileTypes: ["c", "cpp", "cc", "h"]
+      allowDropFileTypes: ["c", "cpp", "cc", "h"],
+      viewportMargin: Infinity
     };
 
+    const cardStyle = { height: "95%", marginBottom: "8px" };
+    const bodyStyle = { padding: "0px", height: "calc(100% - 28px)" };
+
     return (
-      <DomCard title="Code" bodyStyle={{ padding: "0px" }}>
+      <DomCard title="Code" style={cardStyle} bodyStyle={bodyStyle}>
         <div className={`codeArea ${this.isVisualizing() ? "disabled" : ""}`}>
           <CodeMirror
             ref={this.setupCodeMirrorInstance}
