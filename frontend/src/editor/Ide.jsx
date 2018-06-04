@@ -42,6 +42,12 @@ export default class Ide extends Component {
     };
   }
 
+  //////////// React Lifecycle ////////////
+
+  componentDidMount() {
+    this.resetVisualizingDom();
+  }
+
   //////////// Event Handling ////////////
 
   readFileAsText(file) {
@@ -180,7 +186,7 @@ export default class Ide extends Component {
   }
 
   resetVisualizingDom() {
-    document.querySelectorAll("CodeMirror-gutter-elt").forEach(element => element.classList.add("unclickable"));
+    document.querySelectorAll(".CodeMirror-gutter-elt").forEach(element => element.classList.add("unclickable"));
     const codeMirrorLines = document.querySelector(".CodeMirror-lines");
     if (codeMirrorLines) codeMirrorLines.classList.remove("disabled");
   }
