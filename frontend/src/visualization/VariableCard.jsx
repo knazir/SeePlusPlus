@@ -32,6 +32,7 @@ export default class VariableCard extends Component {
   componentWillReceiveProps({ variable }) {
     this.setState({
       highlight: variable.getValue() !== this.props.variable.getValue(),
+      prevHighlight: this.state.highlight,
       ...VisualizationTool.getVariableCardDimensions(variable)
     });
   }
@@ -134,7 +135,7 @@ export default class VariableCard extends Component {
         fontSize={VisualConstants.FONT.BODY_SIZE}
         align={VisualConstants.ALIGNMENT.VALUE}
         fontFamily={VisualConstants.FONT.FAMILY}
-        fontStyle={this.state.highlight ? "bold" : "normal"}
+        fontStyle={this.state.prevHighlight ? "bold" : "normal"}
         width={this.state.width}
       />
     );
