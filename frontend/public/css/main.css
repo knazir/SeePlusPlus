@@ -245,12 +245,12 @@ button:hover:enabled, button.active {
   text-align: center;
 }
 
-.CodeMirror-gutter-elt.clickable {
-  cursor: pointer;
+.CodeMirror-gutter-elt.unclickable {
+  cursor: default;
 }
 
-.CodeMirror-gutter-elt.clickable:hover {
-  background-color: #e2e2e2;
+.CodeMirror-gutter-elt.unclickable:hover {
+  background-color: #f7f7f7;
 }
 
 @media only screen and (max-width: 650px) {

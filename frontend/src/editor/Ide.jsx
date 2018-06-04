@@ -174,13 +174,13 @@ export default class Ide extends Component {
   //////////// DOM Manipulation ////////////
 
   setupVisualizingDom() {
-    document.querySelectorAll(".CodeMirror-gutter-elt").forEach(element => element.classList.add("clickable"));
+    document.querySelectorAll(".CodeMirror-gutter-elt").forEach(element => element.classList.remove("unclickable"));
     const codeMirrorLines = document.querySelector(".CodeMirror-lines");
     if (codeMirrorLines) codeMirrorLines.classList.add("disabled");
   }
 
   resetVisualizingDom() {
-    document.querySelectorAll("CodeMirror-gutter-elt").forEach(element => element.classList.remove("clickable"));
+    document.querySelectorAll("CodeMirror-gutter-elt").forEach(element => element.classList.add("unclickable"));
     const codeMirrorLines = document.querySelector(".CodeMirror-lines");
     if (codeMirrorLines) codeMirrorLines.classList.remove("disabled");
   }
