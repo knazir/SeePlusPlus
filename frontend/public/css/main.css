@@ -147,7 +147,7 @@ h3 {
 .button-panel {
   display: flex;
   justify-content: center;
-  height: 5%;
+  height: 10%;
 }
 
 .control-buttons {
@@ -156,9 +156,15 @@ h3 {
   align-items: center;
 }
 
+.main-button {
+  height: 28px;
+}
+
 .step-button-bar {
   display: flex;
   align-items: center;
+  height: 30px;
+  margin-bottom: 2px;
 }
 
 .smaller-button {

@@ -30,6 +30,8 @@ export default class Ide extends Component {
     this.setupCodeMirrorInstance = this.setupCodeMirrorInstance.bind(this);
     this.onFileDrop = this.onFileDrop.bind(this);
     this.onGutterClick = this.onGutterClick.bind(this);
+    this.stop = this.stop.bind(this);
+    this.play = this.play.bind(this);
     this.activeLine = null;
     this.state = {
       code: starterCode,
@@ -106,6 +108,18 @@ export default class Ide extends Component {
   onGutterClick(editor, lineNumber) {
     if (!this.isVisualizing()) return;
     this.props.stepLine(lineNumber + 1); // account for 0-indexed lines
+  }
+
+  //////////// Animation Handling ////////////
+
+  play() {
+    this.setState({ isPlaying: true });
+    this.props.stepPlay();
+  }
+
+  stop() {
+    this.setState({ isPlaying: false });
+    this.props.stepStop();
   }
 
   //////////// CodeMirror Instance ////////////
@@ -240,7 +254,7 @@ export default class Ide extends Component {
 
   getVisualizeButton() {
     return (
-      <button onClick={() => this.visualizeCode()}>
+      <button onClick={() => this.visualizeCode()} className="main-button">
         &nbsp;&nbsp;Visualize Code&nbsp;&nbsp;
       </button>
     );
@@ -248,32 +262,33 @@ export default class Ide extends Component {
 
   getStopVisualizingButton() {
     return (
-      <button className="stop-button" onClick={() => this.stopVisualizing()}>
+      <button className="main-button stop-button" onClick={() => this.stopVisualizing()}>
         &nbsp;&nbsp;Stop Visualization&nbsp;&nbsp;
       </button>
     );
+  }
+
+  getPlayButton(atEnd) {
+    const stepPlay = this.state.buttonClassNames.stepPlay;
+    return <button className={stepPlay} disabled={atEnd} onClick={this.play}>play</button>;
+  }
+
+  getStopButton(atEnd) {
+    const stepStop = this.state.buttonClassNames.stepStop;
+    return <button className={stepStop} disabled={atEnd} onClick={this.stop}>stop</button>;
   }
 
   getControlButtons() {
     const atStart = this.props.trace.atStart();
     const encounteredException = this.props.trace.encounteredException();
     const atEnd = this.props.trace.atEnd() || encounteredException;
-    const { stepStart, stepPrev, stepPlay, stepStop, stepNext, stepEnd } = this.state.buttonClassNames;
+    const { stepStart, stepPrev, stepNext, stepEnd } = this.state.buttonClassNames;
     return (
       <div className="control-buttons">
         <div className="step-button-bar">
           <button className={stepStart} disabled={atStart} onClick={this.props.stepStart}>|&lt;</button>
           <button className={stepPrev} disabled={atStart} onClick={this.props.stepPrev}>&lt;</button>
-          {this.state.isPlaying
-            ? <button className={stepStop} disabled={atEnd} onClick={() => {
-              this.setState({ isPlaying: false });
-              this.props.stepStop();
-            }
-            }>stop</button>
-            : <button className={stepPlay} disabled={atEnd} onClick={() => {
-              this.setState({ isPlaying: true });
-              this.props.stepPlay();
-            }}>play</button>}
+          {!this.state.isPlaying ? this.getPlayButton(atEnd) : this.getStopButton(atEnd)}
           <button className={stepNext} disabled={atEnd} onClick={this.props.stepNext}>&gt;</button>
           <button className={stepEnd} disabled={atEnd} onClick={this.props.stepEnd}>&gt;|</button>
         </div>
