@@ -47,7 +47,7 @@ export default class TraceStep {
 
   getExceptionMessage() {
     if (!this.line) return this.exceptionMessage;
-    return `${this.exceptionMessage} at line ${this.line};`
+    return `${this.exceptionMessage} at line ${this.line}`;
   }
 
   //////////// Property Querying ////////////
