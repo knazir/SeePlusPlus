@@ -197,7 +197,7 @@ class VisualizationTool {
     const graph = new Dagre.graphlib.Graph();
     graph.setGraph({
       rankDir: "TB",
-      rankSep: VisualConstants.VariableCard.POINTER.THRESHOLD_SUPER_CLOSE_X,
+      rankSep: 20,
       marginX: 0,
       marginY: 0
     });

@@ -51,7 +51,10 @@ export default class VariableCard extends Component {
     let points = [];
     if (pointerTarget) {
       const { x, y } = pointerTarget;
-      if (Math.abs(y - origin.y) < VisualConstants.POINTER.THRESHOLD_SUPER_CLOSE_Y && Math.abs(x - origin.x) < VisualConstants.POINTER.THRESHOLD_SUPER_CLOSE_X) {
+      const withinThreshold = Math.abs(y - origin.y) < VisualConstants.POINTER.THRESHOLD_SUPER_CLOSE_Y &&
+        Math.abs(x - origin.x) < VisualConstants.POINTER.THRESHOLD_SUPER_CLOSE_X;
+      const withinTargetBoundaries = origin.x >= x;
+      if (withinThreshold && withinTargetBoundaries) {
         targetX = origin.x;
         targetY = y + VisualConstants.POINTER.ARROW_OFFSET;
         points = [origin.x, origin.y, targetX, targetY];
