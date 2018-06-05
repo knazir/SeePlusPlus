@@ -171,8 +171,11 @@ export default class Visualization extends Component {
   }
 
   // TODO: Find out if we need to do any sort of stage drag handling
-  handleStageDrag(pos) {
-    return pos;
+  handleStageDrag({ x, y }) {
+    const result = { x, y };
+    if (x > 0) result.x = 0;
+    if (y > 0) result.y = 0;
+    return result;
   }
 
   render() {
