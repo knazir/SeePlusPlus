@@ -150,6 +150,10 @@ h3 {
   height: 10%;
 }
 
+.button-panel button {
+  background-color: white; /* we need to explicitly set this for windows apparently */
+}
+
 .control-buttons {
   display: flex;
   flex-direction: column;

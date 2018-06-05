@@ -158,7 +158,7 @@ class VisualizationTool {
       let { x, y, component } = graph.node(id);
       x += origin.x;
       y += origin.y;
-      return React.cloneElement(component, { x, y })
+      return React.cloneElement(component, { x, y });
     });
     VisualizationTool.registerComponents(laidOutNodes);
     return laidOutNodes;

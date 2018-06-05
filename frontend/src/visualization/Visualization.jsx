@@ -167,10 +167,9 @@ export default class Visualization extends Component {
       <Stage draggable={this.props.trace} dragBoundFunc={this.handleStageDrag} width={bodyWidth} height={bodyHeight}>
         {this.getStageBody()}
       </Stage>
-    )
+    );
   }
 
-  // TODO: Find out if we need to do any sort of stage drag handling
   handleStageDrag({ x, y }) {
     const result = { x, y };
     if (x > 0) result.x = 0;
