@@ -11,6 +11,11 @@ Below is an example of a visualization possible with our interface:
 
 <img src="https://github.com/StanfordCS194/Ashley-Taylor-Kashif-Nazir-Lucy-Wang-Maria-Yang/blob/master/docs/img/example_viz.png"  />
 
+## Getting Started 
+To use our tool, go to [See++](https://seepluspl.us/).
+To join development on our tool, please check out our [Wiki](https://github.com/StanfordCS194/SeePlusPlus/wiki/Getting-Started).
+
+
 ## Team Skills Matrix
 | Member        | Skills        | Personal Traits | Desired Growth | Weaknesses | Hat |
 | ------------- | ------------- |  -------------- | -------------- | ---------- |  ---------- |
