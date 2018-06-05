@@ -112,13 +112,7 @@ export default class ProgramTrace {
       if (traceStep.encounteredException()) return;
       const variables = traceStep.getAllVariables();
       variables.forEach(variable => {
-        if (!variable.isPointer()) return;
-        for (const otherVar of variables) {
-          if (otherVar.address === variable.getValue()) {
-            variable.setTarget(otherVar);
-            break;
-          }
-        }
+        variable.setTargetVariable(variables);
       });
     });
   }

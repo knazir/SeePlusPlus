@@ -10,11 +10,12 @@ export default class Variable {
 
   //////////// Class ////////////
 
-  constructor(data, stackFrame, global, heap, orphaned = false) {
+  constructor(data, stackFrame, global, heap, parent = null, orphaned = false) {
     this.name = null;
     this.stackFrame = stackFrame;
     this.global = global;
     this.heap = heap;
+    this.parent = parent || this;
     this.orphaned = orphaned;
 
     const [ cType, address, type ] = data;
@@ -30,6 +31,32 @@ export default class Variable {
   }
 
   //////////// Getters ////////////
+
+  getTargetVariables() {
+    const toReturn = new Set();
+    if (this.isPointer() && this.target) {
+      toReturn.add(this.target.parent);
+    } else if (this.isComplexType()) {
+      Object.values(this.value).forEach(member => {
+        member.getTargetVariables().forEach(memberTarget => toReturn.add(memberTarget));
+      });
+    }
+    return toReturn;
+  }
+
+  getTargetStackFrames() {
+    const toReturn = new Set();
+    if (this.type === "string") return toReturn;
+    if (this.isPointer()) {
+      if(!this.target || !this.target.stackFrame) return toReturn;
+      toReturn.add(this.target.stackFrame);
+    } else if (this.isComplexType()) {
+      for (let i = 0; i < this.value.length; i++) {
+        this.value[i].getTargetStackFrames().forEach(elem => toReturn.add(elem));
+      }
+    }
+    return toReturn;
+  }
 
   getValue() {
     if (this.isUninitialized()) {
@@ -114,26 +141,21 @@ export default class Variable {
     return this;
   }
 
-  setTarget(targetVar) {
-    this.target = targetVar;
+  setTargetVariable(variables) {
+    if (this.isPointer()) {
+      for (const otherVar of variables) {
+        if (otherVar.address === this.getValue()) {
+          this.target = otherVar;
+          break;
+        }
+      }
+    } else if (this.isComplexType()) {
+      Object.values(this.value).forEach(member => member.setTargetVariable(variables));
+    }
   }
 
   createOrphan() {
-    return new Variable(this.data, this.stackFrame, this.global, this.heap, true).withName(this.name);
-  }
-
-  getTargets() {
-    let toReturn = new Set();
-    if (this.type === "string") return toReturn;
-    if (this.isPointer()) {
-      if(!this.target || !this.target.stackFrame) return toReturn;
-      toReturn.add(this.target.stackFrame);
-    } else if (this.isComplexType()) {
-      for (let i = 0; i < this.value.length; i++) {
-        this.value[i].getTargets().forEach(elem => toReturn.add(elem));
-      }
-    }
-    return toReturn;
+    return new Variable(this.data, this.stackFrame, this.global, this.heap, this.parent, true).withName(this.name);
   }
 
   //////////// Helper Methods ////////////
@@ -153,7 +175,7 @@ export default class Variable {
   _setupArray(data) {
     this.type = "array";
     this.value = Utils.arrayOfType(Variable, data.slice(2),
-        varData => new Variable(varData, this.stackFrame, false, this.heap));
+        varData => new Variable(varData, this.stackFrame, false, this.heap, this.parent));
     // note, very important to remember if the object was orphaned! took an obscene amount of time to debug
     // is there a better way to do this?
     if (this.value.length === 1) Object.assign(this, this.value[0], { orphaned: this.orphaned });
@@ -165,7 +187,7 @@ export default class Variable {
     const fieldList = data.slice(3);
     this.value = {};
     Utils.arrayOfType(Variable, fieldList,
-        field => new Variable(field[1], this.stackFrame, false, this.heap).withName(field[0]))
+        field => new Variable(field[1], this.stackFrame, false, this.heap, this.parent).withName(field[0]))
       .forEach((elem) => this.value[elem.name] = elem);
   }
 

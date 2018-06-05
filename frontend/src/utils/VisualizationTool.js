@@ -1,4 +1,5 @@
 import React from "react";
+import Dagre from "dagre";
 
 import Variable from "../models/Variable";
 import StackFrameCard from "../visualization/StackFrameCard";
@@ -95,10 +96,10 @@ class VisualizationTool {
    * layout: either row or column
    * returns: a list of node components to be rendered by React's render() method
    */
-  static layoutNodes({ nodes, origin, offset, traceStep, otherNodes = [], layout }) {
+  static layoutNodes({ nodes, origin, offset, layout }) {
     let x = origin.x;
     let y = origin.y;
-    const layedOutNodes = nodes.map(node => {
+    const laidOutNodes = nodes.map(node => {
       const newComponent = React.cloneElement(node.component, { x, y });
       if (layout === VisualizationTool.Layouts.ROW) x += node.width;
       else if (layout === VisualizationTool.Layouts.COLUMN) y += node.height;
@@ -106,8 +107,61 @@ class VisualizationTool {
       y += offset.y;
       return newComponent;
     });
-    VisualizationTool.registerComponents(layedOutNodes);
-    return layedOutNodes;
+    VisualizationTool.registerComponents(laidOutNodes);
+    return laidOutNodes;
+  }
+
+  static layoutHeap({ nodes, origin }) {
+    const graph = VisualizationTool._createGraph();
+
+    // create nodes
+    nodes.forEach(({ component, width, height }) => {
+      graph.setNode(component.props.variable.getId(), { component, width, height });
+    });
+
+    // create edges
+    nodes.forEach(({ component }) => {
+      const variable = component.props.variable;
+      variable.getTargetVariables().forEach(targetVar => graph.setEdge(variable.getId(), targetVar.getId()));
+    });
+
+    // create "phantom" edges
+    const components = Dagre.graphlib.alg.components(graph);
+    const sinks = graph.sinks();
+    const sources = graph.sources();
+
+    for (let i = 1; i < components.length; i++) {
+      const prevComponent = new Set(components[i - 1]);
+      const component = new Set(components[i]);
+      const prevSinks = sinks.filter(sink => prevComponent.has(sink));
+      const currSources = sources.filter(source => component.has(source));
+      prevSinks.forEach(sink => currSources.forEach(source => graph.setEdge(sink, source)));
+    }
+
+    // adjust layout
+    Dagre.layout(graph);
+    window.graph = graph;
+
+    // fix built-in offset by finding min x and y coordinates of resulting graph
+    let minX = Infinity;
+    let minY = Infinity;
+    graph.nodes().forEach(id => {
+      const { x, y } = graph.node(id);
+      if (x < minX) minX = x;
+      if (y < minY) minY = y;
+    });
+    origin.x -= minX;
+    origin.y -= minY;
+
+    // create, register, and return components with new coordinates
+    const laidOutNodes = graph.nodes().map(id => {
+      let { x, y, component } = graph.node(id);
+      x += origin.x;
+      y += origin.y;
+      return React.cloneElement(component, { x, y })
+    });
+    VisualizationTool.registerComponents(laidOutNodes);
+    return laidOutNodes;
   }
 
   //////////// "State" Management ////////////
@@ -151,10 +205,25 @@ class VisualizationTool {
   static _getNextArrowId() {
     return VisualizationTool.arrowId++;
   }
+
+  static _createGraph() {
+    const graph = new Dagre.graphlib.Graph();
+    graph.setGraph({
+      rankDir: "TB",
+      rankSep: 20,
+      marginX: 0,
+      marginY: 0
+    });
+    graph.setDefaultEdgeLabel(function() { return {}; });
+    return graph;
+  }
 }
 
 VisualizationTool.componentsByAddress = {};
 VisualizationTool.arrowComponents = [];
 VisualizationTool.arrowId = 0;
+
+window.Dagre = Dagre;
+window.VisualizationTool = VisualizationTool;
 
 export default VisualizationTool;

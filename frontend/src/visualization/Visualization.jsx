@@ -88,19 +88,15 @@ export default class Visualization extends Component {
       nodes: stackNodes,
       origin: { x: 10, y: 10 },
       offset: { x: 0, y: 10 },
-      traceStep: this.props.trace.getCurrentStep(),
       layout: VisualizationTool.Layouts.COLUMN
     }).reverse();
   }
 
   getHeapNodes() {
-    return VisualizationTool.layoutNodes({
+    return VisualizationTool.layoutHeap({
       nodes: this.getHeapVariableNodes(),
-      origin: { x: (this.props.width / 2.0) + 10, y: 40 },
-      offset: { x: 0, y: 10 },
-      traceStep: this.props.trace.getCurrentStep(),
-      layout: VisualizationTool.Layouts.COLUMN
-    }).reverse();
+      origin: { x: (this.props.width / 2.0) + 10, y: 10 }
+    });
   }
 
   getAllNodes() {
