@@ -82,6 +82,19 @@ module.exports = {
   },
   Visualization: {
     PADDING: 70,
-    KONVA_PADDING: 2
+    KONVA_PADDING: 2,
+    SPLIT_LINE: {
+      COLOR: "#e2e2e2",
+      WIDTH: 1
+    },
+    STAGE_Y_OFFSET: 42,
+    TITLE_Y_OFFSET: 10,
+    TITLE_UNDERLINE_Y_OFFSET: 35,
+    FONT: {
+      SIZE: 17,
+      FAMILY: "Menlo, monospace",
+      STYLE: "bold",
+      ALIGNMENT: "center"
+    }
   }
 };
