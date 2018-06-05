@@ -125,6 +125,19 @@ class VisualizationTool {
       variable.getTargetVariables().forEach(targetVar => graph.setEdge(variable.getId(), targetVar.getId()));
     });
 
+    // create "phantom" edges
+    const components = Dagre.graphlib.alg.components(graph);
+    const sinks = graph.sinks();
+    const sources = graph.sources();
+
+    for (let i = 1; i < components.length; i++) {
+      const prevComponent = new Set(components[i - 1]);
+      const component = new Set(components[i]);
+      const prevSinks = sinks.filter(sink => prevComponent.has(sink));
+      const currSources = sources.filter(source => component.has(source));
+      prevSinks.forEach(sink => currSources.forEach(source => graph.setEdge(sink, source)));
+    }
+
     // adjust layout
     Dagre.layout(graph);
     window.graph = graph;
