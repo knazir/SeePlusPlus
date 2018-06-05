@@ -100,11 +100,9 @@ export default class Visualization extends Component {
   }
 
   getAllNodes() {
-    if (this.props.trace.getCurrentStep().heap) {
-      // note that order is important here, we need heap nodes to be registered first
-      return [...this.getHeapNodes(), ...this.getStackNodes(), ...VisualizationTool.getArrowComponents()];
-    }
-    return [];
+    if (!this.props.trace.getCurrentStep().heap) return [];
+    // note that order is important here, we need heap nodes to be registered first
+    return [...this.getHeapNodes(), ...this.getStackNodes(), ...VisualizationTool.getArrowComponents()];
   }
 
   getEmptyVisualization() {
