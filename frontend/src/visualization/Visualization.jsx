@@ -38,7 +38,7 @@ export default class Visualization extends Component {
 
   onResize(event) {
     event.stopPropagation();
-    VisualizationTool.clearArrowComponents();
+    VisualizationTool.clearAllArrowComponents();
     this.updateVisualization();
   }
 

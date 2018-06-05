@@ -181,13 +181,26 @@ class VisualizationTool {
     VisualizationTool.componentsByAddress = {};
   }
 
-  static registerArrowComponent(arrowComponent) {
+  static registerArrowComponent(variable, arrowComponent) {
     const newComponent = React.cloneElement(arrowComponent, { key: VisualizationTool._getNextArrowId() });
-    VisualizationTool.arrowComponents.push(newComponent);
+    if (variable.stackFrame) {
+      const stackFrameId = variable.stackFrame.getId();
+      if (VisualizationTool.arrowComponents[stackFrameId]) {
+        VisualizationTool.arrowComponents[stackFrameId].push(newComponent);
+      } else {
+        VisualizationTool.arrowComponents[stackFrameId] = [newComponent];
+      }
+    } else {
+      VisualizationTool.arrowComponents[variable.getId()] = [newComponent];
+    }
   }
 
-  static clearArrowComponents() {
-    VisualizationTool.arrowComponents = [];
+  static clearAllArrowComponents() {
+    VisualizationTool.arrowComponents = {};
+  }
+
+  static clearStackFrameArrowComponents(stackFrame) {
+    delete VisualizationTool.arrowComponents[stackFrame.getId()];
   }
 
   //////////// "State" Querying ////////////
@@ -197,7 +210,10 @@ class VisualizationTool {
   }
 
   static getArrowComponents() {
-    return VisualizationTool.arrowComponents;
+    const result = [];
+    const arrowArrays = Object.values(VisualizationTool.arrowComponents);
+    arrowArrays.forEach(arr => result.push(...arr));
+    return result;
   }
 
   //////////// Helper Methods ////////////

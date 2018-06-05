@@ -38,6 +38,7 @@ export default class StackFrameCard extends Component {
     this.props.trace.setStackFrameExpanded(this.props.stackFrame, !this.props.stackFrame.expanded);
     this.setState({ ...VisualizationTool.getStackFrameCardDimensions(this.props.stackFrame) }, () => {
       VisualizationTool.clearRegisteredComponents();
+      if (!this.props.stackFrame.expanded) VisualizationTool.clearStackFrameArrowComponents(this.props.stackFrame);
       this.props.updateVisualization();
     });
   }

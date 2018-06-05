@@ -157,7 +157,7 @@ export default class VariableCard extends Component {
         fill={VisualConstants.POINTER.COLOR}
       />
     );
-    VisualizationTool.registerArrowComponent(arrowComponent);
+    VisualizationTool.registerArrowComponent(this.props.variable, arrowComponent);
     return (
       <Group key={this.props.variable.toString() + this.props.variable.address}>
         <Circle

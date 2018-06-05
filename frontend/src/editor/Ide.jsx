@@ -158,7 +158,7 @@ export default class Ide extends Component {
 
   visualizeCode() {
     if (this.isVisualizing()) return;
-    VisualizationTool.clearArrowComponents();
+    VisualizationTool.clearAllArrowComponents();
     VisualizationTool.clearRegisteredComponents();
     this.setState({ loading: true }, async () => {
       const trace = await Api.getCodeTrace("c++", this.state.code);
