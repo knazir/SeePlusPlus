@@ -188,6 +188,7 @@ export default class VariableCard extends Component {
     if (!this.props.variable.isPointer() || this.props.variable.isUninitialized()) return this.getValueText();
     const origin = { x: this.props.x + this.state.width / 2.0, y: this.props.y + VisualConstants.POINTER.Y_OFFSET };
     const pointerTarget = VisualizationTool.getComponentByAddress(this.props.variable.getValue());
+    if (pointerTarget) console.log(`${this.props.variable.getId()}: (${pointerTarget.x}, ${pointerTarget.y})`);
     if (pointerTarget) return this.getPointerToTarget(origin, pointerTarget);
     else if (this.props.variable.isNull()) return this.getNullIndicator(origin);
     else return null; // could not find target but value is not null

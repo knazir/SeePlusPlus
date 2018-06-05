@@ -120,7 +120,6 @@ export default class StackFrameCard extends Component {
       nodes: nodesToLayout,
       origin: { x: this.props.x + 7, y: this.props.y + VisualConstants.SIZING.ORIGIN_Y_OFFSET },
       offset: { x: 0, y: VisualConstants.SIZING.OFFSET },
-      traceStep: this.props.traceStep,
       layout: VisualizationTool.Layouts.COLUMN
     });
   }
