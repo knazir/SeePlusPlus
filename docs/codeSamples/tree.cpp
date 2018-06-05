@@ -5,8 +5,8 @@ using namespace std;
 
 typedef struct TreeNode {
     int val;
-    TreeNode *right;
     TreeNode *left;
+    TreeNode *right;
 } TreeNode;
 
 TreeNode *root = nullptr;
