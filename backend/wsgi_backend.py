@@ -162,13 +162,16 @@ def handle_gcc_error(opts, gcc_stderr):
                     pass
             break
 
-    ret = {'code': opts['USER_PROGRAM'],
-           'trace': [
-               {'event': 'uncaught_exception',
-                'exception_msg': exception_msg,
-                'line': lineno
+    ret = {
+            'code': opts['USER_PROGRAM'],
+            'trace': [
+                {
+                    'event': 'uncaught_exception',
+                    'exception_msg': exception_msg,
+                    'line': lineno
                 }
-           ]}
+            ]
+        }
 
     return stderr, json.dumps(ret)
 
@@ -182,7 +185,7 @@ def application(env, start_response):
     prep_dir(opts)
     (gcc_retcode, gcc_stdout, gcc_stderr) = compile(opts)
     (stderr, stdout) = generate_trace(opts, gcc_stderr) if gcc_retcode == 0 else handle_gcc_error(opts, gcc_stderr)
-    # cleanup(opts)
+    cleanup(opts)
     start_response('200 OK', [('Content-type', 'application/json')])
     # TODO: Figure out how to handle stderr
     return [stdout]
