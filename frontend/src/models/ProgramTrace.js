@@ -11,9 +11,10 @@ export default class ProgramTrace {
       this._setupPointerTargets();
       this._setupActiveStackFrames();
       this._setupChangedStackFrames();
-    }
-    if (this.trace[this.trace.length - 1].encounteredException() && this.trace.length > 1) {
-      this.trace[this.trace.length - 1].loadStep(this.trace[this.trace.length - 2]);
+      this.lineNumbers = this._getValidLineNumbers();
+      if (this.trace[this.trace.length - 1].encounteredException() && this.trace.length > 1) {
+        this.trace[this.trace.length - 1].loadStep(this.trace[this.trace.length - 2]);
+      }
     }
   }
 
@@ -80,6 +81,10 @@ export default class ProgramTrace {
     return this.traceIndex === this.trace.length - 1;
   }
 
+  isValidLine(lineNumber) {
+    return this.lineNumbers.has(lineNumber);
+  }
+
   //////////// Mutator Methods ////////////
 
   setStackFrameExpanded(stackFrame, expanded) {
@@ -140,5 +145,11 @@ export default class ProgramTrace {
         if (!stackFrame.expanded && shouldExpand) stackFrame.setExpanded(true);
       }
     }
+  }
+
+  _getValidLineNumbers() {
+    const lineNumbers = new Set();
+    this.trace.forEach(step => lineNumbers.add(step.line));
+    return lineNumbers;
   }
 }
