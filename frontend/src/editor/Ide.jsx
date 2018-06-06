@@ -40,8 +40,8 @@ export default class Ide extends Component {
       buttonClassNames: {
         stepStart: "smaller-button",
         stepPrev: "bigger-button",
-        stepPlay: "bigger-button",
-        stepStop: "bigger-button",
+        stepPlay: "play-button",
+        stepStop: "stop-play-button",
         stepNext: "bigger-button",
         stepEnd: "smaller-button"
       }
@@ -267,19 +267,19 @@ export default class Ide extends Component {
   getStopVisualizingButton() {
     return (
       <button className="main-button stop-button" onClick={() => this.stopVisualizing()}>
-        &nbsp;&nbsp;Stop Visualization&nbsp;&nbsp;
+        &nbsp;&nbsp;End Visualization&nbsp;&nbsp;
       </button>
     );
   }
 
   getPlayButton(atEnd) {
     const stepPlay = this.state.buttonClassNames.stepPlay;
-    return <button className={stepPlay} disabled={atEnd} onClick={this.play}>play</button>;
+    return <button className={stepPlay} disabled={atEnd} onClick={this.play}>▷</button>;
   }
 
   getStopButton(atEnd) {
     const stepStop = this.state.buttonClassNames.stepStop;
-    return <button className={stepStop} disabled={atEnd} onClick={this.stop}>stop</button>;
+    return <button className={stepStop} disabled={atEnd} onClick={this.stop}>▢</button>;
   }
 
   getControlButtons() {
