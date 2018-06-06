@@ -184,8 +184,8 @@ export default class Ide extends Component {
       buttonClassNames: {
         stepStart: "smaller-button",
         stepPrev: "bigger-button",
-        stepPlay: "bigger-button",
-        stepStop: "bigger-button",
+        stepPlay: "play-button",
+        stepStop: "stop-play-button",
         stepNext: "bigger-button",
         stepEnd: "smaller-button"
       }
