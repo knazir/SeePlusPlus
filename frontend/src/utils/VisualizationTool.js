@@ -52,14 +52,16 @@ class VisualizationTool {
 
     const valueHeight = calculatedHeight - VisualConstants.VariableCard.SIZING.TITLE_HEIGHT;
     const offsetToValueCenter = VisualConstants.VariableCard.SIZING.TITLE_HEIGHT + (valueHeight / 2.0);
-    const titleWidth = variable.toString().length + 2;
+    const titleWidth = (variable.toString().length) / 1.5 + 2;
     const valueWidth = variable.getValue().toString().length * 1.25 + 2;
     const minWidth = VisualConstants.VariableCard.SIZING.MIN_WIDTH;
     let calculatedWidth = 0;
     if (variable.isPointer()) {
-      calculatedWidth = Math.max(Math.max(titleWidth, minWidth) * 10 + 7, maxFieldWidth + 14);
+      calculatedWidth = Math.max(Math.max(titleWidth, minWidth) * 10 + 7, maxFieldWidth + 10);
+    } else if (variable.cType === Variable.CTypes.STRUCT) {
+      calculatedWidth = Math.max(Math.max(titleWidth, minWidth) * 10 + 7, maxFieldWidth + 10);
     } else {
-      calculatedWidth = Math.max(Math.max(titleWidth, valueWidth, minWidth) * 10 + 7, maxFieldWidth + 14);
+      calculatedWidth = Math.max(Math.max(titleWidth, valueWidth, minWidth) * 10 + 7, maxFieldWidth + 10);
     }
 
     return {
