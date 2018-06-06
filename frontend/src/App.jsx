@@ -10,6 +10,7 @@ export default class App extends Component {
   constructor(props) {
     super(props);
     this.handleKeyCommands = this.handleKeyCommands.bind(this);
+    this.superHackyForceUpdate = this.superHackyForceUpdate.bind(this);
     this.state = { trace: null, timer: null };
   }
 
@@ -60,9 +61,9 @@ export default class App extends Component {
   }
 
   // TODO: One day we'll figure out why this works and how to not do it...
-  superHackyForceUpdate() {
+  superHackyForceUpdate(callback) {
     VisualizationTool.clearAllArrowComponents();
-    this.forceUpdate(() => this.forceUpdate());
+    this.forceUpdate(() => this.forceUpdate(callback));
   }
 
   stepNext(keypress = false) {
@@ -141,7 +142,8 @@ export default class App extends Component {
     return (
       <div className="split-panel vis-panel">
         <ContainerDimensions>
-          {({ width, height }) => <Visualization width={width} height={height * 0.8} trace={this.state.trace}/>}
+          {({ width, height }) => <Visualization width={width} height={height * 0.8} trace={this.state.trace}
+                                                 updateVisualization={this.superHackyForceUpdate}/>}
         </ContainerDimensions>
         <ContainerDimensions>
           {({ width, height }) => <Output width="calc(100% + 20px)" height={height * 0.2}>{this.getOutput()}</Output>}

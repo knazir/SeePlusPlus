@@ -35,11 +35,20 @@ export default class StackFrameCard extends Component {
   //////////// State Management ////////////
 
   toggleOpen() {
-    this.props.trace.setStackFrameExpanded(this.props.stackFrame, !this.props.stackFrame.expanded);
-    this.setState({ ...VisualizationTool.getStackFrameCardDimensions(this.props.stackFrame) }, () => {
+    const stackFrame = this.props.stackFrame;
+    this.props.trace.setStackFrameExpanded(stackFrame, !stackFrame.expanded);
+    this.setState({ ...VisualizationTool.getStackFrameCardDimensions(stackFrame) }, () => {
       VisualizationTool.clearRegisteredComponents();
-      if (!this.props.stackFrame.expanded) VisualizationTool.clearStackFrameArrowComponents(this.props.stackFrame);
+      if (!stackFrame.expanded) { // toggling closed, remove all arrows for this frame and re-render source arrows
+        VisualizationTool.clearStackFrameArrowComponents(stackFrame);
+        stackFrame.getStackFrameSources().forEach(frame => VisualizationTool.clearStackFrameArrowComponents(frame));
+      }
       this.props.updateVisualization();
+
+      // I have no clue why this works or why we have to do this, but we have to update the visualization
+      // an extra time and passing a callback does not work, so we're using setTimeout here.
+      // TODO: Fix this...
+      setTimeout(() => this.props.updateVisualization(), 1);
     });
   }
 

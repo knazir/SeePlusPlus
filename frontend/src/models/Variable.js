@@ -146,6 +146,7 @@ export default class Variable {
       for (const otherVar of variables) {
         if (otherVar.address === this.getValue()) {
           this.target = otherVar;
+          if (otherVar.stackFrame && this.stackFrame) otherVar.stackFrame.registerStackFrameSource(this.stackFrame);
           break;
         }
       }

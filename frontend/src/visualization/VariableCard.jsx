@@ -190,10 +190,17 @@ export default class VariableCard extends Component {
   getPrimitiveValue() {
     if (!this.props.variable.isPointer() || this.props.variable.isUninitialized()) return this.getValueText();
     const origin = { x: this.props.x + this.state.width / 2.0, y: this.props.y + VisualConstants.POINTER.Y_OFFSET };
-    const pointerTarget = VisualizationTool.getComponentByAddress(this.props.variable.getValue());
-    if (pointerTarget) return this.getPointerToTarget(origin, pointerTarget);
-    else if (this.props.variable.isNull()) return this.getNullIndicator(origin);
-    else return null; // could not find target but value is not null
+    let pointerTarget = VisualizationTool.getComponentByAddress(this.props.variable.getValue());
+    if (pointerTarget) {
+      return this.getPointerToTarget(origin, pointerTarget);
+    } else if (this.props.variable.target && this.props.variable.target.stackFrame) { // valid target, but not rendered
+      pointerTarget = VisualizationTool.getStackFrameComponent(this.props.variable.target.stackFrame);
+      return pointerTarget ? this.getPointerToTarget(origin, pointerTarget) : null;
+    } else if (this.props.variable.isNull()) {
+      return this.getNullIndicator(origin);
+    } else { // could not find target but value is not null (garbage pointer?)
+      return null;
+    }
   }
 
   getStructValues() {
