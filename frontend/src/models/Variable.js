@@ -107,6 +107,15 @@ export default class Variable {
     return this.type === "ptr";
   }
 
+  isTree() {
+    if (!this.isStruct()) return false;
+    const numPointers = Object.values(this.value).filter(elem => elem.isPointer()).length;
+    if (numPointers <= 1) return false;
+    if (numPointers >= 3) return true;
+    const regex = /ne?xt/;
+    return !(Object.values(this.value).filter(elem => elem.isPointer() && regex.exec(elem.name))[0]);
+  }
+
   isUninitialized() {
     return this.value === "<UNINITIALIZED>" || this.value === "<UNALLOCATED>";
   }

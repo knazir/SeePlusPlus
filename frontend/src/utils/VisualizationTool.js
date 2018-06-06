@@ -19,7 +19,22 @@ class VisualizationTool {
     let calculatedHeight = VisualConstants.VariableCard.SIZING.HEIGHT;
     let maxFieldWidth = 0;
 
-    if (variable.cType === Variable.CTypes.STRUCT) {
+    if (variable.isTree()) {
+      const offset = VisualConstants.VariableCard.SIZING.SPACE_BETWEEN;
+      const fields = Object.values(variable.value);
+      calculatedHeight = fields.filter(v => !v.isPointer())
+        .map(v => VisualizationTool.getVariableCardDimensions(v).height)
+        .reduce((total, height) => total + height + offset, 0);
+      const pointer = fields.filter(v => v.isPointer())[0];
+      calculatedHeight += offset + VisualizationTool.getVariableCardDimensions(pointer).height;
+      calculatedHeight += VisualConstants.VariableCard.SIZING.TITLE_HEIGHT + offset;
+      maxFieldWidth = Math.max.apply(null, fields.filter(field => !field.isPointer())
+        .map(v => VisualizationTool.getVariableCardDimensions(v).width));
+      const treeFieldWidth = fields.filter(field => field.isPointer())
+        .map(v => VisualizationTool.getVariableCardDimensions(v).width)
+        .reduce((total, width) => total + width + offset, 0) - offset;
+      maxFieldWidth = Math.max(maxFieldWidth, treeFieldWidth);
+     } else if (variable.cType === Variable.CTypes.STRUCT) {
       const offsetY = VisualConstants.VariableCard.SIZING.SPACE_BETWEEN;
       const fields = Object.values(variable.value);
       calculatedHeight = fields.map(v => VisualizationTool.getVariableCardDimensions(v).height)
@@ -107,6 +122,26 @@ class VisualizationTool {
       y += offset.y;
       return newComponent;
     });
+    VisualizationTool.registerComponents(laidOutNodes);
+    return laidOutNodes;
+  }
+
+  static layoutTreeNodes({ nodes, origin, offset }) {
+    let x = origin.x;
+    let y = origin.y;
+    const nonPtrNodes = nodes.filter(node => !node.component.props.variable.isPointer()).map(node => {
+      const newComponent = React.cloneElement(node.component, { x, y });
+      y += node.height;
+      y += offset;
+      return newComponent;
+    });
+    const ptrNodes = nodes.filter(node => node.component.props.variable.isPointer()).map(node => {
+      const newComponent = React.cloneElement(node.component, { x, y });
+      x += node.width;
+      x += offset;
+      return newComponent;
+    });
+    const laidOutNodes = nonPtrNodes.concat(ptrNodes);
     VisualizationTool.registerComponents(laidOutNodes);
     return laidOutNodes;
   }
