@@ -112,7 +112,7 @@ export default class Variable {
     const numPointers = Object.values(this.value).filter(elem => elem.isPointer()).length;
     if (numPointers <= 1) return false;
     if (numPointers >= 3) return true;
-    const regex = /ne?xt/;
+    const regex = /ne?xt/i;
     return !(Object.values(this.value).filter(elem => elem.isPointer() && regex.exec(elem.name))[0]);
   }
 
