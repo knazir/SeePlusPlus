@@ -48,7 +48,7 @@ export default class StackFrameCard extends Component {
       // I have no clue why this works or why we have to do this, but we have to update the visualization
       // an extra time and passing a callback does not work, so we're using setTimeout here.
       // TODO: Fix this...
-      setTimeout(() => this.props.updateVisualization(), 1);
+      setTimeout(() => this.props.updateVisualization(), 100);
     });
   }
 
