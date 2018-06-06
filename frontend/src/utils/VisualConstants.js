@@ -89,10 +89,10 @@ module.exports = {
       WIDTH: 1
     },
     STAGE_Y_OFFSET: 42,
-    TITLE_Y_OFFSET: 10,
-    TITLE_UNDERLINE_Y_OFFSET: 35,
+    TITLE_Y_OFFSET: 6,
+    TITLE_UNDERLINE_Y_OFFSET: 27,
     FONT: {
-      SIZE: 17,
+      SIZE: 15,
       FAMILY: "Menlo, monospace",
       STYLE: "bold",
       ALIGNMENT: "center"

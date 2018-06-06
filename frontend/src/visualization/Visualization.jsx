@@ -126,6 +126,7 @@ export default class Visualization extends Component {
           x={0}
           y={VisualConstants.TITLE_Y_OFFSET}
           fontSize={VisualConstants.FONT.SIZE}
+          fontFamily={VisualConstants.FONT.FAMILY}
           fontStyle={VisualConstants.FONT.STYLE}
           align={VisualConstants.FONT.ALIGNMENT}
           width={this.props.width / 2.0}
@@ -135,6 +136,7 @@ export default class Visualization extends Component {
           x={this.props.width / 2.0}
           y={VisualConstants.TITLE_Y_OFFSET}
           fontSize={VisualConstants.FONT.SIZE}
+          fontFamily={VisualConstants.FONT.FAMILY}
           fontStyle={VisualConstants.FONT.STYLE}
           align={VisualConstants.FONT.ALIGNMENT}
           width={this.props.width / 2.0}
