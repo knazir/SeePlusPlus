@@ -203,6 +203,7 @@ class VisualizationTool {
 
   static registerComponents(components) {
     components.forEach(component => {
+      if (component.props.stackFrame) return VisualizationTool.registerStackFrameComponent(component);
       const variable = component.props.variable;
       if (!variable) return;
       const componentInfo = VisualizationTool.componentsByAddress[variable.address];
@@ -212,8 +213,14 @@ class VisualizationTool {
     });
   }
 
+  static registerStackFrameComponent(component) {
+    const { stackFrame, x, y } = component.props;
+    VisualizationTool.stackFrameComponents[stackFrame.getId()] = { x, y, stackFrame, component };
+  }
+
   static clearRegisteredComponents() {
     VisualizationTool.componentsByAddress = {};
+    VisualizationTool.stackFrameComponents = {};
   }
 
   static registerArrowComponent(variable, arrowComponent) {
@@ -244,6 +251,10 @@ class VisualizationTool {
     return VisualizationTool.componentsByAddress[address];
   }
 
+  static getStackFrameComponent(stackFrame) {
+    return VisualizationTool.stackFrameComponents[stackFrame.getId()];
+  }
+
   static getArrowComponents() {
     const result = [];
     const arrowArrays = Object.values(VisualizationTool.arrowComponents);
@@ -271,6 +282,7 @@ class VisualizationTool {
 }
 
 VisualizationTool.componentsByAddress = {};
+VisualizationTool.stackFrameComponents = {};
 VisualizationTool.arrowComponents = [];
 VisualizationTool.arrowId = 0;
 

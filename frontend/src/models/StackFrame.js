@@ -13,6 +13,7 @@ export default class StackFrame {
     // for visualization
     this.active = active; // whether it is the most recent stack frame
     this.expanded = active; // whether the frame is expanded in the visual
+    this.stackFrameSources = {}; // which stack frames have variables pointing to this frame's local variables
 
     // currently unused properties
     this.isHighlighted = is_highlighted;
@@ -39,6 +40,10 @@ export default class StackFrame {
     return match ? match[1] : this.funcName;
   }
 
+  getStackFrameSources() {
+    return Object.values(this.stackFrameSources);
+  }
+
   toString() {
     return `${this.getFuncName()} ${this.frameId ? `(${this.frameId})` : ""}`.trim();
   }
@@ -59,6 +64,10 @@ export default class StackFrame {
         stackFrame.setExpanded(expanded);
       }
     });
+  }
+
+  registerStackFrameSource(stackFrame) {
+    this.stackFrameSources[stackFrame.getId()] = stackFrame;
   }
 
   //////////// Helper Methods ////////////

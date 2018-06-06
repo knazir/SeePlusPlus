@@ -13,13 +13,13 @@ export default class Visualization extends Component {
     return {
       width: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
       height: PropTypes.number,
-      trace: PropTypes.object
+      trace: PropTypes.object,
+      updateVisualization: PropTypes.func.isRequired
     };
   }
 
   constructor(props) {
     super(props);
-    this.updateVisualization = this.updateVisualization.bind(this);
     this.handleStageDrag = this.handleStageDrag.bind(this);
     this.onResize = this.onResize.bind(this);
   }
@@ -39,14 +39,10 @@ export default class Visualization extends Component {
   onResize(event) {
     event.stopPropagation();
     VisualizationTool.clearAllArrowComponents();
-    this.updateVisualization();
+    this.props.updateVisualization();
   }
 
   //////////// Visualization ////////////
-
-  updateVisualization() {
-    this.forceUpdate();
-  }
 
   getHeapVariableNodes() {
     const step = this.props.trace.getCurrentStep();
@@ -54,7 +50,7 @@ export default class Visualization extends Component {
       const id = v.getId();
       return {
         ...VisualizationTool.getVariableCardDimensions(v),
-        component: <VariableCard key={id} variable={v} traceStep={step} updateVisualization={this.updateVisualization}/>
+        component: <VariableCard key={id} variable={v} traceStep={step} updateVisualization={this.props.updateVisualization}/>
       };
     });
   }
@@ -66,7 +62,7 @@ export default class Visualization extends Component {
       return {
         ...VisualizationTool.getVariableCardDimensions(v),
         component: <VariableCard key={id} variable={v} traceStep={step}
-                                 updateVisualization={this.updateVisualization} global/>
+                                 updateVisualization={this.props.updateVisualization} global/>
       };
     });
   }
@@ -77,7 +73,7 @@ export default class Visualization extends Component {
       return {
         ...VisualizationTool.getStackFrameCardDimensions(frame, frame.active),
         component: <StackFrameCard key={frame.toString()} trace={this.props.trace} traceStep={currentStep}
-                                   stackFrame={frame} updateVisualization={this.updateVisualization}/>
+                                   stackFrame={frame} updateVisualization={this.props.updateVisualization}/>
       };
     });
   }
