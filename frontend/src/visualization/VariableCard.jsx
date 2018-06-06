@@ -46,7 +46,8 @@ export default class VariableCard extends Component {
   }
 
   getPointerLinePoints(origin, pointerTarget) {
-    let targetX = origin.x + 10;
+    let isInTree = ((VisualizationTool.componentsByAddress[this.props.variable.parent.address]).component.props.variable).isTree();
+    let targetX = isInTree ? origin.x + this.state.width / 2.0 : origin.x + 10;
     let targetY = origin.y;
     let points = [];
     if (pointerTarget) {
@@ -54,8 +55,12 @@ export default class VariableCard extends Component {
       const withinThreshold = Math.abs(y - origin.y) < VisualConstants.POINTER.THRESHOLD_SUPER_CLOSE_Y &&
         Math.abs(x - origin.x) < VisualConstants.POINTER.THRESHOLD_SUPER_CLOSE_X;
       const withinTargetBoundaries = origin.x >= x;
-      if (withinThreshold && withinTargetBoundaries) {
+      if (withinThreshold && withinTargetBoundaries && !isInTree) {
         targetX = origin.x;
+        targetY = y + VisualConstants.POINTER.ARROW_OFFSET;
+        points = [origin.x, origin.y, targetX, targetY];
+      } else if (isInTree) {
+        targetX = x + this.state.width;
         targetY = y + VisualConstants.POINTER.ARROW_OFFSET;
         points = [origin.x, origin.y, targetX, targetY];
       } else {
