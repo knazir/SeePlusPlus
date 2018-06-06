@@ -221,10 +221,11 @@ export default class VariableCard extends Component {
     });
     return VisualizationTool.layoutNodes({
       nodes: nodesToLayout,
-      origin: { x: this.props.x + 7, y: this.props.y + VisualConstants.SIZING.ORIGIN_Y_OFFSET },
+      origin: { x: this.props.x, y: this.props.y + VisualConstants.SIZING.ORIGIN_Y_OFFSET },
       offset: this.props.variable.cType === Variable.CTypes.STRUCT_ARRAY ? { x: 0, y: 0 } : { x: 0, y: 5 },
       traceStep: this.props.traceStep,
-      layout: this.props.variable.cType === Variable.CTypes.STRUCT_ARRAY ? ROW : COLUMN
+      layout: this.props.variable.cType === Variable.CTypes.STRUCT_ARRAY ? ROW : COLUMN,
+      componentWidth: this.state.width
     });
   }
 
@@ -238,9 +239,10 @@ export default class VariableCard extends Component {
     });
     return VisualizationTool.layoutTreeNodes({
       nodes: nodesToLayout,
-      origin: { x: this.props.x + 7, y: this.props.y + VisualConstants.SIZING.ORIGIN_Y_OFFSET },
+      origin: { x: this.props.x, y: this.props.y + VisualConstants.SIZING.ORIGIN_Y_OFFSET },
       offset: 5,
-      traceStep: this.props.traceStep
+      traceStep: this.props.traceStep,
+      componentWidth: this.state.width
     });
   }
 

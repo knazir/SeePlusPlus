@@ -128,9 +128,10 @@ export default class StackFrameCard extends Component {
     });
     return VisualizationTool.layoutNodes({
       nodes: nodesToLayout,
-      origin: { x: this.props.x + 7, y: this.props.y + VisualConstants.SIZING.ORIGIN_Y_OFFSET },
+      origin: { x: this.props.x, y: this.props.y + VisualConstants.SIZING.ORIGIN_Y_OFFSET },
       offset: { x: 0, y: VisualConstants.SIZING.OFFSET },
-      layout: VisualizationTool.Layouts.COLUMN
+      layout: VisualizationTool.Layouts.COLUMN,
+      componentWidth: this.state.width
     });
   }
 

@@ -113,11 +113,19 @@ class VisualizationTool {
    * layout: either row or column
    * returns: a list of node components to be rendered by React's render() method
    */
-  static layoutNodes({ nodes, origin, offset, layout }) {
+  static layoutNodes({ nodes, origin, offset, layout, componentWidth }) {
     let x = origin.x;
     let y = origin.y;
+    let totalWidth = 0;
+    if (layout === VisualizationTool.Layouts.ROW) {
+      totalWidth = nodes.reduce((total, node) => total + node.width + offset.x, 0) - offset.x;
+    }
     const laidOutNodes = nodes.map(node => {
-      const newComponent = React.cloneElement(node.component, { x, y });
+      let nodeX = x;
+      if (componentWidth) {
+        nodeX = x + (componentWidth - (layout === VisualizationTool.Layouts.COLUMN ? node.width : totalWidth)) / 2;
+      }
+      const newComponent = React.cloneElement(node.component, { x: nodeX, y });
       if (layout === VisualizationTool.Layouts.ROW) x += node.width;
       else if (layout === VisualizationTool.Layouts.COLUMN) y += node.height;
       x += offset.x;
@@ -128,17 +136,19 @@ class VisualizationTool {
     return laidOutNodes;
   }
 
-  static layoutTreeNodes({ nodes, origin, offset }) {
+  static layoutTreeNodes({ nodes, origin, offset, componentWidth }) {
     let x = origin.x;
     let y = origin.y;
     const nonPtrNodes = nodes.filter(node => !node.component.props.variable.isPointer()).map(node => {
-      const newComponent = React.cloneElement(node.component, { x, y });
+      const newComponent = React.cloneElement(node.component, { x: x + (componentWidth - node.width) / 2 , y });
       y += node.height;
       y += offset;
       return newComponent;
     });
-    const ptrNodes = nodes.filter(node => node.component.props.variable.isPointer()).map(node => {
-      const newComponent = React.cloneElement(node.component, { x, y });
+    const ptrComponents = nodes.filter(node => node.component.props.variable.isPointer());
+    const treeWidth = ptrComponents.reduce((total, node) => total + node.width + offset, 0) - offset;
+    const ptrNodes = ptrComponents.map(node => {
+      const newComponent = React.cloneElement(node.component, { x: x + (componentWidth - treeWidth) / 2, y });
       x += node.width;
       x += offset;
       return newComponent;
