@@ -58,15 +58,15 @@ export default class VariableCard extends Component {
       if (withinThreshold && withinTargetBoundaries && !isInTree) {
         targetX = origin.x;
         targetY = y + VisualConstants.POINTER.ARROW_OFFSET;
-        points = [origin.x, origin.y, targetX, targetY];
+        points = [origin.x, origin.y - VisualConstants.POINTER.ORIGIN_Y_SHIFTER, targetX, targetY];
       } else if (isInTree) {
         targetX = x + this.state.width;
         targetY = y + VisualConstants.POINTER.ARROW_OFFSET;
-        points = [origin.x, origin.y, targetX, targetY];
+        points = [origin.x, origin.y - VisualConstants.POINTER.ORIGIN_Y_SHIFTER, targetX, targetY];
       } else {
         targetX = x + VisualConstants.POINTER.ARROW_OFFSET;
         targetY = y + VisualConstants.POINTER.ARROW_OFFSET;
-        points = [origin.x, origin.y, this.getPointerIntermediateXCoordinate(origin.x, targetX), origin.y, targetX, targetY];
+        points = [origin.x, origin.y - VisualConstants.POINTER.ORIGIN_Y_SHIFTER, this.getPointerIntermediateXCoordinate(origin.x, targetX), origin.y - VisualConstants.POINTER.ORIGIN_Y_SHIFTER, targetX, targetY];
       }
     }
     return points;
@@ -167,7 +167,7 @@ export default class VariableCard extends Component {
       <Group key={this.props.variable.toString() + this.props.variable.address}>
         <Circle
           x={origin.x}
-          y={origin.y}
+          y={origin.y - VisualConstants.POINTER.ORIGIN_Y_SHIFTER}
           radius={VisualConstants.POINTER.RADIUS}
           fill={VisualConstants.POINTER.COLOR}
         />

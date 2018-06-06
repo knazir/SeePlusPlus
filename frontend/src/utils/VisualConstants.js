@@ -48,7 +48,8 @@ module.exports = {
       THRESHOLD_SUPER_CLOSE_X: 100,
       BOLD_WIDTH: 2,
       NORMAL_WIDTH: 1,
-      INTERMEDIATE_PADDING: 50
+      INTERMEDIATE_PADDING: 50,
+      ORIGIN_Y_SHIFTER: 3
     }
 
   },
