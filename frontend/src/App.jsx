@@ -11,7 +11,7 @@ export default class App extends Component {
     super(props);
     this.handleKeyCommands = this.handleKeyCommands.bind(this);
     this.superHackyForceUpdate = this.superHackyForceUpdate.bind(this);
-    this.state = { trace: null, timer: null };
+    this.state = { trace: null, timer: null, delay: 1500 };
   }
 
   //////////// React Lifecycle ////////////
@@ -92,20 +92,12 @@ export default class App extends Component {
 
   stepPlay() {
     this.stepNext();
-    this.setState({
-      timer: setInterval(() => {
-        if (!this.state.trace.stepNext()) {
-          clearInterval(this.state.timer);
-          return;
-        }
-        this.superHackyForceUpdate();
-      }, 1500)
-    });
+    this.setState({ timer: this._setupTimer() });
   }
 
   stepStop() {
     if (this.state.timer) {
-      clearInterval(this.state.timer);
+      clearTimeout(this.state.timer);
       this.setState({ timer: null });
     }
   }
@@ -113,6 +105,24 @@ export default class App extends Component {
   stepLine(lineNumber) {
     if (!this.state.trace || !this.state.trace.stepLine(lineNumber)) return;
     this.superHackyForceUpdate();
+  }
+
+  fastForward() {
+    this.setState({ delay: this.state.delay * 0.9 });
+  }
+
+  fastBackward() {
+    this.setState({ delay: this.state.delay * 1.1 });
+  }
+
+  _setupTimer() {
+    return setTimeout(() => {
+        if (!this.state.trace.stepNext()) {
+          clearTimeout(this.state.timer);
+          return;
+        }
+        this.superHackyForceUpdate(() => this.setState({ timer: this._setupTimer() }));
+      }, this.state.delay);
   }
 
   //////////// DOM Elements ////////////
@@ -132,6 +142,7 @@ export default class App extends Component {
                                        stepNext={() => this.stepNext()} stepPrev={() => this.stepPrev()}
                                        stepStart={() => this.stepStart()} stepEnd={() => this.stepEnd()}
                                        stepPlay={() => this.stepPlay()} stepStop={() => this.stepStop()}
+                                       fastForward={() => this.fastForward()} fastBackward={() => this.fastBackward()}
                                        stepLine={(lineNumber) => this.stepLine(lineNumber)}/>}
         </ContainerDimensions>
       </div>
