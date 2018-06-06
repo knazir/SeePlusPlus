@@ -274,7 +274,8 @@ class VisualizationTool {
     const graph = new Dagre.graphlib.Graph();
     graph.setGraph({
       rankDir: "TB",
-      rankSep: 20,
+      rankSep: 10,
+      nodeSep: 10,
       marginX: 0,
       marginY: 0
     });
