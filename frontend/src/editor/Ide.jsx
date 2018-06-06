@@ -207,7 +207,11 @@ export default class Ide extends Component {
   //////////// DOM Manipulation ////////////
 
   setupVisualizingDom() {
-    document.querySelectorAll(".CodeMirror-gutter-elt").forEach(element => element.classList.remove("unclickable"));
+    document.querySelectorAll(".CodeMirror-gutter-elt").forEach(element => {
+      const lineNumber = Number(element.textContent);
+      if (this.props.trace.isValidLine(lineNumber)) element.classList.remove("unclickable");
+      else element.classList.add("unclickable");
+    });
     const codeMirrorLines = document.querySelector(".CodeMirror-lines");
     if (codeMirrorLines) codeMirrorLines.classList.add("disabled");
   }
