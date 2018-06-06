@@ -140,7 +140,7 @@ class VisualizationTool {
     let x = origin.x;
     let y = origin.y;
     const nonPtrNodes = nodes.filter(node => !node.component.props.variable.isPointer()).map(node => {
-      const newComponent = React.cloneElement(node.component, { x: x + (componentWidth - node.width) / 2 , y });
+      const newComponent = React.cloneElement(node.component, { x: x + (componentWidth - node.width) / 2, y });
       y += node.height;
       y += offset;
       return newComponent;

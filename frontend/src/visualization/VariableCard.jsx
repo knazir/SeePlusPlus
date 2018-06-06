@@ -240,7 +240,7 @@ export default class VariableCard extends Component {
     return VisualizationTool.layoutTreeNodes({
       nodes: nodesToLayout,
       origin: { x: this.props.x, y: this.props.y + VisualConstants.SIZING.ORIGIN_Y_OFFSET },
-      offset: 5,
+      offset: 10,
       traceStep: this.props.traceStep,
       componentWidth: this.state.width
     });
