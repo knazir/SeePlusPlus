@@ -19,10 +19,10 @@ int main() {
     root->left->val = 5;
     root->right = new TreeNode;
     root->right->val = 6;
-    root->right->right = nullptr;
-    root->right->left = nullptr;
-    root->left->right = nullptr;
-    root->left->left = nullptr;
+    root->right->right = new TreeNode{7, nullptr, nullptr};
+    root->right->left = new TreeNode{8, nullptr, nullptr};
+    root->left->right = new TreeNode{9, nullptr, nullptr};
+    root->left->left = new TreeNode{10, nullptr, nullptr};
     
     return 0;
 }
