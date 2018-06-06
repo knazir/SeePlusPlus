@@ -177,22 +177,12 @@ class VisualizationTool {
     Dagre.layout(graph);
     window.graph = graph;
 
-    // fix built-in offset by finding min x and y coordinates of resulting graph
-    let minX = Infinity;
-    let minY = Infinity;
-    graph.nodes().forEach(id => {
-      const { x, y } = graph.node(id);
-      if (x < minX) minX = x;
-      if (y < minY) minY = y;
-    });
-    origin.x -= minX;
-    origin.y -= minY;
-
     // create, register, and return components with new coordinates
+    // convert Dagre center coordinates to top left of the corner of component
     const laidOutNodes = graph.nodes().map(id => {
-      let { x, y, component } = graph.node(id);
-      x += origin.x;
-      y += origin.y;
+      let { x, y, component, width, height } = graph.node(id);
+      x += origin.x - width / 2;
+      y += origin.y - height / 2;
       return React.cloneElement(component, { x, y });
     });
     VisualizationTool.registerComponents(laidOutNodes);
