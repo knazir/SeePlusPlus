@@ -222,7 +222,7 @@ export default class VariableCard extends Component {
     return VisualizationTool.layoutNodes({
       nodes: nodesToLayout,
       origin: { x: this.props.x, y: this.props.y + VisualConstants.SIZING.ORIGIN_Y_OFFSET },
-      offset: this.props.variable.cType === Variable.CTypes.STRUCT_ARRAY ? { x: 0, y: 0 } : { x: 0, y: 5 },
+      offset: this.props.variable.cType === Variable.CTypes.STRUCT_ARRAY ? { x: 0, y: 0 } : { x: 0, y: 10 },
       traceStep: this.props.traceStep,
       layout: this.props.variable.cType === Variable.CTypes.STRUCT_ARRAY ? ROW : COLUMN,
       componentWidth: this.state.width

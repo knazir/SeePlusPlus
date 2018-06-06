@@ -46,7 +46,7 @@ class VisualizationTool {
       const fields = Object.values(variable.value);
       maxFieldWidth = fields.map(v => VisualizationTool.getVariableCardDimensions(v).width)
         .reduce((total, width) => total + width + offset, 0);
-      calculatedHeight = VisualConstants.VariableCard.SIZING.TITLE_HEIGHT + 15;
+      calculatedHeight = VisualConstants.VariableCard.SIZING.TITLE_HEIGHT + 20; // number gives top + bottom padding
       calculatedHeight += Math.max.apply(null, fields.map(v => VisualizationTool.getVariableCardDimensions(v).height));
     }
 
