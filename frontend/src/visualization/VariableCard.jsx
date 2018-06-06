@@ -197,6 +197,7 @@ export default class VariableCard extends Component {
   }
 
   getStructValues() {
+    if (this.props.variable.isTree()) return this.getTreeValues();
     const { ROW, COLUMN } = VisualizationTool.Layouts;
     const nodesToLayout = Object.values(this.props.variable.value).map(v => {
       return {
@@ -212,6 +213,22 @@ export default class VariableCard extends Component {
       offset: this.props.variable.cType === Variable.CTypes.STRUCT_ARRAY ? { x: 0, y: 0 } : { x: 0, y: 5 },
       traceStep: this.props.traceStep,
       layout: this.props.variable.cType === Variable.CTypes.STRUCT_ARRAY ? ROW : COLUMN
+    });
+  }
+
+  getTreeValues() {
+    const nodesToLayout = Object.values(this.props.variable.value).map(v => {
+      return {
+        ...VisualizationTool.getVariableCardDimensions(v),
+        component: <VariableCard key={v.getId()} variable={v} traceStep={this.props.traceStep} x={this.props.x + 40}
+                                 y={this.props.y + 40} updateVisualization={this.props.updateVisualization}/>
+      };
+    });
+    return VisualizationTool.layoutTreeNodes({
+      nodes: nodesToLayout,
+      origin: { x: this.props.x + 7, y: this.props.y + VisualConstants.SIZING.ORIGIN_Y_OFFSET },
+      offset: 5,
+      traceStep: this.props.traceStep
     });
   }
 
