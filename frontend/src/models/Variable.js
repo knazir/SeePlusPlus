@@ -11,7 +11,7 @@ export default class Variable {
 
   //////////// Class ////////////
 
-  constructor(data, stackFrame, global, heap, parent = null, orphaned = false, isArrayElem = false) {
+  constructor(data, stackFrame, global, heap, parent = null, orphaned = false, isArrayElem = false, multiArray) {
     this.name = null;
     this.stackFrame = stackFrame;
     this.global = global;
@@ -30,6 +30,7 @@ export default class Variable {
 
     // kept on hand for cloning
     this.data = data;
+    this.multiArray = multiArray;
   }
 
   //////////// Getters ////////////
@@ -239,7 +240,7 @@ export default class Variable {
     const values = data.slice(3);
     for (let i = 0; i < values.length; i++) {
       this.value[Math.floor(i / cols)][i % cols] =
-        new Variable(values[i], this.stackFrame, false, this.heap, this.parent, false, true)
+        new Variable(values[i], this.stackFrame, false, this.heap, this.parent, false, true, this)
           .withName(`(${Math.floor(i / cols)}, ${i % cols})`);
     }
   }

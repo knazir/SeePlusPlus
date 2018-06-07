@@ -15,9 +15,21 @@ class VisualizationTool {
 
   //////////// Dimension Calculation ////////////
 
-  static getVariableCardDimensions(variable) {
+  // calcMultiArray is a boolean to prevent infinite recursion. Should be true if trying to calculate parent array dims
+  static getVariableCardDimensions(variable, calcMultiArray = false) {
     let calculatedHeight = VisualConstants.VariableCard.SIZING.HEIGHT;
     let maxFieldWidth = 0;
+
+    if (variable.multiArray && !calcMultiArray) {
+      const { width, height } = VisualizationTool._getBiggestDimsMultiArray(variable.multiArray);
+      const valueHeight = calculatedHeight - VisualConstants.VariableCard.SIZING.TITLE_HEIGHT;
+      const offsetToValueCenter = VisualConstants.VariableCard.SIZING.TITLE_HEIGHT + (valueHeight / 2.0);
+      return {
+        width,
+        height,
+        centerOffset: offsetToValueCenter
+      };
+    }
 
     if (variable.isTree()) {
       const offset = VisualConstants.VariableCard.SIZING.SPACE_BETWEEN;
@@ -35,16 +47,8 @@ class VisualizationTool {
         .reduce((total, width) => total + width + offset, 0) - offset;
       maxFieldWidth = Math.max(maxFieldWidth, treeFieldWidth);
     } else if (variable.isMultiDimArray()) {
-      let width = 0;
-      let height = 0;
+      const { width, height } = VisualizationTool._getBiggestDimsMultiArray(variable);
       const nodes = variable.value;
-      for (let i = 0; i < nodes.length; i++) {
-        for (let j = 0; j < nodes.length; j++) {
-          const dimensions = VisualizationTool.getVariableCardDimensions(nodes[i][j]);
-          width = Math.max(width, dimensions.width);
-          height = Math.max(height, dimensions.height);
-        }
-      }
       calculatedHeight = height * nodes.length + VisualConstants.VariableCard.SIZING.SPACE_BETWEEN;
       const offsetY = VisualConstants.VariableCard.SIZING.SPACE_BETWEEN;
       calculatedHeight += VisualConstants.VariableCard.SIZING.TITLE_HEIGHT + offsetY;
@@ -326,6 +330,20 @@ class VisualizationTool {
     });
     graph.setDefaultEdgeLabel(function() { return {}; });
     return graph;
+  }
+
+  static _getBiggestDimsMultiArray(variable) {
+    let width = 0;
+    let height = 0;
+    const nodes = variable.value;
+    for (let i = 0; i < nodes.length; i++) {
+      for (let j = 0; j < nodes.length; j++) {
+        const dimensions = VisualizationTool.getVariableCardDimensions(nodes[i][j], true);
+        width = Math.max(width, dimensions.width);
+        height = Math.max(height, dimensions.height);
+      }
+    }
+    return { width, height };
   }
 }
 
