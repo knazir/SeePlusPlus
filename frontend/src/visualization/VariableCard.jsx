@@ -209,6 +209,7 @@ export default class VariableCard extends Component {
   }
 
   getStructValues() {
+    if (this.props.variable.isMultiDimArray()) return this.getMultiDimValues();
     if (this.props.variable.isTree()) return this.getTreeValues();
     const { ROW, COLUMN } = VisualizationTool.Layouts;
     const nodesToLayout = Object.values(this.props.variable.value).map(v => {
@@ -246,13 +247,38 @@ export default class VariableCard extends Component {
     });
   }
 
+  getMultiDimValues() {
+    const value = this.props.variable.value;
+    let nodesToLayout = new Array(value.length);
+    for (let i = 0; i < value.length; i++) {
+      let row = new Array(value[i].length);
+      for (let j = 0; j < value[i].length; j++) {
+        const v = value[i][j];
+        row[j] = {
+          ...VisualizationTool.getVariableCardDimensions(v),
+          component: <VariableCard key={v.getId()} variable={v} traceStep={this.props.traceStep} x={this.props.x + 40}
+                                   y={this.props.y + 40} updateVisualization={this.props.updateVisualization}
+                                   squareCorners />
+        };
+      }
+      nodesToLayout[i] = row;
+    }
+    return VisualizationTool.layoutMultiDimArrayNodes({
+      nodes: nodesToLayout,
+      origin: { x: this.props.x, y: this.props.y + VisualConstants.SIZING.ORIGIN_Y_OFFSET },
+      offset: { x: 0, y: 0 },
+      traceStep: this.props.traceStep,
+      componentWidth: this.state.width
+    });
+  }
+
   render() {
     const variable = this.props.variable;
     return (
       <Group>
         {this.getOutline()}
         {this.getTitleSegment()}
-        {variable.isStruct() || variable.isArray() ? this.getStructValues() : this.getPrimitiveValue()}
+        {variable.isComplexType() ? this.getStructValues() : this.getPrimitiveValue()}
       </Group>
     );
   }

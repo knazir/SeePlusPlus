@@ -5,7 +5,8 @@ export default class Variable {
   //////////// Static Properties ////////////
 
   static get CTypes() {
-    return { ARRAY: "C_ARRAY", DATA: "C_DATA", STRUCT: "C_STRUCT", STRUCT_ARRAY: "C_STRUCT_ARRAY"};
+    return { ARRAY: "C_ARRAY", DATA: "C_DATA", STRUCT: "C_STRUCT", STRUCT_ARRAY: "C_STRUCT_ARRAY",
+      MULTI_DIM_ARRAY: "C_MULTIDIMENSIONAL_ARRAY"};
   }
 
   //////////// Class ////////////
@@ -51,6 +52,12 @@ export default class Variable {
     if (this.isPointer()) {
       if(!this.target || !this.target.stackFrame) return toReturn;
       toReturn.add(this.target.stackFrame);
+    } else if (this.isMultiDimArray()) {
+      for (let i = 0; i < this.value.length; i++) {
+        for (let j = 0; j < this.value[i].length; j++) {
+          this.value[i][j].getTargetStackFrames().forEach(elem => toReturn.add(elem));
+        }
+      }
     } else if (this.isComplexType()) {
       for (let i = 0; i < this.value.length; i++) {
         this.value[i].getTargetStackFrames().forEach(elem => toReturn.add(elem));
@@ -108,6 +115,10 @@ export default class Variable {
     return this.type === "ptr";
   }
 
+  isMultiDimArray() {
+    return this.cType === Variable.CTypes.MULTI_DIM_ARRAY;
+  }
+
   isTree() {
     if (!this.isStruct()) return false;
     const numPointers = Object.values(this.value).filter(elem => elem.isPointer()).length;
@@ -160,6 +171,12 @@ export default class Variable {
           break;
         }
       }
+    } else if (this.isMultiDimArray()) {
+      for (let i = 0; i < this.value.length; i++) {
+        for (let j = 0; j < this.value[i].length; j++) {
+          this.value[i][j].setTargetVariable(variables);
+        }
+      }
     } else if (this.isComplexType()) {
       Object.values(this.value).forEach(member => member.setTargetVariable(variables));
     }
@@ -177,6 +194,8 @@ export default class Variable {
     } else if (cType === Variable.CTypes.STRUCT) {
       this._setupStruct(data);
       if (type === "string") this._setupString(data);
+    } else if (cType === Variable.CTypes.MULTI_DIM_ARRAY) {
+      this._setupMultiDimArray(data);
     } else {
       this.type = type === "pointer" ? "ptr" : type;
       this.value = data[3];
@@ -206,6 +225,25 @@ export default class Variable {
       .forEach((elem) => this.value[elem.name] = elem);
   }
 
+  _setupMultiDimArray(data) {
+    this.type = "multi_dim_array";
+    if (data[2].length > 2) {
+      this.value = [];
+      throw new Error("We do not support arrays with more than 2 dimensions");
+    }
+    const [rows, cols] = data[2];
+    this.value = new Array(rows);
+    for (let i = 0; i < rows; i++) {
+      this.value[i] = new Array(cols);
+    }
+    const values = data.slice(3);
+    for (let i = 0; i < values.length; i++) {
+      this.value[Math.floor(i / cols)][i % cols] =
+        new Variable(values[i], this.stackFrame, false, this.heap, this.parent, false, true)
+          .withName(`(${Math.floor(i / cols)}, ${i % cols})`);
+    }
+  }
+
   _setupString(data) {
     this.cType = Variable.CTypes.DATA;
 
@@ -231,10 +269,16 @@ export default class Variable {
       .join("");
   }
 
+  _getType() {
+    if (this.isArrayElem) return "";
+    if (this.isMultiDimArray()) return "array";
+    return this.type;
+  }
+
   toString() {
     if (this.isFree()) return `(Freed) ${this.name || ""}`.trim();
     if (this.global) return `(Global) ${this.type} ${this.name || ""}`.trim();
     if (this.isOrphaned()) return `(Orphaned) ${this.name.substring(this.name.indexOf("*"))}`.trim();
-    return `${this.isArrayElem ? "" : this.type} ${this.name || ""}`.trim();
+    return `${this._getType()} ${this.name || ""}`.trim();
   }
 }
