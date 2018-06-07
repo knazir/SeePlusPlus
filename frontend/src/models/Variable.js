@@ -10,7 +10,7 @@ export default class Variable {
 
   //////////// Class ////////////
 
-  constructor(data, stackFrame, global, heap, parent = null, orphaned = false) {
+  constructor(data, stackFrame, global, heap, parent = null, orphaned = false, isArrayElem = false) {
     this.name = null;
     this.stackFrame = stackFrame;
     this.global = global;
@@ -21,6 +21,7 @@ export default class Variable {
     const [ cType, address, type ] = data;
     this.cType = cType;
     this.address = address;
+    this.isArrayElem = isArrayElem;
     this._setupValue(cType, type, data);
 
     // used only for pointers
@@ -184,8 +185,12 @@ export default class Variable {
 
   _setupArray(data) {
     this.type = "array";
-    this.value = Utils.arrayOfType(Variable, data.slice(2),
-        varData => new Variable(varData, this.stackFrame, false, this.heap, this.parent));
+    this.value = [];
+    const values = data.slice(2);
+    for (let i = 0; i < values.length; i++) {
+      this.value.push(new Variable(values[i], this.stackFrame, false, this.heap, this.parent, false, true)
+        .withName("" + i));
+    }
     // note, very important to remember if the object was orphaned! took an obscene amount of time to debug
     // is there a better way to do this?
     if (this.value.length === 1) Object.assign(this, this.value[0], { orphaned: this.orphaned });
@@ -230,6 +235,6 @@ export default class Variable {
     if (this.isFree()) return `(Freed) ${this.name || ""}`.trim();
     if (this.global) return `(Global) ${this.type} ${this.name || ""}`.trim();
     if (this.isOrphaned()) return `(Orphaned) ${this.name.substring(this.name.indexOf("*"))}`.trim();
-    return `${this.type} ${this.name || ""}`.trim();
+    return `${this.isArrayElem ? "" : this.type} ${this.name || ""}`.trim();
   }
 }
