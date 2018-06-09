@@ -4,7 +4,16 @@ import Utils from "../utils/Utils";
 export default class ProgramTrace {
   constructor({ code, trace }) {
     this.code = code;
-    this.trace = Utils.arrayOfType(TraceStep, trace);
+    try {
+      this.trace = Utils.arrayOfType(TraceStep, trace);
+    } catch(e) {
+      if (e.message === "We do not support arrays with more than 2 dimensions") {
+        this.trace = [new TraceStep({event: "exception",
+          exception_msg: e.message})];
+      } else {
+        throw e;
+      }
+    }
     this.traceIndex = 0;
     if (this.trace) {
       this._setupOrphanedMemory();
