@@ -283,7 +283,7 @@ export default class Ide extends Component {
 
   getStopButton(atEnd) {
     const stepStop = this.state.buttonClassNames.stepStop;
-    return <button className={stepStop} disabled={atEnd} onClick={this.stop}>▢</button>;
+    return <button className={stepStop} disabled={atEnd} onClick={this.stop}>▌▌</button>;
   }
 
   getPlayButtons(atEnd) {
