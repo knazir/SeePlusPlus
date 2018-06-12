@@ -208,35 +208,68 @@ class VisualizationTool {
   }
 
   static layoutHeap({ nodes, origin }) {
-    const graph = VisualizationTool._createGraph();
-
-    // create nodes
-    nodes.forEach(({ component, width, height }) => {
-      graph.setNode(component.props.variable.getId(), { component, width, height });
-    });
-
-    // create edges
-    nodes.forEach(({ component }) => {
-      const variable = component.props.variable;
-      variable.getTargetVariables().forEach(targetVar => graph.setEdge(variable.getId(), targetVar.getId()));
-    });
+    let graph = VisualizationTool._createGraph();
+    this.createBasicGraph(graph, nodes);
 
     // create "phantom" edges
     const components = Dagre.graphlib.alg.components(graph);
     const sinks = graph.sinks();
     const sources = graph.sources();
+    let shouldReLayout = false;
 
     for (let i = 1; i < components.length; i++) {
       const prevComponent = new Set(components[i - 1]);
       const component = new Set(components[i]);
       const prevSinks = sinks.filter(sink => prevComponent.has(sink));
       const currSources = sources.filter(source => component.has(source));
+      if (prevSinks.length === 0 || currSources.length === 0) {
+        shouldReLayout = true;
+      }
       prevSinks.forEach(sink => currSources.forEach(source => graph.setEdge(sink, source)));
     }
 
     // adjust layout
     Dagre.layout(graph);
     window.graph = graph;
+
+    if (shouldReLayout) {
+      const finalGraph = VisualizationTool._createGraph();
+      this.createBasicGraph(finalGraph, nodes);
+
+      // create "phantom" edges
+      const components = Dagre.graphlib.alg.components(finalGraph);
+      const sinks = finalGraph.sinks();
+      const sources = finalGraph.sources();
+
+      for (let i = 1; i < components.length; i++) {
+        const prevComponent = new Set(components[i - 1]);
+        const component = new Set(components[i]);
+        const prevSinks = sinks.filter(sink => prevComponent.has(sink));
+        const currSources = sources.filter(source => component.has(source));
+        if (prevSinks.length === 0) {
+          let lowest = components[i - 1][0];
+          for (let j = 1; j < components[i - 1].length; j++) {
+            if (graph.node(components[i - 1][j]).y > graph.node(lowest).y) {
+              lowest = components[i - 1][j];
+            }
+          }
+          prevSinks.push(lowest);
+        }
+        if (currSources.length === 0) {
+          let highest = components[i][0];
+          for (let j = 1; j < components[i].length; j++) {
+            if (graph.node(components[i][j]).y < graph.node(highest).y) {
+              highest = components[i][j];
+            }
+          }
+          currSources.push(highest);
+        }
+        prevSinks.forEach(sink => currSources.forEach(source => finalGraph.setEdge(sink, source)));
+      }
+
+      Dagre.layout(finalGraph);
+      graph = finalGraph;
+    }
 
     // create, register, and return components with new coordinates
     // convert Dagre center coordinates to top left of the corner of component
@@ -248,6 +281,19 @@ class VisualizationTool {
     });
     VisualizationTool.registerComponents(laidOutNodes);
     return laidOutNodes;
+  }
+
+  static createBasicGraph(graph, nodes) {
+    // create nodes
+    nodes.forEach(({ component, width, height }) => {
+      graph.setNode(component.props.variable.getId(), { component, width, height });
+    });
+
+    // create edges
+    nodes.forEach(({ component }) => {
+      const variable = component.props.variable;
+      variable.getTargetVariables().forEach(targetVar => graph.setEdge(variable.getId(), targetVar.getId()));
+    });
   }
 
   //////////// "State" Management ////////////
