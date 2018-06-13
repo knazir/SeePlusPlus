@@ -124,6 +124,7 @@ export default class Ide extends Component {
   stop() {
     this.setState({ isPlaying: false });
     this.props.stepStop();
+    this.clearHighlightedLine();
   }
 
   //////////// CodeMirror Instance ////////////
@@ -180,7 +181,7 @@ export default class Ide extends Component {
   stopVisualizing() {
     if (!this.isVisualizing()) return;
     if (this.activeLine !== null) this.clearHighlightedLine();
-    this.props.stepStop();
+    this.stop();
     this.setState({ isVisualizing: false }, () => this.resetVisualizingDom());
   }
 
