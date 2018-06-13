@@ -190,7 +190,6 @@ def application(env, start_response):
     opts = setup_options(env)
     prep_dir(opts)
     (gcc_retcode, gcc_stdout, gcc_stderr) = compile(opts)
-    sys.stderr.write(gcc_stderr)
     (stderr, stdout) = generate_trace(opts, gcc_stderr) if gcc_retcode == 0 else handle_gcc_error(opts, gcc_stderr)
     cleanup(opts)
     start_response('200 OK', [('Content-type', 'application/json')])
