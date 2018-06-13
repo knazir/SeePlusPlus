@@ -39,6 +39,7 @@ def setup_options(env):
         'LIB_DIR': '/var/spp/lib',
         'USER_PROGRAM': preprocess_code(get_request_param('code', request_info)),
         'LANG': get_request_param('lang', request_info),
+        'INCLUDE': '-I/var/spp/include',
         'PRETTY_DUMP': False
     }
     if opts['LANG'] == 'c':
@@ -63,9 +64,9 @@ def prep_dir(opts):
 
 
 def compile(opts):
-    CC, DIALECT, EXE_PATH, F_PATH = pluck(opts, 'CC', 'DIALECT', 'EXE_PATH', 'F_PATH')
+    CC, DIALECT, EXE_PATH, F_PATH, INCLUDE = pluck(opts, 'CC', 'DIALECT', 'EXE_PATH', 'F_PATH', 'INCLUDE')
     p = Popen(
-        [CC, DIALECT, '-ggdb', '-O0', '-fno-omit-frame-pointer', '-o', EXE_PATH, F_PATH],
+        [CC, DIALECT, '-ggdb', '-O0', '-fno-omit-frame-pointer', INCLUDE, '-o', EXE_PATH, F_PATH],
         stdout=PIPE,
         stderr=PIPE
     )
@@ -148,6 +149,13 @@ def handle_gcc_error(opts, gcc_stderr):
             exception_msg = m.group(3).strip()
             break
 
+        # handle custom-defined errors from include path
+        if '#error' in line:
+            exception_msg = line.split('#error')[-1].strip()
+            if exception_msg[0] == '"' and exception_msg[-1] == '"':
+                exception_msg = exception_msg[1:-1]
+            break
+
         # linker errors are usually 'undefined ' something
         # (this code is VERY brittle)
         if 'undefined ' in line:
@@ -184,6 +192,7 @@ def application(env, start_response):
     opts = setup_options(env)
     prep_dir(opts)
     (gcc_retcode, gcc_stdout, gcc_stderr) = compile(opts)
+    sys.stderr.write(gcc_stderr)
     (stderr, stdout) = generate_trace(opts, gcc_stderr) if gcc_retcode == 0 else handle_gcc_error(opts, gcc_stderr)
     cleanup(opts)
     start_response('200 OK', [('Content-type', 'application/json')])
