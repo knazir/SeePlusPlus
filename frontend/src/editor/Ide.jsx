@@ -130,6 +130,7 @@ export default class Ide extends Component {
   //////////// CodeMirror Instance ////////////
 
   clearHighlightedLine() {
+    if (this.activeLine === null) return;
     this.cm.removeLineClass(this.activeLine);
     this.activeLine = null;
     this.cm.refresh();
@@ -153,7 +154,7 @@ export default class Ide extends Component {
 
   highlightActiveLine() {
     if (this.props.trace.encounteredException()) return;
-    if (this.activeLine !== null) this.clearHighlightedLine();
+    this.clearHighlightedLine();
     let lineNumber = this.props.trace.getCurrentStep().line - 1;
     this.highlightLine(lineNumber);
     this.scrollToLine(lineNumber);
@@ -180,7 +181,6 @@ export default class Ide extends Component {
 
   stopVisualizing() {
     if (!this.isVisualizing()) return;
-    if (this.activeLine !== null) this.clearHighlightedLine();
     this.stop();
     this.setState({ isVisualizing: false }, () => this.resetVisualizingDom());
   }
