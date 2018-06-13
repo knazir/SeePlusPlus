@@ -46,7 +46,7 @@ export default class TraceStep {
   }
 
   getExceptionMessage() {
-    if (!this.line) return this.exceptionMessage;
+    if (this.line === null || this.line === undefined || this.line < 0) return this.exceptionMessage;
     return `${this.exceptionMessage} at line ${this.line}`;
   }
 
