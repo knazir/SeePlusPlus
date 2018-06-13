@@ -96,10 +96,9 @@ export default class App extends Component {
   }
 
   stepStop() {
-    if (this.state.timer) {
-      clearTimeout(this.state.timer);
-      this.setState({ timer: null });
-    }
+    if (!this.state.timer) return;
+    clearTimeout(this.state.timer);
+    this.setState({ timer: null });
   }
 
   stepLine(lineNumber) {

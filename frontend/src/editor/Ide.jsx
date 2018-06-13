@@ -180,6 +180,7 @@ export default class Ide extends Component {
   stopVisualizing() {
     if (!this.isVisualizing()) return;
     if (this.activeLine !== null) this.clearHighlightedLine();
+    this.props.stepStop();
     this.setState({ isVisualizing: false }, () => this.resetVisualizingDom());
   }
 
