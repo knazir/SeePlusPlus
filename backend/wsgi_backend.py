@@ -152,8 +152,6 @@ def handle_gcc_error(opts, gcc_stderr):
         # handle custom-defined errors from include path
         if '#error' in line:
             exception_msg = line.split('#error')[-1].strip()
-            if exception_msg[0] == '"' and exception_msg[-1] == '"':
-                exception_msg = exception_msg[1:-1]
             break
 
         # linker errors are usually 'undefined ' something
