@@ -40,6 +40,9 @@ Our internal communication is largely through Facebook Messenger. However, we ar
 Our blog posts are located in the Blog Posts folder in our [Google Drive folder](https://drive.google.com/open?id=1bVMzrTyTeiJjy37oXOonQ54kb6bK7iqm).
 
 ## Brought To You By:
-<img src="https://github.com/StanfordCS194/Ashley-Taylor-Kashif-Nazir-Lucy-Wang-Maria-Yang/blob/master/docs/img/ashley.jpg" width="100" height="100" /> <img src="https://github.com/StanfordCS194/Ashley-Taylor-Kashif-Nazir-Lucy-Wang-Maria-Yang/blob/master/docs/img/maria.jpeg" width="100" height="100" /> <img src="https://github.com/StanfordCS194/Ashley-Taylor-Kashif-Nazir-Lucy-Wang-Maria-Yang/blob/master/docs/img/kashif.jpg" width="100" height="100" /> <img src="https://github.com/StanfordCS194/Ashley-Taylor-Kashif-Nazir-Lucy-Wang-Maria-Yang/blob/master/docs/img/lucy.jpeg" width="100" height="100" />
+<img src="https://github.com/StanfordCS194/Ashley-Taylor-Kashif-Nazir-Lucy-Wang-Maria-Yang/blob/master/docs/img/kashif.jpg" width="100" height="100" /> 
+<img src="https://github.com/StanfordCS194/Ashley-Taylor-Kashif-Nazir-Lucy-Wang-Maria-Yang/blob/master/docs/img/ashley.jpg" width="100" height="100" /> 
+<img src="https://github.com/StanfordCS194/Ashley-Taylor-Kashif-Nazir-Lucy-Wang-Maria-Yang/blob/master/docs/img/lucy.jpeg" width="100" height="100" />
+<img src="https://github.com/StanfordCS194/Ashley-Taylor-Kashif-Nazir-Lucy-Wang-Maria-Yang/blob/master/docs/img/maria.jpeg" width="100" height="100" /> 
 
-Ashley Taylor, Maria Yang, Kashif Nazir, and Lucy Wang
+[Kashif Nazir](https://github.com/knazir), [Ashley Taylor](https://github.com/ataylor4), and [Lucy Wang](https://github.com/ruechy), [Maria Yang](https://github.com/mariamyang)
