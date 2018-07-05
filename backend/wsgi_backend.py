@@ -1,6 +1,7 @@
 # Run the Valgrind-based C/C++ backend for OPT and produce JSON to
 # stdout for piping to a web app, properly handling errors and stuff
 #
+# Original code (c) Philip Guo, licensed under the MIT license
 # Created 2016-05-09 by Philip Guo
 # Modified 2018-04-28 by Kashif Nazir
 

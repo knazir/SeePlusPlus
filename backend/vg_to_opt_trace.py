@@ -2,6 +2,7 @@
 # that the OPT frontend can digest, making various optimizations and
 # clean-ups along the way to beautify the trace
 #
+# Original code (c) Philip Guo, licensed under the MIT license
 # Created 2015-10-04 by Philip Guo
 # Modified 2018-04-28 by Kashif Nazir
 #
