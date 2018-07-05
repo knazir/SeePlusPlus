@@ -7,7 +7,7 @@ Every quarter, CS106B students dread learning recursion and pointers, arguably t
 
 Ultimately, see++ will help students understand pointers, the stack, and the heap in more detail and even debug their own code that manipulates linked lists and trees.
 
-Marty Stepp, Senior Lecturer of CS106A/B/X at Stanford University, describes the need and use for see++:
+Marty Stepp, Lecturer of CS106A/B/X at Stanford University, describes the need and use for see++:
 
 > I have taught introductory computer programming at the college level since 2001.  In my experience, many students struggle with creating a proper mental model of the state of a program as it is running.  The layout of the program and its data and state in memory, along with the changes to that state over time as the program runs, are very important for students to understand.  Being able to simulate these aspects of a program's state helps students write correct code and find bugs in existing code.  We instructors often draw pictures with boxes and labels to help students picture the variables and function call stacks in their code, but it can be tedious and error-prone to try to draw a new picture for every program.
 >
