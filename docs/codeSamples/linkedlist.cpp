@@ -8,9 +8,7 @@ typedef struct ListNode {
     ListNode *next;
 } ListNode;
 
-ListNode *head = nullptr;
-
-void add(int val) {
+void add(ListNode *&head, int val) {
     ListNode *newNode = new ListNode{val, nullptr};
     if (head == nullptr) {
         head = newNode;
@@ -21,7 +19,7 @@ void add(int val) {
     curr->next = newNode;
 }
 
-void plus1() {
+void plus1(ListNode *head) {
     for (ListNode *curr = head; curr != nullptr; curr = curr->next) {
         curr->val++;
     }
@@ -35,10 +33,11 @@ void free(ListNode *curr) {
 
 int main() {
     cout << "yay linked lists!" << endl;
-    add(0);
-    add(8);
-    add(3);
-    plus1();
+    ListNode *head = nullptr;
+    add(head, 0);
+    add(head, 8);
+    add(head, 3);
+    plus1(head);
     free(head);
     head = nullptr;
     return 0;
