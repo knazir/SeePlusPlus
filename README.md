@@ -23,15 +23,6 @@ Below is an example of a visualization possible with our interface:
 To use our tool, go to [See++](https://seepluspl.us/).
 To join development on our tool, please check out our [Wiki](https://github.com/StanfordCS194/SeePlusPlus/wiki/Getting-Started).
 
-
-## Team Skills Matrix
-| Member        | Skills        | Personal Traits | Desired Growth | Weaknesses | Hat |
-| ------------- | ------------- |  -------------- | -------------- | ---------- |  ---------- |
-| Kashif | Full stack, Pedagogy | Will sit at computer for 16 hours straight | Working with a team | Often bogged down by details | Black|
-| Ashley        | Management, logistics, pedagogy, backend   | Very detail-oriented, goal-oriented, deadline-driven | Design, product management | Web programming, creating a large code base, perfectionist | Green |
-| Maria         | Pedagogy, logistics, Documentation, digital systems | bubbly, optimistic, determined, diligent | Learning more front-end stuff | can be nitpicky, dislikes getting close to deadlines | Yellow |
-| Lucy          | Pedagogy, backend, NLP, UI/UX        |  Artistic and bubbly| More interface design experience | nitpicky, worries a lot| Red |
-
 ## Team Communication
 
 Our internal communication is largely through Facebook Messenger. However, we are maintaining a Google Drive with our weekly blog posts and other team materials, which is available to view [here](https://drive.google.com/open?id=1bVMzrTyTeiJjy37oXOonQ54kb6bK7iqm). Others may communicate with our team through email.
