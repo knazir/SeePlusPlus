@@ -122,7 +122,8 @@ export default class Variable {
 
   isTree() {
     if (!this.isStruct()) return false;
-    const numPointers = Object.values(this.value).filter(elem => elem.isPointer()).length;
+    const numPointers = Object.values(this.value).filter(elem => elem.isPointer() &&
+      (elem.isNull() || this.heap[elem.value] && this.heap[elem.value].type === this.type)).length;
     if (numPointers <= 1) return false;
     if (numPointers >= 3) return true;
     const regex = /ne?xt/i;
