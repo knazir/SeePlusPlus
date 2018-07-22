@@ -258,9 +258,6 @@ export default class Variable {
       const localBuffer = this._formatString(this.value["<anon_field>"].value["_M_local_buf"].value);
       this.value = `"${localBuffer}"`;
     } else { // string is on the heap, get value and make sure it's not rendered as part of the heap
-      if (!this.heap[cStrPointer.value].value) {
-        this.heap[cStrPointer.value] = new Variable(this.heap[cStrPointer.value], null, false, this.heap);
-      }
       const heapValue = this._formatString(this.heap[cStrPointer.value].value);
       this.value = `"${heapValue}"`;
       delete this.heap[cStrPointer.value];
