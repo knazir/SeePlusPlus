@@ -123,7 +123,7 @@ export default class Variable {
   isTree() {
     if (!this.isStruct()) return false;
     const numPointers = Object.values(this.value).filter(elem => elem.isPointer() &&
-      (elem.isNull() || this.heap[elem.value] && this.heap[elem.value].type === this.type)).length;
+      (elem.isNull() || (this.heap[elem.value] && this.heap[elem.value].type === this.type))).length;
     if (numPointers <= 1) return false;
     if (numPointers >= 3) return true;
     const regex = /ne?xt/i;
@@ -258,6 +258,9 @@ export default class Variable {
       const localBuffer = this._formatString(this.value["<anon_field>"].value["_M_local_buf"].value);
       this.value = `"${localBuffer}"`;
     } else { // string is on the heap, get value and make sure it's not rendered as part of the heap
+      if (!this.heap[cStrPointer.value].value) {
+        this.heap[cStrPointer.value] = new Variable(this.heap[cStrPointer.value], null, false, this.heap);
+      }
       const heapValue = this._formatString(this.heap[cStrPointer.value].value);
       this.value = `"${heapValue}"`;
       delete this.heap[cStrPointer.value];

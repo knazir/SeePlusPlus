@@ -78,7 +78,7 @@ export default class TraceStep {
   _mapHeap(heap) {
     // need to create a "meta heap" to pass in to heap variables without being circular (not sure why though...)
     // note, no variables should be orphaned here as we check after all heaps are mapped (so we ignore the property)
-    const metaHeap = Utils.mapValues(Variable, heap, varData => new Variable(varData, null, false, heap));
+    const metaHeap = Utils.mapValues(Variable, heap, varData => new Variable(varData, null, false, heapStringsDefined));
     const result = Utils.mapValues(Variable, heap, varData => new Variable(varData, null, false, metaHeap));
     Object.entries(result).forEach(([varName, heapVar]) => heapVar.setName(varName));
     return result;
