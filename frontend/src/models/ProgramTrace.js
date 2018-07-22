@@ -116,6 +116,12 @@ export default class ProgramTrace {
       });
       Object.entries(prevStep.heap).forEach(([address, prevHeapVar]) => {
         if (prevHeapVar.isFree() || address in currentStep.heap) return;
+        for (let j = i + 1; j < this.trace.length; j++) {
+          if (address in this.trace[j].heap) {
+            currentStep.addHeapVariable(prevHeapVar);
+            return;
+          }
+        }
         currentStep.addHeapVariable(prevHeapVar.createOrphan());
       })
     }
