@@ -80,7 +80,7 @@ export default class TraceStep {
     // note, no variables should be orphaned here as we check after all heaps are mapped (so we ignore the property)
     const heapStringsDefined = Utils.mapValues(Variable, heap, varData => {
       // check if non-empty array of simple types
-      if (varData[0] === Variable.CTypes.ARRAY && varData[2].length > 0 && varData[2][0] === Variable.CTypes.DATA) {
+      if (varData[0] === Variable.CTypes.ARRAY && varData[2] && varData[2].length > 0 && varData[2][0] === Variable.CTypes.DATA) {
         return new Variable(varData, null, false, heap);
       } else {
         return varData;
