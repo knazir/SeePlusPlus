@@ -113,7 +113,11 @@ export default class Variable {
   }
 
   isPointer() {
-    return this.type === "ptr";
+    return this.type === "ptr" || this.type === "ref";
+  }
+
+  isReference() {
+    return this.type === "ref";
   }
 
   isMultiDimArray() {

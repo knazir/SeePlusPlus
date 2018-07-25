@@ -81,7 +81,7 @@ export default class VariableCard extends Component {
         y={this.props.y}
         width={this.state.width}
         height={this.state.height}
-        fill={VisualConstants.COLORS.BODY}
+        fill={this.props.variable.isReference() ? VisualConstants.COLORS.REF_BODY : VisualConstants.COLORS.BODY}
         stroke={VisualizationTool.getColor(this)}
         strokeWidth={VisualConstants.SIZING.OUTLINE_WIDTH}
         cornerRadius={this.props.squareCorners ? 0 : VisualConstants.SIZING.CORNER_RADIUS}

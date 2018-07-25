@@ -24,6 +24,7 @@ module.exports = {
     },
     COLORS: {
       BODY: "white",
+      REF_BODY: "#d7d4f0",
       TYPES: {
         "bool": "#dedd95",
         "char": "#ee94bc",
@@ -32,6 +33,7 @@ module.exports = {
         "long int": "#beafff",
         "ptr": "#89e1df",
         "string": "#ffcead",
+        "ref": "#beafff",
         ORPHANED: "#ea9e9d",
         DEFAULT: "#b3ea99"
       }
