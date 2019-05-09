@@ -4,34 +4,45 @@ const code = `
 
 using namespace std;
 
-struct ListNode {
+typedef struct ListNode {
     int val;
     ListNode *next;
-};
+} ListNode;
 
-void addToBack(ListNode *&front, int val) {
+void add(ListNode *&head, int val) {
     ListNode *newNode = new ListNode{val, nullptr};
-    if (front == nullptr) {
-        front = newNode;
+    if (head == nullptr) {
+        head = newNode;
         return;
     }
-    ListNode *curr = front;
-    while (curr->next != nullptr) {
-        curr = curr->next;
-    }
+    ListNode *curr = head;
+    while (curr->next != nullptr) curr = curr->next;
     curr->next = newNode;
 }
 
-int main() {
-    ListNode *list1 = nullptr;
-    addToBack(list1, 1);
-    addToBack(list1, 5);
-    
-    ListNode *list2 = nullptr;
-    addToBack(list2, 2);
-    addToBack(list2, 3);
-    addToBack(list2, 4);
+void plus1(ListNode *head) {
+    for (ListNode *curr = head; curr != nullptr; curr = curr->next) {
+        curr->val++;
+    }
+}
 
+void free(ListNode *head) {
+    ListNode *curr = head;
+    while (head) {
+        curr = head->next;
+        delete head;
+        head = curr;
+    }
+}
+
+int main() {
+    cout << "yay linked lists!" << endl;
+    ListNode *head = nullptr;
+    add(head, 0);
+    add(head, 8);
+    add(head, 3);
+    plus1(head);
+    free(head);
     return 0;
 }
 `.trim();

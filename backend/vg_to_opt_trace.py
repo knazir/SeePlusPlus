@@ -168,10 +168,10 @@ def encode_value(obj, heap):
     if obj['kind'] == 'base':
         return ['C_DATA', obj['addr'], obj['type'], obj['val']]
 
-    elif obj['kind'] == 'pointer':
+    elif obj['kind'] == 'pointer' or obj['kind'] == 'ref':
         if 'deref_val' in obj:
             encode_value(obj['deref_val'], heap) # update the heap
-        return ['C_DATA', obj['addr'], 'pointer', obj['val']]
+        return ['C_DATA', obj['addr'], obj['kind'], obj['val']]
 
     elif obj['kind'] == 'struct':
         ret = ['C_STRUCT', obj['addr'], obj['type']]
