@@ -32,7 +32,7 @@ void free(ListNode *curr) {
 }
 
 int main() {
-    cout << "yay linked lists!" << endl;
+    cout << "This is a linked list." << endl;
     ListNode *head = nullptr;
     add(head, 0);
     add(head, 8);

@@ -130,6 +130,7 @@ export default class Visualization extends Component {
           fontStyle={VisualConstants.FONT.STYLE}
           align={VisualConstants.FONT.ALIGNMENT}
           width={this.props.width / 2.0}
+          fill={VisualConstants.FONT.COLOR}
         />
         <Text
           text="Heap"
@@ -140,6 +141,7 @@ export default class Visualization extends Component {
           fontStyle={VisualConstants.FONT.STYLE}
           align={VisualConstants.FONT.ALIGNMENT}
           width={this.props.width / 2.0}
+          fill={VisualConstants.FONT.COLOR}
         />
         <Line
           points={[Number.MIN_SAFE_INTEGER, VisualConstants.TITLE_UNDERLINE_Y_OFFSET,

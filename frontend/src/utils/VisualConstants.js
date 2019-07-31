@@ -91,13 +91,14 @@ module.exports = {
       WIDTH: 1
     },
     STAGE_Y_OFFSET: 42,
-    TITLE_Y_OFFSET: 6,
+    TITLE_Y_OFFSET: 8,
     TITLE_UNDERLINE_Y_OFFSET: 27,
     FONT: {
       SIZE: 15,
       FAMILY: "Menlo, monospace",
       STYLE: "bold",
-      ALIGNMENT: "center"
+      ALIGNMENT: "center",
+      COLOR: "#a9a9a9"
     }
   }
 };

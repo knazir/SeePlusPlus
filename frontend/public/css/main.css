@@ -35,7 +35,7 @@ h3 {
 }
 
 .codeArea.disabled {
-  background-color: #f4f4f4;
+  background-color: #f4f4f457;
 }
 
 .react-codemirror2 {
@@ -151,7 +151,8 @@ h3 {
 }
 
 .button-panel button {
-  background-color: white; /* we need to explicitly set this for windows apparently */
+  background-color: #78a6d8; /* we need to explicitly set this for windows apparently */
+  /*unhappy with this color*/
 }
 
 .control-buttons {
@@ -162,57 +163,70 @@ h3 {
 
 .main-button {
   height: 28px;
+  width: 80%;
 }
 
 .step-button-bar {
   display: flex;
   align-items: center;
-  height: 30px;
-  margin-bottom: 2px;
+  height: 24px;
+  margin-bottom: 20px;
+  margin-top: -10px;
+  padding-right: 10px;
+  padding-left: 10px;
+  background-color: white;
+  border-radius: 10px;
+  border: 1px solid #e2e2e2;
+  box-shadow: 0 3px 3px rgba(0, 0, 0, 0.05);
 }
 
 .smaller-button {
   font-size: x-small;
   border-radius: 50%;
   margin: 5px;
+  padding: 10px 9px;
 }
 
 .bigger-button {
   font-size: medium;
   border-radius: 50%;
   margin: 5px;
-  padding: 5px 10px;
+  padding: 8px 12px;
 }
 
 .play-button {
   font-size: x-large;
   border-radius: 50%;
-  padding: 3px 11px 4px 13px;
+  padding: 5px 11px 6px 13px;
   margin: 5px;
+}
+
+.stop-button {
+  font-size: x-small;
 }
 
 .stop-play-button {
-  font-size:medium;
+  font-size:x-large;
   border-radius: 50%;
-  padding: 8px 8px 10px 12px;
+  padding: 0px 10px 0px 10px;
   margin: 5px;
 }
-
 
 button {
   border: solid .5px #8db8e7;
   border-radius: 10px;
-  color: #8DB8E7;
+  background-color: #80c6f1;
+  color: #ffffff;
   text-align: center;
   text-decoration: none;
   display: inline-block;
-  margin: 5px 5px 0 5px;
+  margin: -8px 5px 0 5px;
   padding: 7px;
   font-size: small;
   font-family: Menlo, monospace;
   cursor: pointer;
   user-select: none;
-  box-shadow: 0 3px 3px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 6px 6px rgba(0, 0, 0, 0.05);
 }
 
 button:disabled {
@@ -222,23 +236,15 @@ button:disabled {
   cursor: default;
 }
 
-.stop-button {
-  border: solid .5px rgb(255,127,127);
-  color: rgb(255,127,127);
-}
-
 button:focus {
   outline: 0;
+  color: #ffffff;
 }
 
 button:hover:enabled, button.active {
-  background-color: #8DB8E7;
-  color: #ffffff;
-}
-
-.stop-button:hover:enabled {
-  background-color: rgb(255,127,127);
-  color: #ffffff;
+  border: solid .5px #8db8e7;
+  background-color: #ffffff;
+  color: #8db8e7;
 }
 
 .loader {
@@ -250,6 +256,7 @@ button:hover:enabled, button.active {
   height: 32px;
   animation: spin 2s linear infinite;
   box-shadow: 0 3px 3px rgba(0, 0, 0, 0.1);
+  margin: -8px;
 }
 
 @keyframes spin {

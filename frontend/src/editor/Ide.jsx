@@ -42,10 +42,10 @@ export default class Ide extends Component {
       buttonClassNames: {
         stepStart: "smaller-button",
         stepPrev: "bigger-button",
-        fastForward: "bigger-button",
+        fastForward: "smaller-button",
         stepPlay: "play-button",
         stepStop: "stop-play-button",
-        fastBackward: "bigger-button",
+        fastBackward: "smaller-button",
         stepNext: "bigger-button",
         stepEnd: "smaller-button"
       }
@@ -243,7 +243,7 @@ export default class Ide extends Component {
     };
 
     const cardStyle = { height: "95%", marginBottom: "8px" };
-    const bodyStyle = { padding: "0px", height: "calc(100% - 28px)" };
+    const bodyStyle = { padding: "0px", height: "calc(100% - 50px)" };
 
     return (
       <DomCard title="Code" style={cardStyle} bodyStyle={bodyStyle}>
@@ -272,8 +272,8 @@ export default class Ide extends Component {
 
   getStopVisualizingButton() {
     return (
-      <button className="main-button stop-button" onClick={() => this.stopVisualizing()}>
-        &nbsp;&nbsp;End Visualization&nbsp;&nbsp;
+      <button className="stop-button" onClick={() => this.stopVisualizing()}>
+        &nbsp;&nbsp;Stop Visualization&nbsp;&nbsp;
       </button>
     );
   }
@@ -285,7 +285,7 @@ export default class Ide extends Component {
 
   getStopButton(atEnd) {
     const stepStop = this.state.buttonClassNames.stepStop;
-    return <button className={stepStop} disabled={atEnd} onClick={this.stop}>▌▌</button>;
+    return <button className={stepStop} disabled={atEnd} onClick={this.stop}>॥</button>;
   }
 
   getPlayButtons(atEnd) {
