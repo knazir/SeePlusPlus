@@ -170,7 +170,7 @@ export default class App extends Component {
           <div className ="split-bar"/>
           {this.getVisualizationPanel()}
         </div>
-        <p className="copyright">&copy; 2019 by See++</p>
+        <p className="copyright">&copy; 2022 by See++</p>
       </div>
     );
   }
