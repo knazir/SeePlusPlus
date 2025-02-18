@@ -130,8 +130,6 @@ app.post("/run", async (req: Request, res: Response) => {
         fs.rmSync(stdoutFilePath.accessible);
         fs.rmSync(stderrFilePath.accessible);
 
-        console.log(`Trace: ${vgTrace}`);
-
         const trace: ValgrindTrace = buildValgrindResponse(
             `${USER_CODE_FILE_PREFIX}.cpp`,
             userCode,
