@@ -9,3 +9,8 @@
     background-color: hsl(220, 13%, 18%);
     color: white;
 }
+
+.mainContent {
+    display: flex;
+    width: 100%;
+}
