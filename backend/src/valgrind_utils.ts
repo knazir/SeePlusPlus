@@ -21,18 +21,22 @@ export function preprocessCode(userCode: string): string {
 
 //------------------------------------------------------------------------------
 export function buildValgrindResponse(
+    userCodeFileName: string,
     originalUserCode: string,
     preprocessedUserCode: string,
+    ccStdout: string,
+    ccStderr: string,
     stdout: string,
-    stderr: string
+    stderr: string,
+    vgTrace: string
 ): ValgrindTrace {
-    if (stderr.includes("error:") ||
-        stderr.includes("#error") ||
-        stderr.includes("undefined reference")) {
-        return handleGccError("usercode.cpp", originalUserCode, stderr);
+    if (ccStderr.includes("error:")     ||
+        ccStderr.includes("#error")     ||
+        ccStderr.includes("undefined reference")) {
+        return handleGccError(userCodeFileName, originalUserCode, stderr);
     }
 
-    return parseValgrindTrace(stdout, originalUserCode);
+    return parseValgrindTrace(vgTrace, originalUserCode);
 }
 
 //------------------------------------------------------------------------------
