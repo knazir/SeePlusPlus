@@ -7,6 +7,12 @@ import fs from "fs";
 import path from "path";
 import util from "util";
 
+import {
+    buildValgrindResponse,
+    preprocessCode,
+    ValgrindTrace
+} from "./valgrind_utils";
+
 // Setup
 //------------------------------------------------------------------------------
 dotenv.config();
@@ -40,7 +46,10 @@ app.get("/", (req: Request, res: Response) => {
 //------------------------------------------------------------------------------
 app.post("/run", async (req: Request, res: Response) => {
     const userCode: string | undefined = req.body.code;
-    if (!userCode) {
+    let preprocessedUserCode: string | undefined = userCode;
+    if (userCode) {
+        preprocessedUserCode = preprocessCode(userCode);
+    } else {
         res.status(400).json({ error: "Code is required" });
         return;
     }
@@ -48,10 +57,11 @@ app.post("/run", async (req: Request, res: Response) => {
     // Generate a unique filename using a hash
     const uniqueId: crypto.UUID = crypto.randomUUID();
     const tempFilePath: string = path.join(TEMP_DIR, `${uniqueId}.cpp`);
-    const outputFilePath = path.join(TEMP_DIR, `${uniqueId}_out.txt`);
+    const stdoutFilePath = path.join(TEMP_DIR, `${uniqueId}_out.txt`);
+    const stderrFilePath = path.join(TEMP_DIR, `${uniqueId}_err.txt`);
 
     try {
-        fs.writeFileSync(tempFilePath, userCode);
+        fs.writeFileSync(tempFilePath, preprocessedUserCode);
         
         const dockerCmd = [
             "docker run",
@@ -61,13 +71,29 @@ app.post("/run", async (req: Request, res: Response) => {
             IMAGE_NAME,
             `/${USER_CODE_FILE_NAME}`
         ].join(" ");
-        await execPromise(`${dockerCmd} > ${outputFilePath}`);
+        await execPromise(`${dockerCmd} > ${stdoutFilePath} 2> ${stderrFilePath}`);
         
-        const output = fs.readFileSync(outputFilePath, "utf-8");
-        fs.rmSync(tempFilePath);
-        fs.rmSync(outputFilePath);
+        const valgrindStdout: string = fs.readFileSync(stdoutFilePath, "utf-8");
+        const valgrindStderr: string = fs.readFileSync(stderrFilePath, "utf-8");
+        const valgrindOut: string = [
+            '=== Valgrind stdout ===',
+            valgrindStdout, 
+            '=== Valgrind stderr ===',
+            valgrindStderr
+        ].join("\n");
 
-        res.json({ output });
+        fs.rmSync(tempFilePath);
+        fs.rmSync(stdoutFilePath);
+        fs.rmSync(stderrFilePath);
+
+        const trace: ValgrindTrace = buildValgrindResponse(
+            userCode,
+            preprocessedUserCode,
+            valgrindStdout,
+            valgrindStderr
+        );
+
+        res.json(trace);
     } catch (error) {
         res.status(500).json({ error: (error as Error).message });
     }
