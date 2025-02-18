@@ -8,9 +8,14 @@ import supportIcon from "../assets/support.png";
 import "./Header.css";
 
 //------------------------------------------------------------------------------
-const Header: React.FC = () => {
+interface HeaderProps {
+    height?: string;
+}
+
+//------------------------------------------------------------------------------
+const Header: React.FC<HeaderProps> = ({ height }) => {
     return (
-        <header className="header">
+        <header className="header" style={{ height }}>
             <img className="logo" src={logo}/>
             <div className="headerButtons">
                 <button className="headerButton">
