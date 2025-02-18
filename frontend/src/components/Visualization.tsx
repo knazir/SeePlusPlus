@@ -6,13 +6,14 @@ import "./Visualization.css";
 //------------------------------------------------------------------------------
 interface VisualizationProps {
     width?: string;
+    height?: string;
 }
 
 //------------------------------------------------------------------------------
-const Visualization: React.FC<VisualizationProps> = ({ width }) => {
+const Visualization: React.FC<VisualizationProps> = ({ width, height }) => {
     return (
-        <div className="visualization" style={{ width }}>
-            <div className="visualizationText">Visualization</div>
+        <div className="visualization" style={{ width, height }}>
+            <div>Visualization</div>
         </div>
     );
 }

@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@monaco-editor/react": "^4.7.0",
     "@types/node": "^16.18.126",
     "@types/react": "^19.0.10",
     "@types/react-dom": "^19.0.4",

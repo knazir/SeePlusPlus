@@ -1,22 +1,22 @@
 //------------------------------------------------------------------------------
 import React from "react";
 
-import "./Editor.css";
+import "./Output.css";
 
 //------------------------------------------------------------------------------
-interface EditorProps {
+interface OutputProps {
     width?: string;
     height?: string;
 }
 
 //------------------------------------------------------------------------------
-const Editor: React.FC<EditorProps> = ({ width, height }) => {
+const Output: React.FC<OutputProps> = ({ width, height }) => {
     return (
-        <div className="editor" style={{ width, height }}>
-            <textarea className="editorTextArea" placeholder="Write your code here..."/>
+        <div className="output" style={{ width, height }}>
+            <div>Output</div>
         </div>
     );
 }
 
 //------------------------------------------------------------------------------
-export default Editor;
+export default Output;
