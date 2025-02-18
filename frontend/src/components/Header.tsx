@@ -1,3 +1,4 @@
+//------------------------------------------------------------------------------
 import React from "react";
 
 import githubIcon from "../assets/github.png";
@@ -6,7 +7,8 @@ import supportIcon from "../assets/support.png";
 
 import "./Header.css";
 
-export default function Header() {
+//------------------------------------------------------------------------------
+const Header: React.FC = () => {
     return (
         <header className="header">
             <img className="logo" src={logo}/>
@@ -23,3 +25,6 @@ export default function Header() {
         </header>
     );
 }
+
+//------------------------------------------------------------------------------
+export default Header;
