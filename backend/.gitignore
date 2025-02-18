@@ -1,0 +1,8 @@
+# Packages
+node_modules/
+
+# Builds
+dist/
+
+# Secrets
+.env
