@@ -6,7 +6,7 @@ set -o pipefail
 # updated both here and in the server
 SRC_FILE="/main.cpp"
 EXE_FILE="/main.out"
-TRACE_FILE="/main.vgtrace"
+TRACE_FILE="/main_vgtrace.txt"
 CC_STDOUT_FILE="/main_cc_out.txt"
 CC_STDERR_FILE="/main_cc_err.txt"
 VAL_STDOUT_FILE="/main_out.txt"

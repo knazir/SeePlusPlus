@@ -68,7 +68,7 @@ app.post("/run", async (req: Request, res: Response) => {
     // within the user's individual container.
     const uniqueId: crypto.UUID = crypto.randomUUID();
     const userCodeFilePath: MappedFilePath = makeMappedFilePath(uniqueId, ".cpp");
-    const traceFilePath: MappedFilePath = makeMappedFilePath(uniqueId, ".vgtrace");
+    const traceFilePath: MappedFilePath = makeMappedFilePath(uniqueId, "_vgtrace.txt");
     const ccStdoutFilePath: MappedFilePath = makeMappedFilePath(uniqueId, "_cc_out.txt");
     const ccStderrFilePath: MappedFilePath = makeMappedFilePath(uniqueId, "_cc_err.txt");
     const stdoutFilePath: MappedFilePath = makeMappedFilePath(uniqueId, "_out.txt");
@@ -89,7 +89,7 @@ app.post("/run", async (req: Request, res: Response) => {
         // the specific files needed to avoid leakagae of other users' code.
         const dockerCmd = [
             "docker run",
-            "--rm",
+            // "--rm",
             `--network ${USER_CODE_NETWORK_NAME}`,
             `-v ${userCodeFilePath.accessible}:${userCodeFilePath.isolated}`,
             `-v ${traceFilePath.accessible}:${traceFilePath.isolated}`,
@@ -125,11 +125,12 @@ app.post("/run", async (req: Request, res: Response) => {
         }
 
         // Cleanup
-        fs.rmSync(userCodeFilePath.accessible);
-        fs.rmSync(ccStdoutFilePath.accessible);
-        fs.rmSync(ccStderrFilePath.accessible);
-        fs.rmSync(stdoutFilePath.accessible);
-        fs.rmSync(stderrFilePath.accessible);
+        // fs.rmSync(userCodeFilePath.accessible);
+        // fs.rmSync(traceFilePath.accessible);
+        // fs.rmSync(ccStdoutFilePath.accessible);
+        // fs.rmSync(ccStderrFilePath.accessible);
+        // fs.rmSync(stdoutFilePath.accessible);
+        // fs.rmSync(stderrFilePath.accessible);
 
         const trace: ValgrindTrace = buildValgrindResponse(
             `${USER_CODE_FILE_PREFIX}.cpp`,
