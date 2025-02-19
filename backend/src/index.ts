@@ -30,6 +30,7 @@ const PORT: number = Number(process.env.PORT) || 3000;
 const ROOT_SHARED_DIR: string = "/tmp/spp-usercode";
 const USER_CODE_FILE_PREFIX = process.env.USER_CODE_FILE_PREFIX || "main";
 const USER_CODE_IMAGE_NAME: string = "spp-user-code-image";
+const USER_CODE_NETWORK_NAME: string = "spp-no-internet";
 
 if (!fs.existsSync(ROOT_SHARED_DIR)) {
     fs.mkdirSync(ROOT_SHARED_DIR, { recursive: true });
@@ -89,7 +90,7 @@ app.post("/run", async (req: Request, res: Response) => {
         const dockerCmd = [
             "docker run",
             "--rm",
-            "--network no-internet",
+            `--network ${USER_CODE_NETWORK_NAME}`,
             `-v ${userCodeFilePath.accessible}:${userCodeFilePath.isolated}`,
             `-v ${traceFilePath.accessible}:${traceFilePath.isolated}`,
             `-v ${ccStdoutFilePath.accessible}:${ccStdoutFilePath.isolated}`,
