@@ -7,6 +7,16 @@ import cppLogo from "../assets/cpp.png";
 import "./Editor.css";
 
 //------------------------------------------------------------------------------
+const defaultCode: string = `
+#include <iostream>
+
+int main()
+{
+    std::cout << "Hello, world!" << std::endl;
+    return 0;
+}`.trim();
+
+//------------------------------------------------------------------------------
 interface EditorProps {
     width?: string;
     height?: string;
@@ -14,7 +24,7 @@ interface EditorProps {
 
 //------------------------------------------------------------------------------
 const Editor: React.FC<EditorProps> = ({ width, height }) => {
-    const [code, setCode] = useState<string>("// Write your code here...");
+    const [code, setCode] = useState<string>(defaultCode);
 
     return (
         <div className="editor" style={{ width, height }}>
