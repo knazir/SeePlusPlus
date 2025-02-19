@@ -47,10 +47,31 @@ function remove_images() {
 
 function build_images() {
     echo "Building container images..."
-    docker build -t $BACKEND_IMAGE backend
-    docker build -t $USER_CODE_IMAGE backend/user-code-container
-    docker build -t $FRONTEND_IMAGE frontend
+
+    case "$1" in
+        backend)
+            docker build -t $BACKEND_IMAGE backend
+            ;;
+        user-code)
+            docker build -t $USER_CODE_IMAGE backend/user-code-container
+            ;;
+        frontend)
+            docker build -t $FRONTEND_IMAGE frontend
+            ;;
+        "")
+            docker build -t $BACKEND_IMAGE backend
+            docker build -t $USER_CODE_IMAGE backend/user-code-container
+            docker build -t $FRONTEND_IMAGE frontend
+            ;;
+        *)
+            echo "Invalid image name: $1"
+            echo "Usage: build_images [backend | user-code | frontend]"
+            return 1
+            ;;
+    esac
 }
+
+
 
 function start_containers() {
     create_network
@@ -132,6 +153,9 @@ case "$1" in
         stop_containers
         remove_containers
         start_containers
+        ;;
+    build)
+        build_images "$2"
         ;;
     rebuild)
         stop_containers
