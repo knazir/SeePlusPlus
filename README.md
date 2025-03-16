@@ -2,6 +2,13 @@
 <img  src="https://github.com/StanfordCS194/Ashley-Taylor-Kashif-Nazir-Lucy-Wang-Maria-Yang/blob/master/docs/img/logo.png"/>
   </p>
 
+## Notice
+Welcome to See++! Very excited to have you here.
+
+The site is current offline while we make some infrastructure improvements needed to keep the service running for the forseeable future.
+
+For updates, please check the open issue [here](https://github.com/knazir/SeePlusPlus/issues/77).
+
 ## Project Description
 Every quarter, CS106B students dread learning recursion and pointers, arguably the two hardest concepts in CS106B. We're excited to develop see++, a C++ memory visualization tool, to help students better understand how code affects memory. see++ lets students watch their code execute line by line, updating local variables as well as heap memory, helping them understand pointers in much greater detail.
 
