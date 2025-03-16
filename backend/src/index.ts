@@ -84,6 +84,7 @@ app.post("/run", async (req: Request, res: Response) => {
         fs.writeFileSync(ccStderrFilePath.accessible, "");
         fs.writeFileSync(stdoutFilePath.accessible, "");
         fs.writeFileSync(stderrFilePath.accessible, "");
+        fs.writeFileSync(`/tmp/spp-usercode/${uniqueId}_spp_stdout.txt`, "");
         
         // Isolate the user's code in a container with no network access and only mount
         // the specific files needed to avoid leakagae of other users' code.
@@ -97,6 +98,7 @@ app.post("/run", async (req: Request, res: Response) => {
             `-v ${ccStderrFilePath.accessible}:${ccStderrFilePath.isolated}`,
             `-v ${stdoutFilePath.accessible}:${stdoutFilePath.isolated}`,
             `-v ${stderrFilePath.accessible}:${stderrFilePath.isolated}`,
+            `-v /tmp/spp-usercode/${uniqueId}_spp_stdout.txt:/spp_stdout.txt`,
             USER_CODE_IMAGE_NAME
         ].join(" ");
         await execPromise(dockerCmd);
