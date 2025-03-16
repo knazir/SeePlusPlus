@@ -17,6 +17,7 @@ RUN ./autogen.sh && \
 
 # Setup user code working directory
 RUN mkdir /usercode
+RUN touch /spp_stdout.txt
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
