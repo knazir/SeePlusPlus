@@ -3,24 +3,25 @@ import StackFrame from "./StackFrame";
 import Utils from "../utils/Utils";
 
 export default class TraceStep {
-  constructor({ event, exception_msg, func_name, line, globals, ordered_globals, heap, stack_to_render, stdout }) {
+  constructor({ event, exceptionMsg, funcName, line, globals, orderedGlobals, heap, stackToRender, stdout }) {
     this.event = event;
 
     if (this.encounteredException()) {
-      this.exceptionMessage = exception_msg;
+      this.exceptionMessage = exceptionMsg;
       this.line = line - 1;
       return;
     }
 
-    this.funcName = func_name;
+    this.funcName = funcName;
     this.line = line - 1; // IMPORTANT: we do line - 1 to discount the #define for fixing unions TODO kn: Do on backend
     this.heap = this._mapHeap(heap);
     this.globals = this._mapGlobals(globals);
-    this.stack = this._createStack(stack_to_render);
+    console.log(`stackToRender: ${JSON.stringify(stackToRender)}`);
+    this.stack = this._createStack(stackToRender);
     this.stdout = stdout;
 
     // currently unused properties
-    this.orderedGlobals = ordered_globals;
+    this.orderedGlobals = orderedGlobals;
   }
 
   //////////// Getters ////////////
@@ -53,7 +54,7 @@ export default class TraceStep {
   //////////// Property Querying ////////////
 
   encounteredException() {
-    return this.event === "exception" || this.event === "uncaught_exception";
+    return this.event === "exception" || this.event === "uncaughtException";
   }
 
   //////////// Mutator Methods ////////////
@@ -102,8 +103,8 @@ export default class TraceStep {
     return result;
   }
 
-  _createStack(stack_to_render) {
-    return Utils.arrayOfType(StackFrame, stack_to_render, frameData => new StackFrame(frameData, this.heap));
+  _createStack(stackToRender) {
+    return Utils.arrayOfType(StackFrame, stackToRender, frameData => new StackFrame(frameData, this.heap));
   }
 
   _getAllStackVariables() {

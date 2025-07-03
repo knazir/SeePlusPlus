@@ -1,4 +1,3 @@
-
 // Constants
 //------------------------------------------------------------------------------
 const RECORD_SEPARATOR: string = "=== pg_trace_inst ===";
@@ -13,6 +12,7 @@ interface ExecutionPoint {
     funcName: string;
     stackToRender: Array<any>;
     globals: any;
+    heap: any;
     orderedGlobals: string[];
     stdout: string;
     exceptionMsg?: string;
@@ -308,6 +308,8 @@ function processJsonObject(
     errStr: string | null,
     stdoutStr: string
 ): ExecutionPoint {
+    console.log(`obj: ${JSON.stringify(obj)}`);
+
     if (!obj.stack || obj.stack.length < 1) {
         console.warn(`Record has no stack frames: ${JSON.stringify(obj)}`);
     }
@@ -325,6 +327,7 @@ function processJsonObject(
         funcName: topStackEntry?.func_name || "???",
         stackToRender: [],
         globals: {},
+        heap: {},
         orderedGlobals: obj.ordered_globals || [],
         stdout: stdoutStr
     };
@@ -337,7 +340,7 @@ function processJsonObject(
     // Encode globals
     if (obj.globals) {
         for (const [gVar, gVal] of Object.entries(obj.globals)) {
-            executionPoint.globals[gVar] = encodeValue(gVal, {} /*dummy heap for now */);
+            executionPoint.globals[gVar] = encodeValue(gVal, executionPoint.heap);
         }
     }
 
@@ -359,8 +362,9 @@ function processJsonObject(
                 stackEntry.line = frameObj.line;
             }
             if (frameObj.locals) {
+                console.log(`frameObj.locals: ${JSON.stringify(frameObj.locals)}`);
                 for (const [localVar, localVal] of Object.entries(frameObj.locals)) {
-                    stackEntry.encodedLocals[localVar] = encodeValue(localVal, {});
+                    stackEntry.encodedLocals[localVar] = encodeValue(localVal, executionPoint.heap);
                 }
             }
             executionPoint.stackToRender.push(stackEntry);
@@ -432,9 +436,9 @@ function encodeValue(obj: any, heap: Record<string, any>): any {
                 for (const e of obj.val || []) {
                     newElt.push(encodeValue(e, heap));
                 }
-                heap[obj.addr] = new Element;
+                heap[obj.addr] = newElt;
             }
-            return null;
+            return heap[obj.addr];
         }
         default: {
             console.warn(`encodeValue: unknown kind ${obj.kind}`);

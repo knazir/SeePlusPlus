@@ -1,5 +1,6 @@
 //------------------------------------------------------------------------------
 import { exec } from "child_process";
+import cors from "cors";
 import crypto from "crypto";
 import dotenv from "dotenv";
 import express, { Express, Request, Response } from "express";
@@ -39,6 +40,14 @@ if (!fs.existsSync(ROOT_SHARED_DIR)) {
 // Middleware
 //------------------------------------------------------------------------------
 app.use(express.json());
+
+// Configure CORS to allow requests from the frontend
+app.use(cors({
+  origin: ['http://localhost:8080', 'http://localhost:3000'],
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
+}));
 
 // Route: /
 // Returns a healthcheck to confirm the server is running

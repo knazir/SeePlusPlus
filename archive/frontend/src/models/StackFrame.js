@@ -2,13 +2,13 @@ import Utils from "../utils/Utils";
 import Variable from "./Variable";
 
 export default class StackFrame {
-  constructor({ frame_id, func_name, is_highlighted, is_parent, is_zombie, line, parent_frame_id_list, unique_hash,
-                encoded_locals, ordered_varnames }, heap, active = false) {
-    this.frameId = frame_id;
-    this.funcName = func_name;
+  constructor({ frameId, funcName, isHighlighted, isParent, isZombie, line, parentFrameIdList, uniqueHash,
+                encodedLocals, orderedVarNames }, heap, active = false) {
+    this.frameId = frameId;
+    this.funcName = funcName;
     this.line = line;
-    this.uniqueHash = unique_hash;
-    this.encodedLocals = this._mapLocals(encoded_locals, heap);
+    this.uniqueHash = uniqueHash;
+    this.encodedLocals = this._mapLocals(encodedLocals, heap);
 
     // for visualization
     this.active = active; // whether it is the most recent stack frame
@@ -16,11 +16,11 @@ export default class StackFrame {
     this.stackFrameSources = {}; // which stack frames have variables pointing to this frame's local variables
 
     // currently unused properties
-    this.isHighlighted = is_highlighted;
-    this.orderedVarnames = ordered_varnames;
-    this.isParent = is_parent;
-    this.isZombie = is_zombie;
-    this.parentFrameIdList = parent_frame_id_list;
+    this.isHighlighted = isHighlighted;
+    this.orderedVarNames = orderedVarNames;
+    this.isParent = isParent;
+    this.isZombie = isZombie;
+    this.parentFrameIdList = parentFrameIdList;
   }
 
   //////////// Getters ////////////
@@ -72,8 +72,8 @@ export default class StackFrame {
 
   //////////// Helper Methods ////////////
 
-  _mapLocals(encoded_locals, heap) {
-    const result = Utils.mapValues(Variable, encoded_locals, varData => new Variable(varData, this, false, heap));
+  _mapLocals(encodedLocals, heap) {
+    const result = Utils.mapValues(Variable, encodedLocals, varData => new Variable(varData, this, false, heap));
     Object.entries(result).forEach(([varName, localVar]) => localVar.setName(varName));
     return result;
   }

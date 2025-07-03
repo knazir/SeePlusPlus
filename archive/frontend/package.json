@@ -26,10 +26,10 @@
     "eslint-plugin-standard": "^3.0.1"
   },
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test --env=jsdom",
-    "eject": "react-scripts eject",
+    "start": "npx react-scripts start",
+    "build": "npx react-scripts build",
+    "test": "npx react-scripts test --env=jsdom",
+    "eject": "npx react-scripts eject",
     "lint": "eslint --ext .js,.jsx . || true"
   }
 }
