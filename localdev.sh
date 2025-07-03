@@ -6,6 +6,7 @@ NETWORK_NAME="spp-no-internet"
 BACKEND_IMAGE="spp-backend-image"
 USER_CODE_IMAGE="spp-user-code-image"
 FRONTEND_IMAGE="spp-frontend-image"
+ARCHIVE_FRONTEND_IMAGE="spp-archive-frontend-image"
 
 function create_network() {
     echo "Creating isolated network ($NETWORK_NAME)..."
@@ -29,6 +30,7 @@ function stop_containers() {
     docker ps -q --filter "ancestor=$BACKEND_IMAGE" | xargs -r docker stop
     docker ps -q --filter "ancestor=$USER_CODE_IMAGE" | xargs -r docker stop
     docker ps -q --filter "ancestor=$FRONTEND_IMAGE" | xargs -r docker stop
+    docker ps -q --filter "ancestor=$ARCHIVE_FRONTEND_IMAGE" | xargs -r docker stop
 }
 
 function remove_containers() {
@@ -36,6 +38,7 @@ function remove_containers() {
     docker ps -aq --filter "ancestor=$BACKEND_IMAGE" | xargs -r docker rm
     docker ps -aq --filter "ancestor=$USER_CODE_IMAGE" | xargs -r docker rm
     docker ps -aq --filter "ancestor=$FRONTEND_IMAGE" | xargs -r docker rm
+    docker ps -aq --filter "ancestor=$ARCHIVE_FRONTEND_IMAGE" | xargs -r docker rm
 }
 
 function remove_images() {
@@ -43,6 +46,7 @@ function remove_images() {
     docker rmi -f $BACKEND_IMAGE || true
     docker rmi -f $USER_CODE_IMAGE || true
     docker rmi -f $FRONTEND_IMAGE || true
+    docker rmi -f $ARCHIVE_FRONTEND_IMAGE || true
 }
 
 function build_images() {
@@ -58,6 +62,9 @@ function build_images() {
         frontend)
             docker build -t $FRONTEND_IMAGE frontend
             ;;
+        archive-frontend)
+            docker build -t $ARCHIVE_FRONTEND_IMAGE archive/frontend
+            ;;
         "")
             docker build -t $BACKEND_IMAGE backend
             docker build -t $USER_CODE_IMAGE backend/user-code-container
@@ -65,13 +72,11 @@ function build_images() {
             ;;
         *)
             echo "Invalid image name: $1"
-            echo "Usage: build_images [backend | user-code | frontend]"
+            echo "Usage: build_images [backend | user-code | frontend | archive-frontend]"
             return 1
             ;;
     esac
 }
-
-
 
 function start_containers() {
     create_network
@@ -88,13 +93,31 @@ function start_containers() {
       -p 8080:8080 $FRONTEND_IMAGE
 }
 
+function start_archive_frontend() {
+    create_network
+    
+    echo "Starting containers with archive frontend..."
+    docker run --rm -d --name spp-backend \
+      -v "$(pwd)/backend:/app" \
+      -v /tmp:/tmp \
+      -v /var/run/docker.sock:/var/run/docker.sock \
+      -p 3000:3000 $BACKEND_IMAGE
+
+    docker run --rm -d --name spp-archive-frontend \
+      -p 8080:8080 $ARCHIVE_FRONTEND_IMAGE
+}
+
 function show_logs() {
     if [ -z "$1" ]; then
-        echo "Specify a container (frontend, backend, user-code)."
+        echo "Specify a container (frontend, backend, user-code, archive-frontend)."
         exit 1
     fi
 
-    CONTAINER_NAME="spp-$1"
+    if [ "$1" == "archive-frontend" ]; then
+        CONTAINER_NAME="spp-archive-frontend"
+    else
+        CONTAINER_NAME="spp-$1"
+    fi
 
     # Check if user wants to tail logs or just show recent logs
     if [ "$2" == "--tail" ]; then
@@ -108,11 +131,18 @@ function show_logs() {
 
 function exec_container() {
     if [ -z "$1" ]; then
-        echo "Specify a container (frontend, backend, user-code)."
+        echo "Specify a container (frontend, backend, user-code, archive-frontend)."
         exit 1
     fi
-    echo "Opening shell in spp-$1..."
-    docker exec -it "spp-$1" sh
+    
+    if [ "$1" == "archive-frontend" ]; then
+        CONTAINER_NAME="spp-archive-frontend"
+    else
+        CONTAINER_NAME="spp-$1"
+    fi
+    
+    echo "Opening shell in $CONTAINER_NAME..."
+    docker exec -it "$CONTAINER_NAME" sh
 }
 
 function help_menu() {
@@ -120,6 +150,7 @@ function help_menu() {
     echo ""
     echo "Commands:"
     echo "  up                Start all containers (default action)."
+    echo "  up-archive        Start backend with archive frontend."
     echo "  down              Stop and remove running containers (keep images)."
     echo "  restart           Restart containers without rebuilding."
     echo "  rebuild           Stop, remove, and fully rebuild containers."
@@ -129,6 +160,7 @@ function help_menu() {
     echo "  logs <container> [--tail]    Show logs for a specific container."
     echo "                                 - Without --tail: Show last 50 lines."
     echo "                                 - With --tail: Continuously stream logs."
+    echo "                                 - Supports: frontend, backend, user-code, archive-frontend"
     echo "  help              Show this menu."
 }
 
@@ -144,6 +176,9 @@ fi
 case "$1" in
     up)
         start_containers
+        ;;
+    up-archive)
+        start_archive_frontend
         ;;
     down)
         stop_containers

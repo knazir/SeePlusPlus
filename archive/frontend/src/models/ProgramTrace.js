@@ -9,7 +9,7 @@ export default class ProgramTrace {
     } catch(e) {
       if (e.message === "We do not support arrays with more than 2 dimensions") {
         this.trace = [new TraceStep({event: "exception",
-          exception_msg: e.message})];
+          exceptionMsg: e.message})];
       } else {
         throw e;
       }

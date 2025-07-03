@@ -12,7 +12,9 @@ class RawApi {
       opts.body = JSON.stringify(body);
     }
 
-    const res = await fetch(`${process.env.REACT_APP_API_URL}/${path}`, opts);
+    // Default to localhost:3000 for dockerized backend if no environment variable is set
+    const apiUrl = process.env.REACT_APP_API_URL || "http://localhost:3000";
+    const res = await fetch(`${apiUrl}/${path}`, opts);
     let json;
     try {
       json = await res.json();
@@ -34,7 +36,12 @@ class RawApi {
 
 export default class Api {
   static async getCodeTrace(lang, code) {
-    const path = `wsgi-bin/wsgi_backend.py?lang=${encodeURIComponent(lang)}&code=${encodeURIComponent(code)}`;
-    return new ProgramTrace(await RawApi.get(path));
+    // Updated to use the new /run endpoint
+    const path = `run`;
+    const body = {
+      language: lang,
+      code: code
+    };
+    return new ProgramTrace(await RawApi.post(path, body));
   }
 }
