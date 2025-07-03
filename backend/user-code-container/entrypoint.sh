@@ -34,9 +34,3 @@ stdbuf -o0 /spp-valgrind/inst/bin/valgrind \
 
 echo "SPP_STDOUT:"
 cat /spp_stdout.txt
-
-# So I'm taking a break from this for now. Here are the notes for when I come back to this:
-# - In general, it seems like valgrind and other processes running can't write to anything outside / (e.g. /tmp, /spp, etc.)
-# - This also seems to apply to the /tmp stdout piped file from the valgrind modifications, so I tried rerouting that to /spp_stdout.txt
-# - This also didn't seem to work however, and the output is always blank. The trace runs but the user program's stdout is not captured step-by-step.
-# - Definitely going to need to revisit this...
