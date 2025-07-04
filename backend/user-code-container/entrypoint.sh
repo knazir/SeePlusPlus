@@ -13,7 +13,7 @@ VAL_STDOUT_FILE="/main_out.txt"
 VAL_STDERR_FILE="/main_err.txt"
 
 # Compile the user-provided C++ file.
-g++ -std=c++11 -ggdb -O0 -fno-omit-frame-pointer \
+g++-4.8 -std=c++11 -ggdb -O0 -fno-omit-frame-pointer \
     -o "$EXE_FILE" \
     "$SRC_FILE" > "$CC_STDOUT_FILE" 2> "$CC_STDERR_FILE"
 
