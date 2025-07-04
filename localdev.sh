@@ -69,6 +69,7 @@ function build_images() {
             docker build -t $BACKEND_IMAGE backend
             docker build -t $USER_CODE_IMAGE backend/user-code-container
             docker build -t $FRONTEND_IMAGE frontend
+            docker build -t $ARCHIVE_FRONTEND_IMAGE archive/frontend
             ;;
         *)
             echo "Invalid image name: $1"
@@ -91,20 +92,9 @@ function start_containers() {
     docker run --rm -d --name spp-frontend \
       -v "$(pwd)/frontend:/app" \
       -p 8080:8080 $FRONTEND_IMAGE
-}
-
-function start_archive_frontend() {
-    create_network
-    
-    echo "Starting containers with archive frontend..."
-    docker run --rm -d --name spp-backend \
-      -v "$(pwd)/backend:/app" \
-      -v /tmp:/tmp \
-      -v /var/run/docker.sock:/var/run/docker.sock \
-      -p 3000:3000 $BACKEND_IMAGE
 
     docker run --rm -d --name spp-archive-frontend \
-      -p 8080:8080 $ARCHIVE_FRONTEND_IMAGE
+      -p 8000:8000 $ARCHIVE_FRONTEND_IMAGE
 }
 
 function show_logs() {
@@ -176,9 +166,6 @@ fi
 case "$1" in
     up)
         start_containers
-        ;;
-    up-archive)
-        start_archive_frontend
         ;;
     down)
         stop_containers

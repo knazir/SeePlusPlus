@@ -43,7 +43,7 @@ app.use(express.json());
 
 // Configure CORS to allow requests from the frontend
 app.use(cors({
-  origin: ['http://localhost:8080', 'http://localhost:3000'],
+  origin: ["http://localhost:8080", "http://localhost:8000", "http://localhost:3000"],
   methods: ['GET', 'POST', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true
