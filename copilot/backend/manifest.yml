@@ -1,0 +1,82 @@
+name: backend
+type: Backend Service
+
+cpu: 512
+memory: 1024
+count: 2
+
+# Network configuration
+network:
+  vpc:
+    placement: 'private'
+
+# Health check configuration
+healthcheck:
+  path: '/'
+  interval: 30s
+  timeout: 5s
+  retries: 3
+
+# Environment variables
+environments:
+  production:
+    cpu: 1024
+    memory: 2048
+    count: 3
+    secrets:
+      BUCKET:
+        from_cfn: ${COPILOT_APPLICATION_NAME}-prod-S3BucketName
+      CLUSTER_ARN:
+        from_cfn: ${COPILOT_APPLICATION_NAME}-prod-ClusterARN
+      TASK_DEF_ARN:
+        from_cfn: ${COPILOT_APPLICATION_NAME}-prod-ExecRunnerTaskARN
+      SUBNETS:
+        from_cfn: ${COPILOT_APPLICATION_NAME}-prod-PrivateSubnets
+      SECURITY_GROUP:
+        from_cfn: ${COPILOT_APPLICATION_NAME}-prod-SecurityGroup
+
+# IAM permissions
+taskRole:
+  policies:
+    - S3AccessPolicy
+    - ECSTaskExecutionPolicy
+
+# Custom IAM policies
+taskRole:
+  policies:
+    - name: S3AccessPolicy
+      document:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - s3:PutObject
+              - s3:GetObject
+            Resource:
+              - 'arn:aws:s3:::seepp-*/*'
+    - name: ECSTaskExecutionPolicy
+      document:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - ecs:RunTask
+              - ecs:DescribeTasks
+            Resource:
+              - '*'
+          - Effect: Allow
+            Action:
+              - iam:PassRole
+            Resource:
+              - '*'
+            Condition:
+              StringEquals:
+                'iam:PassedToService': 'ecs-tasks.amazonaws.com'
+
+# Storage configuration
+storage:
+  s3:
+    bucket_name: seepp-${COPILOT_ENVIRONMENT_NAME}
+    permissions:
+      - read
+      - write

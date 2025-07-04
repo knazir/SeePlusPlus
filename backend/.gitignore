@@ -4,5 +4,5 @@ node_modules/
 # Builds
 dist/
 
-# Secrets
+# Environment Variables
 .env

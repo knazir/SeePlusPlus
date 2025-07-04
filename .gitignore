@@ -10,3 +10,12 @@ CLAUDE.md
 
 # Temporary Files
 tmp/
+
+# Environment Variables
+.env*
+!.env.development
+!.env.production.template
+
+# AWS Copilot
+copilot/.workspace
+copilot/environments/*/secrets

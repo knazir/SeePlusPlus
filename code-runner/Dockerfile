@@ -1,0 +1,36 @@
+FROM ubuntu:14.04
+
+# Install dependencies required for building Valgrind and running user code
+# Install gcc-4.8 specifically to match the required platform
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    gcc-4.8 g++-4.8 make autoconf automake libtool libc6-dbg \
+    curl ca-certificates && \
+    update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.8 100 && \
+    update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-4.8 100 && \
+    rm -rf /var/lib/apt/lists/*
+
+# Install AWS CLI v2 for S3 operations (using bundled installer for Ubuntu 14.04 compatibility)
+RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" && \
+    apt-get update && apt-get install -y unzip && \
+    unzip awscliv2.zip && \
+    ./aws/install && \
+    rm -rf awscliv2.zip aws /var/lib/apt/lists/*
+
+# Copy and build Valgrind
+COPY SPP-Valgrind /spp-valgrind
+WORKDIR /spp-valgrind
+RUN ./autogen.sh && \
+    ./configure --prefix=/spp-valgrind/inst CFLAGS="-fcommon" && \
+    make -j$(nproc) && \
+    make install
+
+# Setup working directory
+WORKDIR /
+RUN mkdir /usercode && touch /spp_stdout.txt
+
+# Copy entrypoint script
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+ENTRYPOINT ["/entrypoint.sh"]

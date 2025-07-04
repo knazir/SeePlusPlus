@@ -3,10 +3,10 @@
 set -e  # Exit immediately on error
 
 NETWORK_NAME="spp-no-internet"
-BACKEND_IMAGE="spp-backend-image"
-USER_CODE_IMAGE="spp-user-code-image"
-FRONTEND_IMAGE="spp-frontend-image"
-ARCHIVE_FRONTEND_IMAGE="spp-archive-frontend-image"
+BACKEND_IMAGE="spp-backend"
+CODE_RUNNER_IMAGE="spp-code-runner"
+FRONTEND_IMAGE="spp-frontend"
+ARCHIVE_FRONTEND_IMAGE="spp-archive-frontend"
 
 function create_network() {
     echo "Creating isolated network ($NETWORK_NAME)..."
@@ -27,16 +27,20 @@ function remove_network() {
 
 function stop_containers() {
     echo "Stopping running containers..."
-    docker ps -q --filter "ancestor=$BACKEND_IMAGE" | xargs -r docker stop
-    docker ps -q --filter "ancestor=$USER_CODE_IMAGE" | xargs -r docker stop
-    docker ps -q --filter "ancestor=$FRONTEND_IMAGE" | xargs -r docker stop
-    docker ps -q --filter "ancestor=$ARCHIVE_FRONTEND_IMAGE" | xargs -r docker stop
+    if [ -f docker-compose.yml ]; then
+        docker-compose down
+    else
+        docker ps -q --filter "ancestor=$BACKEND_IMAGE" | xargs -r docker stop
+        docker ps -q --filter "ancestor=$CODE_RUNNER_IMAGE" | xargs -r docker stop
+        docker ps -q --filter "ancestor=$FRONTEND_IMAGE" | xargs -r docker stop
+        docker ps -q --filter "ancestor=$ARCHIVE_FRONTEND_IMAGE" | xargs -r docker stop
+    fi
 }
 
 function remove_containers() {
     echo "Removing stopped containers..."
     docker ps -aq --filter "ancestor=$BACKEND_IMAGE" | xargs -r docker rm
-    docker ps -aq --filter "ancestor=$USER_CODE_IMAGE" | xargs -r docker rm
+    docker ps -aq --filter "ancestor=$CODE_RUNNER_IMAGE" | xargs -r docker rm
     docker ps -aq --filter "ancestor=$FRONTEND_IMAGE" | xargs -r docker rm
     docker ps -aq --filter "ancestor=$ARCHIVE_FRONTEND_IMAGE" | xargs -r docker rm
 }
@@ -44,7 +48,7 @@ function remove_containers() {
 function remove_images() {
     echo "Removing images..."
     docker rmi -f $BACKEND_IMAGE || true
-    docker rmi -f $USER_CODE_IMAGE || true
+    docker rmi -f $CODE_RUNNER_IMAGE || true
     docker rmi -f $FRONTEND_IMAGE || true
     docker rmi -f $ARCHIVE_FRONTEND_IMAGE || true
 }
@@ -56,8 +60,8 @@ function build_images() {
         backend)
             docker build -t $BACKEND_IMAGE backend
             ;;
-        user-code)
-            docker build -t $USER_CODE_IMAGE backend/user-code-container
+        code-runner)
+            docker build -t $CODE_RUNNER_IMAGE code-runner
             ;;
         frontend)
             docker build -t $FRONTEND_IMAGE frontend
@@ -67,13 +71,13 @@ function build_images() {
             ;;
         "")
             docker build -t $BACKEND_IMAGE backend
-            docker build -t $USER_CODE_IMAGE backend/user-code-container
+            docker build -t $CODE_RUNNER_IMAGE code-runner
             docker build -t $FRONTEND_IMAGE frontend
             docker build -t $ARCHIVE_FRONTEND_IMAGE archive/frontend
             ;;
         *)
             echo "Invalid image name: $1"
-            echo "Usage: build_images [backend | user-code | frontend | archive-frontend]"
+            echo "Usage: build_images [backend | code-runner | frontend | archive-frontend]"
             return 1
             ;;
     esac
@@ -83,23 +87,32 @@ function start_containers() {
     create_network
     
     echo "Starting containers..."
-    docker run --rm -d --name spp-backend \
-      -v "$(pwd)/backend:/app" \
-      -v /tmp:/tmp \
-      -v /var/run/docker.sock:/var/run/docker.sock \
-      -p 3000:3000 $BACKEND_IMAGE
+    # Use docker-compose if available, otherwise fall back to docker run
+    if [ -f docker-compose.yml ]; then
+        echo "Using docker-compose..."
+        docker-compose up -d
+    else
+        docker run --rm -d --name spp-backend \
+          -v "$(pwd)/backend:/app" \
+          -v /tmp:/tmp \
+          -v /var/run/docker.sock:/var/run/docker.sock \
+          -p 3000:3000 \
+          -e EXEC_MODE=local \
+          -e TRACE_TMP=/tmp/spp-usercode \
+          $BACKEND_IMAGE
 
-    docker run --rm -d --name spp-frontend \
-      -v "$(pwd)/frontend:/app" \
-      -p 8080:8080 $FRONTEND_IMAGE
+        docker run --rm -d --name spp-frontend \
+          -v "$(pwd)/frontend:/app" \
+          -p 8080:8080 $FRONTEND_IMAGE
 
-    docker run --rm -d --name spp-archive-frontend \
-      -p 8000:8000 $ARCHIVE_FRONTEND_IMAGE
+        docker run --rm -d --name spp-archive-frontend \
+          -p 8000:8000 $ARCHIVE_FRONTEND_IMAGE
+    fi
 }
 
 function show_logs() {
     if [ -z "$1" ]; then
-        echo "Specify a container (frontend, backend, user-code, archive-frontend)."
+        echo "Specify a container (frontend, backend, code-runner, archive-frontend)."
         exit 1
     fi
 
@@ -121,7 +134,7 @@ function show_logs() {
 
 function exec_container() {
     if [ -z "$1" ]; then
-        echo "Specify a container (frontend, backend, user-code, archive-frontend)."
+        echo "Specify a container (frontend, backend, code-runner, archive-frontend)."
         exit 1
     fi
     
@@ -133,6 +146,30 @@ function exec_container() {
     
     echo "Opening shell in $CONTAINER_NAME..."
     docker exec -it "$CONTAINER_NAME" sh
+}
+
+function deploy_to_aws() {
+    if ! command -v copilot &> /dev/null; then
+        echo "AWS Copilot CLI not found. Please install it first:"
+        echo "  brew install aws/tap/copilot-cli  # on macOS"
+        echo "  or visit: https://aws.github.io/copilot-cli/docs/getting-started/install/"
+        exit 1
+    fi
+    
+    ENV="$1"
+    if [ -z "$ENV" ]; then
+        ENV="production"
+    fi
+    
+    echo "Deploying to AWS environment: $ENV"
+    echo "Building and pushing images..."
+    
+    # Deploy services
+    copilot svc deploy --name backend --env $ENV
+    copilot svc deploy --name frontend --env $ENV
+    copilot job deploy --name run-task --env $ENV
+    
+    echo "Deployment complete!"
 }
 
 function help_menu() {
@@ -150,7 +187,8 @@ function help_menu() {
     echo "  logs <container> [--tail]    Show logs for a specific container."
     echo "                                 - Without --tail: Show last 50 lines."
     echo "                                 - With --tail: Continuously stream logs."
-    echo "                                 - Supports: frontend, backend, user-code, archive-frontend"
+    echo "                                 - Supports: frontend, backend, code-runner, archive-frontend"
+    echo "  deploy <env>      Deploy to AWS using Copilot (requires AWS credentials)."
     echo "  help              Show this menu."
 }
 
@@ -200,6 +238,9 @@ case "$1" in
         ;;
     exec)
         exec_container "$2"
+        ;;
+    deploy)
+        deploy_to_aws "$2"
         ;;
     help)
         help_menu

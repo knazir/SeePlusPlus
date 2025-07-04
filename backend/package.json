@@ -13,6 +13,8 @@
   "license": "ISC",
   "description": "Backend for See++",
   "dependencies": {
+    "@aws-sdk/client-ecs": "^3.600.0",
+    "@aws-sdk/client-s3": "^3.600.0",
     "@types/cors": "^2.8.19",
     "body-parser": "^1.20.3",
     "cors": "^2.8.5",
