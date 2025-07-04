@@ -7,3 +7,6 @@
 # Claude Code
 .claude/
 CLAUDE.md
+
+# Temporary Files
+tmp/
