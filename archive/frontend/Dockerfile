@@ -1,4 +1,4 @@
-FROM node:16-alpine
+FROM node:23-alpine AS builder
 
 WORKDIR /app
 
@@ -6,13 +6,13 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm install
 
-# Copy the rest of the code
+# Copy and build the rest of the code
 COPY . .
+RUN npm run build
 
 # Set environment to development and start the app
-ENV PORT=8080
+ENV PORT=8000
 ENV CHOKIDAR_USEPOLLING=true
-ENV WATCHPACK_POLLING=true
 CMD ["npm", "start"]
 
 # TODO: Figure out how to toggle this on for non-dev

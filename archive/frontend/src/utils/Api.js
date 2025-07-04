@@ -36,11 +36,10 @@ class RawApi {
 
 export default class Api {
   static async getCodeTrace(lang, code) {
-    // Updated to use the new /run endpoint
+    // Updated to use the new /run endpoint with new backend format
     const path = `run`;
     const body = {
-      language: lang,
-      code: code
+      code: code  // Remove language parameter as new backend doesn't expect it
     };
     return new ProgramTrace(await RawApi.post(path, body));
   }
