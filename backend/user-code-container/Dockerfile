@@ -1,8 +1,11 @@
-FROM ubuntu:16.04
+FROM --platform=linux/amd64 ubuntu:14.04
 
 # Install dependencies required for building Valgrind and running user code
+# Install gcc-4.8 specifically to match the required platform
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends gcc g++ make autoconf automake libtool libc6-dbg && \
+    apt-get install -y --no-install-recommends gcc-4.8 g++-4.8 make autoconf automake libtool libc6-dbg && \
+    update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.8 100 && \
+    update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-4.8 100 && \
     rm -rf /var/lib/apt/lists/*  # Clean up to reduce image size
 
 # Build Valgrind in the container
