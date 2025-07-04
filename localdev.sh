@@ -167,7 +167,8 @@ function deploy_to_aws() {
     # Deploy services
     copilot svc deploy --name backend --env $ENV
     copilot svc deploy --name frontend --env $ENV
-    copilot job deploy --name run-task --env $ENV
+    copilot svc deploy --name frontend-legacy --env $ENV
+    copilot job deploy --name code-runner --env $ENV
     
     echo "Deployment complete!"
 }

@@ -1,4 +1,4 @@
-name: run-task
+name: code-runner
 type: Scheduled Job
 
 # Run configuration
@@ -22,14 +22,12 @@ image:
 
 # Environment configuration
 environments:
+  test:
+    cpu: 2048
+    memory: 4096
   production:
     cpu: 2048
     memory: 4096
-
-# IAM permissions
-taskRole:
-  policies:
-    - S3AccessPolicy
 
 # Custom IAM policies
 taskRole:

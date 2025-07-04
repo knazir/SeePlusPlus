@@ -26,7 +26,7 @@
     "eslint-plugin-standard": "^3.0.1"
   },
   "scripts": {
-    "start": "npx react-scripts start",
+    "start": "npx react-scripts start --host 0.0.0.0",
     "build": "npx react-scripts build",
     "test": "npx react-scripts test --env=jsdom",
     "eject": "npx react-scripts eject",
