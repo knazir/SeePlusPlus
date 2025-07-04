@@ -30,10 +30,6 @@ export function parseValgrindTrace(
     userCode: string,
     endOfTraceErrorMessage?: string
 ): ProgramTrace {
-    console.log(`Parsing Valgrind trace for ${userCode.length} chars`);
-    // console.log("Raw Valgrind output:", rawValgrindOutput);
-
-    // Clear global array for each fresh parse
     const allExecutionPoints: ExecutionPoint[] = [];
 
     // Split entire valgrind output into lines
@@ -308,8 +304,6 @@ function processJsonObject(
     errStr: string | null,
     stdoutStr: string
 ): ExecutionPoint {
-    console.log(`obj: ${JSON.stringify(obj)}`);
-
     if (!obj.stack || obj.stack.length < 1) {
         console.warn(`Record has no stack frames: ${JSON.stringify(obj)}`);
     }
@@ -362,7 +356,6 @@ function processJsonObject(
                 stackEntry.line = frameObj.line;
             }
             if (frameObj.locals) {
-                console.log(`frameObj.locals: ${JSON.stringify(frameObj.locals)}`);
                 for (const [localVar, localVal] of Object.entries(frameObj.locals)) {
                     stackEntry.encodedLocals[localVar] = encodeValue(localVal, executionPoint.heap);
                 }

@@ -9,7 +9,7 @@ const execPromise = util.promisify(exec);
 export class LocalDockerRunner implements TraceRunner {
     private readonly rootSharedDir: string = "/tmp/spp-usercode";
     private readonly userCodeFilePrefix: string = process.env.USER_CODE_FILE_PREFIX || "main";
-    private readonly userCodeImageName: string = "spp-user-code-image";
+    private readonly userCodeImageName: string = "spp-code-runner";
     private readonly userCodeNetworkName: string = "spp-no-internet";
 
     constructor() {
@@ -34,7 +34,7 @@ export class LocalDockerRunner implements TraceRunner {
             // Run container
             const dockerCmd = [
                 "docker run",
-                "--rm",
+                // "--rm",
                 `--network ${this.userCodeNetworkName}`,
                 `-v ${files.userCode.accessible}:${files.userCode.isolated}`,
                 `-v ${files.trace.accessible}:${files.trace.isolated}`,
