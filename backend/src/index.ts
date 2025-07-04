@@ -99,7 +99,7 @@ app.post("/run", async (req: Request, res: Response) => {
         // the specific files needed to avoid leakagae of other users' code.
         const dockerCmd = [
             "docker run",
-            // "--rm",
+            "--rm",
             `--network ${USER_CODE_NETWORK_NAME}`,
             `-v ${userCodeFilePath.accessible}:${userCodeFilePath.isolated}`,
             `-v ${traceFilePath.accessible}:${traceFilePath.isolated}`,
