@@ -10,6 +10,12 @@ network:
   vpc:
     placement: 'private'
 
+# Container configuration
+image:
+  build:
+    dockerfile: ./backend/Dockerfile
+    context: ./backend
+
 # Health check configuration
 healthcheck:
   path: '/'
@@ -19,9 +25,24 @@ healthcheck:
 
 # Environment variables
 environments:
+  test:
+    cpu: 2048
+    memory: 4096
+    count: 3
+    secrets:
+      BUCKET:
+        from_cfn: ${COPILOT_APPLICATION_NAME}-test-S3BucketName
+      CLUSTER_ARN:
+        from_cfn: ${COPILOT_APPLICATION_NAME}-test-ClusterARN
+      TASK_DEF_ARN:
+        from_cfn: ${COPILOT_APPLICATION_NAME}-test-ExecRunnerTaskARN
+      SUBNETS:
+        from_cfn: ${COPILOT_APPLICATION_NAME}-test-PrivateSubnets
+      SECURITY_GROUP:
+        from_cfn: ${COPILOT_APPLICATION_NAME}-test-SecurityGroup
   production:
-    cpu: 1024
-    memory: 2048
+    cpu: 2048
+    memory: 4096
     count: 3
     secrets:
       BUCKET:
@@ -34,12 +55,6 @@ environments:
         from_cfn: ${COPILOT_APPLICATION_NAME}-prod-PrivateSubnets
       SECURITY_GROUP:
         from_cfn: ${COPILOT_APPLICATION_NAME}-prod-SecurityGroup
-
-# IAM permissions
-taskRole:
-  policies:
-    - S3AccessPolicy
-    - ECSTaskExecutionPolicy
 
 # Custom IAM policies
 taskRole:
