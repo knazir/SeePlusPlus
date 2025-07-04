@@ -36,11 +36,11 @@ services:
     networks:
       - spp-network
 
-  archive-frontend:
+  frontend-legacy:
     build:
-      context: ./archive/frontend
+      context: ./frontend-legacy
       dockerfile: Dockerfile
-    container_name: spp-archive-frontend
+    container_name: spp-frontend-legacy
     ports:
       - "8000:8000"
     networks:

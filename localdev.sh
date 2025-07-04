@@ -6,7 +6,7 @@ NETWORK_NAME="spp-no-internet"
 BACKEND_IMAGE="spp-backend"
 CODE_RUNNER_IMAGE="spp-code-runner"
 FRONTEND_IMAGE="spp-frontend"
-ARCHIVE_FRONTEND_IMAGE="spp-archive-frontend"
+FRONTEND_LEGACY_IMAGE="spp-frontend-legacy"
 
 function create_network() {
     echo "Creating isolated network ($NETWORK_NAME)..."
@@ -33,7 +33,7 @@ function stop_containers() {
         docker ps -q --filter "ancestor=$BACKEND_IMAGE" | xargs -r docker stop
         docker ps -q --filter "ancestor=$CODE_RUNNER_IMAGE" | xargs -r docker stop
         docker ps -q --filter "ancestor=$FRONTEND_IMAGE" | xargs -r docker stop
-        docker ps -q --filter "ancestor=$ARCHIVE_FRONTEND_IMAGE" | xargs -r docker stop
+        docker ps -q --filter "ancestor=$FRONTEND_LEGACY_IMAGE" | xargs -r docker stop
     fi
 }
 
@@ -42,7 +42,7 @@ function remove_containers() {
     docker ps -aq --filter "ancestor=$BACKEND_IMAGE" | xargs -r docker rm
     docker ps -aq --filter "ancestor=$CODE_RUNNER_IMAGE" | xargs -r docker rm
     docker ps -aq --filter "ancestor=$FRONTEND_IMAGE" | xargs -r docker rm
-    docker ps -aq --filter "ancestor=$ARCHIVE_FRONTEND_IMAGE" | xargs -r docker rm
+    docker ps -aq --filter "ancestor=$FRONTEND_LEGACY_IMAGE" | xargs -r docker rm
 }
 
 function remove_images() {
@@ -50,7 +50,7 @@ function remove_images() {
     docker rmi -f $BACKEND_IMAGE || true
     docker rmi -f $CODE_RUNNER_IMAGE || true
     docker rmi -f $FRONTEND_IMAGE || true
-    docker rmi -f $ARCHIVE_FRONTEND_IMAGE || true
+    docker rmi -f $FRONTEND_LEGACY_IMAGE || true
 }
 
 function build_images() {
@@ -66,18 +66,18 @@ function build_images() {
         frontend)
             docker build -t $FRONTEND_IMAGE frontend
             ;;
-        archive-frontend)
-            docker build -t $ARCHIVE_FRONTEND_IMAGE archive/frontend
+        frontend-legacy)
+            docker build -t $FRONTEND_LEGACY_IMAGE frontend-legacy
             ;;
         "")
             docker build -t $BACKEND_IMAGE backend
             docker build -t $CODE_RUNNER_IMAGE code-runner
             docker build -t $FRONTEND_IMAGE frontend
-            docker build -t $ARCHIVE_FRONTEND_IMAGE archive/frontend
+            docker build -t $FRONTEND_LEGACY_IMAGE frontend-legacy
             ;;
         *)
             echo "Invalid image name: $1"
-            echo "Usage: build_images [backend | code-runner | frontend | archive-frontend]"
+            echo "Usage: build_images [backend | code-runner | frontend | frontend-legacy]"
             return 1
             ;;
     esac
@@ -105,19 +105,19 @@ function start_containers() {
           -v "$(pwd)/frontend:/app" \
           -p 8080:8080 $FRONTEND_IMAGE
 
-        docker run --rm -d --name spp-archive-frontend \
-          -p 8000:8000 $ARCHIVE_FRONTEND_IMAGE
+        docker run --rm -d --name spp-frontend-legacy \
+          -p 8000:8000 $FRONTEND_LEGACY_IMAGE
     fi
 }
 
 function show_logs() {
     if [ -z "$1" ]; then
-        echo "Specify a container (frontend, backend, code-runner, archive-frontend)."
+        echo "Specify a container (frontend, backend, code-runner, frontend-legacy)."
         exit 1
     fi
 
-    if [ "$1" == "archive-frontend" ]; then
-        CONTAINER_NAME="spp-archive-frontend"
+    if [ "$1" == "frontend-legacy" ]; then
+        CONTAINER_NAME="spp-frontend-legacy"
     else
         CONTAINER_NAME="spp-$1"
     fi
@@ -134,12 +134,12 @@ function show_logs() {
 
 function exec_container() {
     if [ -z "$1" ]; then
-        echo "Specify a container (frontend, backend, code-runner, archive-frontend)."
+        echo "Specify a container (frontend, backend, code-runner, frontend-legacy)."
         exit 1
     fi
     
-    if [ "$1" == "archive-frontend" ]; then
-        CONTAINER_NAME="spp-archive-frontend"
+    if [ "$1" == "frontend" ]; then
+        CONTAINER_NAME="spp-frontend"
     else
         CONTAINER_NAME="spp-$1"
     fi
@@ -187,7 +187,7 @@ function help_menu() {
     echo "  logs <container> [--tail]    Show logs for a specific container."
     echo "                                 - Without --tail: Show last 50 lines."
     echo "                                 - With --tail: Continuously stream logs."
-    echo "                                 - Supports: frontend, backend, code-runner, archive-frontend"
+    echo "                                 - Supports: frontend, backend, code-runner, frontend-legacy"
     echo "  deploy <env>      Deploy to AWS using Copilot (requires AWS credentials)."
     echo "  help              Show this menu."
 }
