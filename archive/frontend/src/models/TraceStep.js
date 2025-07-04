@@ -16,7 +16,6 @@ export default class TraceStep {
     this.line = line - 1; // IMPORTANT: we do line - 1 to discount the #define for fixing unions TODO kn: Do on backend
     this.heap = this._mapHeap(heap);
     this.globals = this._mapGlobals(globals);
-    console.log(`stackToRender: ${JSON.stringify(stackToRender)}`);
     this.stack = this._createStack(stackToRender);
     this.stdout = stdout;
 

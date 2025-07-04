@@ -1,4 +1,5 @@
-FROM ubuntu:14.04
+ARG TARGETPLATFORM=linux/amd64
+FROM --platform=$TARGETPLATFORM ubuntu:14.04
 
 # Install dependencies required for building Valgrind and running user code
 # Install gcc-4.8 specifically to match the required platform
