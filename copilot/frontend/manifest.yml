@@ -16,7 +16,10 @@ image:
 cpu: 256
 memory: 512
 platform: linux/x86_64
-count: 1 
+count:
+  range:
+    min: 1
+    max: 10
 exec: true                     # Enable running commands in container.
 network:
   connect: true                # Enable Service Connect for intra-environment traffic between services.
@@ -24,6 +27,7 @@ network:
 # Environment-specific overrides.
 environments:
   test:
+    count: 1
     deployment:
       rolling: 'recreate'       # Stops existing tasks before new ones are started for faster deployments.
   prod:
