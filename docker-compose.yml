@@ -4,6 +4,7 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile.dev
+    image: spp-backend:dev
     container_name: spp-backend
     ports:
       - "3000:3000"
@@ -25,6 +26,7 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile.dev
+    image: spp-frontend:dev
     container_name: spp-frontend
     ports:
       - "8080:8080"
@@ -40,6 +42,7 @@ services:
     build:
       context: ./frontend-legacy
       dockerfile: Dockerfile.dev
+    image: spp-frontend-legacy:dev
     container_name: spp-frontend-legacy
     ports:
       - "8000:8000"
@@ -51,7 +54,9 @@ services:
     build:
       context: ./code-runner
       dockerfile: Dockerfile.dev
-    image: spp-code-runner
+    image: spp-code-runner:dev
+    deploy:
+      replicas: 0 # Don't spin up an instance of the code-runner image
     command: echo "code-runner image built"
 
 networks:

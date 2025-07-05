@@ -92,7 +92,7 @@ function start_containers() {
         echo "Using docker-compose..."
         docker-compose up -d
     else
-        docker run --rm -d --name spp-backend \
+        docker run --rm -d --name spp-backend:dev \
           -v "$(pwd)/backend:/app" \
           -v /tmp:/tmp \
           -v /var/run/docker.sock:/var/run/docker.sock \
@@ -101,11 +101,11 @@ function start_containers() {
           -e TRACE_TMP=/tmp/spp-usercode \
           $BACKEND_IMAGE
 
-        docker run --rm -d --name spp-frontend \
+        docker run --rm -d --name spp-frontend:dev \
           -v "$(pwd)/frontend:/app" \
           -p 8080:8080 $FRONTEND_IMAGE
 
-        docker run --rm -d --name spp-frontend-legacy \
+        docker run --rm -d --name spp-frontend-legacy:dev \
           -p 8000:8000 $FRONTEND_LEGACY_IMAGE
     fi
 }
