@@ -9,11 +9,16 @@ WORKDIR /app
 COPY package.json package-lock.json* ./
 RUN npm ci --silent
 
-# Copy source and build to /app/build
-COPY . .
+# Setup arguments (required at build time so need to be build arguments)
 ARG SPP_API_URL
 ENV REACT_APP_SPP_API_URL=$SPP_API_URL
-RUN echo "Building with API URL: $REACT_APP_SPP_API_URL"
+
+# List arguments
+RUN echo "Building with arguments:"
+RUN echo "  REACT_APP_SPP_API_URL: $REACT_APP_SPP_API_URL"
+
+# Copy source and build to /app/build
+COPY . .
 RUN npm run build
 
 # ------------------------------------------------------------------------------

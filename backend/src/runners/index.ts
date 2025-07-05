@@ -4,7 +4,8 @@ import { FargateRunner } from "./fargate";
 
 export function createRunner(): TraceRunner {
     const execMode = process.env.EXEC_MODE || "local";
-    
+    console.log("EXEC_MODE: ", process.env.EXEC_MODE);
+    console.log("process.env: ", process.env);
     if (execMode === "local") {
         console.log("Using LocalDockerRunner");
         return new LocalDockerRunner();
