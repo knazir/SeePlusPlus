@@ -1,5 +1,5 @@
-# Frontend service (in beta while in development)
-name: frontend
+# Legacy frontend service (used as main frontend until new frontend is ready)
+name: frontend-legacy
 type: Load Balanced Web Service
 
 # Distribute traffic to the frontend service.
@@ -9,7 +9,7 @@ http:
 
 # Container configuration.
 image:
-  build: frontend/Dockerfile.prod
+  build: frontend-legacy/Dockerfile.prod
   port: 80
 
 # Resources configuration.
@@ -28,4 +28,4 @@ environments:
       rolling: 'recreate'       # Stops existing tasks before new ones are started for faster deployments.
   prod:
     http:
-      alias: ['beta.seepluspl.us']
+      alias: ['seepluspl.us', 'legacy.seepluspl.us']

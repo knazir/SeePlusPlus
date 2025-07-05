@@ -3,7 +3,7 @@ services:
   backend:
     build:
       context: ./backend
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.dev
     container_name: spp-backend
     ports:
       - "3000:3000"
@@ -24,7 +24,7 @@ services:
   frontend:
     build:
       context: ./frontend
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.dev
     container_name: spp-frontend
     ports:
       - "8080:8080"
@@ -39,7 +39,7 @@ services:
   frontend-legacy:
     build:
       context: ./frontend-legacy
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.dev
     container_name: spp-frontend-legacy
     ports:
       - "8000:8000"
@@ -50,7 +50,7 @@ services:
   code-runner-build:
     build:
       context: ./code-runner
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.dev
     image: spp-code-runner
     command: echo "code-runner image built"
 

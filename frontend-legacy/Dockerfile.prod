@@ -2,7 +2,7 @@
 # Build Stage
 # ------------------------------------------------------------------------------
 ARG PLATFORM=linux/amd64
-FROM --platform=${PLATFORM} node:23-alpine AS builder
+FROM --platform=${PLATFORM} node:18-bullseye AS builder
 WORKDIR /app
 
 # Install deps first (better layer caching)
