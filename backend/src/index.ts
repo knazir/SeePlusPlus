@@ -5,14 +5,14 @@ import dotenv from "dotenv";
 import express, { Express, Request, Response } from "express";
 
 import {
+    createRunner,
+    TraceRunner 
+} from "./runners";
+import {
     buildValgrindResponse,
     preprocessCode,
     ValgrindTrace
 } from "./valgrind_utils";
-import { createRunner, TraceRunner } from "./runners";
-
-// Types
-//------------------------------------------------------------------------------
 
 // Setup
 //------------------------------------------------------------------------------
@@ -27,19 +27,29 @@ const USER_CODE_FILE_PREFIX = process.env.USER_CODE_FILE_PREFIX || "main";
 //------------------------------------------------------------------------------
 app.use(express.json());
 
-// Configure CORS to allow requests from the frontend
+const ALLOWED_ORIGIN_REGEX = new RegExp(process.env.ALLOWED_ORIGIN_REGEX || "");
 app.use(cors({
-  origin: ["http://localhost:8080", "http://localhost:8000", "http://localhost:3000"],
-  methods: ['GET', 'POST', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true
+    origin: (origin, callback) => {
+        if (process.env.NODE_ENV === "production") {
+            if (!origin || ALLOWED_ORIGIN_REGEX.test(origin)) {
+                callback(null, true);
+            } else {
+                callback(new Error(`CORS error: origin ${origin} not allowed`));
+            }
+        } else {
+            callback(null, true); // Allow all origins in development
+        }
+    },
+    methods: ["GET", "POST", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true
 }));
 
 // Route: /
 // Returns a healthcheck to confirm the server is running
 //------------------------------------------------------------------------------
-app.get("/", (req: Request, res: Response) => {
-  res.send("See++ backend online");
+app.get("/api", (req: Request, res: Response) => {
+    res.send("See++ backend online");
 });
 
 // Route: /run
@@ -47,7 +57,7 @@ app.get("/", (req: Request, res: Response) => {
 // Spins up a docker container to compile and run the provided C++ code under
 // Valgrind and return a trace.
 //------------------------------------------------------------------------------
-app.post("/run", async (req: Request, res: Response) => {
+app.post("/api/run", async (req: Request, res: Response) => {
     const userCode: string | undefined = req.body.code;
     let preprocessedUserCode: string | undefined = userCode;
     if (userCode) {
@@ -83,5 +93,5 @@ app.post("/run", async (req: Request, res: Response) => {
 // Start server
 //------------------------------------------------------------------------------
 app.listen(PORT, () => {
-  console.log(`[Server]: See++ backend is running at http://localhost:${PORT}`);
+    console.log(`[Server]: See++ backend is running at http://localhost:${PORT}`);
 });

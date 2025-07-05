@@ -12,8 +12,7 @@ class RawApi {
       opts.body = JSON.stringify(body);
     }
 
-    // Default to localhost:3000 for dockerized backend if no environment variable is set
-    const apiUrl = process.env.SPP_API_URL || "http://localhost:3000";
+    const apiUrl = process.env.REACT_APP_SPP_API_URL || "http://localhost:3000/api";
     const res = await fetch(`${apiUrl}/${path}`, opts);
     let json;
     try {
@@ -37,9 +36,9 @@ class RawApi {
 export default class Api {
   static async getCodeTrace(lang, code) {
     // Updated to use the new /run endpoint with new backend format
-    const path = `run`;
+    const path = "run";
     const body = {
-      code: code  // Remove language parameter as new backend doesn't expect it
+      code: code // Remove language parameter as new backend doesn't expect it
     };
     return new ProgramTrace(await RawApi.post(path, body));
   }

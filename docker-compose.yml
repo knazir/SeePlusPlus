@@ -4,6 +4,8 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile.dev
+      args:
+        FRONTEND_URL: "*"
     image: spp-backend:dev
     container_name: spp-backend
     ports:
@@ -26,6 +28,8 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile.dev
+      args:
+        SPP_API_URL: "http://localhost:3000/api"
     image: spp-frontend:dev
     container_name: spp-frontend
     ports:
@@ -34,7 +38,6 @@ services:
       - ./frontend:/app
     environment:
       - NODE_ENV=development
-      - SPP_API_URL=http://localhost:3000
     networks:
       - spp-network
 
@@ -42,6 +45,8 @@ services:
     build:
       context: ./frontend-legacy
       dockerfile: Dockerfile.dev
+      args:
+        SPP_API_URL: "http://localhost:3000/api"
     image: spp-frontend-legacy:dev
     container_name: spp-frontend-legacy
     ports:
@@ -50,7 +55,6 @@ services:
       - ./frontend-legacy:/app
     environment:
       - NODE_ENV=development
-      - SPP_API_URL=http://localhost:3000
     networks:
       - spp-network
 

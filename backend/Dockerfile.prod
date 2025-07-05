@@ -9,10 +9,17 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm install
 
-# Copy the rest of the codebase
-COPY . .
+# Setup arguments
+ARG ALLOWED_ORIGIN_REGEX
+ENV ALLOWED_ORIGIN_REGEX=$ALLOWED_ORIGIN_REGEX
+RUN echo "Building with allowed origin regex: $ALLOWED_ORIGIN_REGEX"
 
-# Build the app
+ARG EXEC_MODE
+ENV EXEC_MODE=$EXEC_MODE
+RUN echo "Building with exec mode: $EXEC_MODE"
+
+# Copy the rest of the codebase and build the app
+COPY . .
 RUN npm run build
 
 # ------------------------------------------------------------------------------------------------

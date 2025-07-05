@@ -1,10 +1,19 @@
 # Backend service
 name: backend
-type: Backend Service
+type: Load Balanced Web Service
+
+# Distribute traffic to the backend service.
+http:
+  path: "/api"
+  healthcheck: "/api"
 
 # Container configuration.
 image:
-  build: backend/Dockerfile.prod
+  build:
+    context: backend
+    dockerfile: backend/Dockerfile.prod
+    args:
+      ALLOWED_ORIGIN_REGEX: '^https?:\/\/(?:[\w-]+\.)?(seepluspl\.us)$'
   port: 3000
 
 # Resources configuration.
@@ -19,22 +28,9 @@ exec: true                     # Enable running commands in container.
 network:
   connect: true                # Enable Service Connect for intra-environment traffic between services.
 
-# Task configuration.
-task_role:
-  policy:          # minimal set
-    statements:
-      - effect: allow
-        actions: ["ecs:RunTask", "iam:PassRole"]
-        resources: ["*"]
-      - effect: allow
-        actions: ["s3:*"]
-        resources: ["arn:aws:s3:::${TRACESTORE_NAME}/*"]
-execution_role:
-  pass_through: true
-
 # Environment-specific overrides.
 environments:
   test:
     count: 1
     deployment:
-      rolling: 'recreate'       # Stops existing tasks before new ones are started for faster deployments.
+      rolling: "recreate"       # Stops existing tasks before new ones are started for faster deployments.
