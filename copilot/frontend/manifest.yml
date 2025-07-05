@@ -1,0 +1,31 @@
+# Frontend service (in beta while in development)
+name: frontend
+type: Load Balanced Web Service
+
+# Distribute traffic to the frontend service.
+http:
+  path: '/'
+  healthcheck: '/'
+
+# Container configuration.
+image:
+  build: frontend/Dockerfile.prod
+  port: 80
+
+# Resources configuration.
+cpu: 256
+memory: 512
+platform: linux/x86_64
+count: 1 
+exec: true                     # Enable running commands in container.
+network:
+  connect: true                # Enable Service Connect for intra-environment traffic between services.
+
+# Environment-specific overrides.
+environments:
+  test:
+    deployment:
+      rolling: 'recreate'       # Stops existing tasks before new ones are started for faster deployments.
+  prod:
+    http:
+      alias: ['beta.test.seepluspl.us']
