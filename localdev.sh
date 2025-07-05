@@ -2,150 +2,32 @@
 
 set -e  # Exit immediately on error
 
-NETWORK_NAME="spp-no-internet"
-BACKEND_IMAGE="spp-backend"
-CODE_RUNNER_IMAGE="spp-code-runner"
-FRONTEND_IMAGE="spp-frontend"
-FRONTEND_LEGACY_IMAGE="spp-frontend-legacy"
-
-function create_network() {
-    echo "Creating isolated network ($NETWORK_NAME)..."
-    if docker network ls --format "{{.Name}}" | grep -wq "$NETWORK_NAME"; then
-        docker network rm "$NETWORK_NAME"
-    fi
-    docker network create --internal "$NETWORK_NAME"
-}
-
-function remove_network() {
-    if docker network ls --format "{{.Name}}" | grep -wq "$NETWORK_NAME"; then
-        echo "Removing existing isolated network ($NETWORK_NAME)..."
-        docker network rm "$NETWORK_NAME"
-    else
-        echo "No existing network found."
-    fi
-}
-
-function stop_containers() {
-    echo "Stopping running containers..."
-    if [ -f docker-compose.yml ]; then
-        docker-compose down
-    else
-        docker ps -q --filter "ancestor=$BACKEND_IMAGE" | xargs -r docker stop
-        docker ps -q --filter "ancestor=$CODE_RUNNER_IMAGE" | xargs -r docker stop
-        docker ps -q --filter "ancestor=$FRONTEND_IMAGE" | xargs -r docker stop
-        docker ps -q --filter "ancestor=$FRONTEND_LEGACY_IMAGE" | xargs -r docker stop
-    fi
-}
-
-function remove_containers() {
-    echo "Removing stopped containers..."
-    docker ps -aq --filter "ancestor=$BACKEND_IMAGE" | xargs -r docker rm
-    docker ps -aq --filter "ancestor=$CODE_RUNNER_IMAGE" | xargs -r docker rm
-    docker ps -aq --filter "ancestor=$FRONTEND_IMAGE" | xargs -r docker rm
-    docker ps -aq --filter "ancestor=$FRONTEND_LEGACY_IMAGE" | xargs -r docker rm
-}
-
-function remove_images() {
-    echo "Removing images..."
-    docker rmi -f $BACKEND_IMAGE || true
-    docker rmi -f $CODE_RUNNER_IMAGE || true
-    docker rmi -f $FRONTEND_IMAGE || true
-    docker rmi -f $FRONTEND_LEGACY_IMAGE || true
-}
-
-function build_images() {
-    echo "Building container images..."
-
-    case "$1" in
-        backend)
-            docker build -f backend/Dockerfile.dev -t $BACKEND_IMAGE:dev backend
-            ;;
-        code-runner)
-            docker build -f code-runner/Dockerfile.dev -t $CODE_RUNNER_IMAGE:dev code-runner
-            ;;
-        frontend)
-            docker build -f frontend/Dockerfile.dev -t $FRONTEND_IMAGE:dev frontend
-            ;;
-        frontend-legacy)
-            docker build -f frontend-legacy/Dockerfile.dev -t $FRONTEND_LEGACY_IMAGE:dev frontend-legacy
-            ;;
-        "")
-            docker build -f backend/Dockerfile.dev -t $BACKEND_IMAGE:dev backend
-            docker build -f code-runner/Dockerfile.dev -t $CODE_RUNNER_IMAGE:dev code-runner
-            docker build -f frontend/Dockerfile.dev -t $FRONTEND_IMAGE:dev frontend
-            docker build -f frontend-legacy/Dockerfile.dev -t $FRONTEND_LEGACY_IMAGE:dev frontend-legacy
-            ;;
-        *)
-            echo "Invalid image name: $1"
-            echo "Usage: build_images [backend | code-runner | frontend | frontend-legacy]"
-            return 1
-            ;;
-    esac
-}
-
-function start_containers() {
-    create_network
-    
-    echo "Starting containers..."
-    # Use docker-compose if available, otherwise fall back to docker run
-    if [ -f docker-compose.yml ]; then
-        echo "Using docker-compose..."
-        docker-compose up -d
-    else
-        docker run --rm -d --name spp-backend:dev \
-          -v "$(pwd)/backend:/app" \
-          -v /tmp:/tmp \
-          -v /var/run/docker.sock:/var/run/docker.sock \
-          -p 3000:3000 \
-          -e EXEC_MODE=local \
-          -e TRACE_TMP=/tmp/spp-usercode \
-          $BACKEND_IMAGE
-
-        docker run --rm -d --name spp-frontend:dev \
-          -v "$(pwd)/frontend:/app" \
-          -p 8080:8080 $FRONTEND_IMAGE
-
-        docker run --rm -d --name spp-frontend-legacy:dev \
-          -p 8000:8000 $FRONTEND_LEGACY_IMAGE
-    fi
-}
-
 function show_logs() {
     if [ -z "$1" ]; then
-        echo "Specify a container (frontend, backend, code-runner, frontend-legacy)."
+        echo "Specify a service (frontend, backend, frontend-legacy)."
+        echo "Usage: ./localdev.sh logs <service> [--tail]"
         exit 1
-    fi
-
-    if [ "$1" == "frontend-legacy" ]; then
-        CONTAINER_NAME="spp-frontend-legacy"
-    else
-        CONTAINER_NAME="spp-$1"
     fi
 
     # Check if user wants to tail logs or just show recent logs
     if [ "$2" == "--tail" ]; then
-        echo "Tailing logs for $CONTAINER_NAME..."
-        docker logs -f "$CONTAINER_NAME"
+        echo "Tailing logs for $1..."
+        docker-compose logs -f "$1"
     else
-        echo "Showing latest logs for $CONTAINER_NAME..."
-        docker logs --tail=50 "$CONTAINER_NAME"
+        echo "Showing latest logs for $1..."
+        docker-compose logs --tail=50 "$1"
     fi
 }
 
 function exec_container() {
     if [ -z "$1" ]; then
-        echo "Specify a container (frontend, backend, code-runner, frontend-legacy)."
+        echo "Specify a service (frontend, backend, frontend-legacy)."
+        echo "Usage: ./localdev.sh exec <service>"
         exit 1
     fi
     
-    if [ "$1" == "frontend" ]; then
-        CONTAINER_NAME="spp-frontend"
-    else
-        CONTAINER_NAME="spp-$1"
-    fi
-    
-    echo "Opening shell in $CONTAINER_NAME..."
-    docker exec -it "$CONTAINER_NAME" sh
+    echo "Opening shell in $1..."
+    docker-compose exec "$1" sh
 }
 
 function deploy_to_aws() {
@@ -156,11 +38,7 @@ function deploy_to_aws() {
         exit 1
     fi
     
-    ENV="$1"
-    if [ -z "$ENV" ]; then
-        ENV="production"
-    fi
-    
+    ENV="${1:-test}"
     echo "Deploying to AWS environment: $ENV"
     echo "Building and pushing images..."
     
@@ -177,62 +55,57 @@ function help_menu() {
     echo "Usage: ./localdev.sh [command]"
     echo ""
     echo "Commands:"
-    echo "  up                Start all containers (default action)."
-    echo "  up-archive        Start backend with archive frontend."
+    echo "  up                Start all services (default action)."
     echo "  down              Stop and remove running containers (keep images)."
-    echo "  restart           Restart containers without rebuilding."
-    echo "  rebuild           Stop, remove, and fully rebuild containers."
-    echo "  clean             Remove containers and images."
-    echo "  network-reset     Recreate the isolated network."
-    echo "  exec <container>  Open shell in a running container."
-    echo "  logs <container> [--tail]    Show logs for a specific container."
+    echo "  restart           Restart services without rebuilding."
+    echo "  build [service]   Build all services or specific service."
+    echo "  rebuild           Stop, remove, rebuild and start services."
+    echo "  clean             Remove containers, images, and volumes."
+    echo "  logs <service> [--tail]    Show logs for a specific service."
     echo "                                 - Without --tail: Show last 50 lines."
     echo "                                 - With --tail: Continuously stream logs."
-    echo "                                 - Supports: frontend, backend, code-runner, frontend-legacy"
-    echo "  deploy <env>      Deploy to AWS using Copilot (requires AWS credentials)."
+    echo "                                 - Supports: frontend, backend, frontend-legacy"
+    echo "  exec <service>    Open shell in a running service."
+    echo "  deploy [env]      Deploy to AWS using Copilot (default: production)."
     echo "  help              Show this menu."
+    echo ""
+    echo "Examples:"
+    echo "  ./localdev.sh up                    # Start all services"
+    echo "  ./localdev.sh build backend         # Build only backend"
+    echo "  ./localdev.sh logs frontend --tail  # Tail frontend logs"
+    echo "  ./localdev.sh exec backend          # Shell into backend"
 }
 
 # Default behavior: Start everything if no arguments are passed
 if [ $# -eq 0 ]; then
     echo "No command specified. Defaulting to 'up'..."
-    build_images
-    start_containers
+    docker-compose up -d
     exit 0
 fi
 
 # Handle commands
 case "$1" in
     up)
-        start_containers
+        docker-compose up -d
         ;;
     down)
-        stop_containers
-        remove_containers
+        docker-compose down
         ;;
     restart)
-        stop_containers
-        remove_containers
-        start_containers
+        docker-compose restart
         ;;
     build)
-        build_images "$2"
+        docker-compose build "${2:-}"
         ;;
     rebuild)
-        stop_containers
-        remove_containers
-        remove_images
-        build_images
-        start_containers
+        echo "Stopping and removing containers..."
+        docker-compose down --rmi all
+        echo "Building and starting services..."
+        docker-compose up --build -d
         ;;
     clean)
-        stop_containers
-        remove_containers
-        remove_images
-        remove_network
-        ;;
-    network-reset)
-        create_network
+        echo "Removing containers, images, and volumes..."
+        docker-compose down --rmi all --volumes
         ;;
     logs)
         show_logs "$2" "$3"
