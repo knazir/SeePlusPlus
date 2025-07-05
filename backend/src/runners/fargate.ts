@@ -1,10 +1,9 @@
 import { 
     ECSClient, 
     RunTaskCommand, 
-    DescribeTasksCommand,
     TaskOverride,
-    Task
 } from "@aws-sdk/client-ecs";
+import { waitUntilTasksStopped } from "@aws-sdk/client-ecs";
 import { S3Client, PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
 import { TraceRunner, RunnerResult } from "./runner.interface";
 
@@ -22,7 +21,7 @@ export class FargateRunner implements TraceRunner {
         this.ecsClient = new ECSClient({ region });
         this.s3Client = new S3Client({ region });
         
-        this.bucketName = process.env.BUCKET!;
+        this.bucketName = process.env.TRACESTORE_NAME!;
         this.clusterArn = process.env.CLUSTER_ARN!;
         this.taskDefinitionArn = process.env.TASK_DEF_ARN!;
         this.subnets = (process.env.SUBNETS || "").split(",").filter(s => s);
@@ -32,12 +31,12 @@ export class FargateRunner implements TraceRunner {
     }
 
     async run(code: string, uniqueId: string): Promise<RunnerResult> {
-        const codeKey = `code/${uniqueId}.cpp`;
-        const traceKey = `trace/${uniqueId}_trace.json`;
-        const ccStdoutKey = `trace/${uniqueId}_cc_stdout.txt`;
-        const ccStderrKey = `trace/${uniqueId}_cc_stderr.txt`;
-        const stdoutKey = `trace/${uniqueId}_stdout.txt`;
-        const stderrKey = `trace/${uniqueId}_stderr.txt`;
+        const codeKey = `${uniqueId}/${uniqueId}_code.cpp`;
+        const traceKey = `${uniqueId}/${uniqueId}_trace.json`;
+        const ccStdoutKey = `${uniqueId}/${uniqueId}_cc_stdout.txt`;
+        const ccStderrKey = `${uniqueId}/${uniqueId}_cc_stderr.txt`;
+        const stdoutKey = `${uniqueId}/${uniqueId}_stdout.txt`;
+        const stderrKey = `${uniqueId}/${uniqueId}_stderr.txt`;
 
         // Upload code to S3
         await this.s3Client.send(new PutObjectCommand({
@@ -48,11 +47,19 @@ export class FargateRunner implements TraceRunner {
         }));
 
         // Run Fargate task
-        const taskArn = await this.runFargateTask(uniqueId, codeKey, traceKey, 
-            ccStdoutKey, ccStderrKey, stdoutKey, stderrKey);
+        const taskArn = await this.runFargateTask(uniqueId,
+                                                  codeKey,
+                                                  traceKey,
+                                                  ccStdoutKey,
+                                                  ccStderrKey,
+                                                  stdoutKey,
+                                                  stderrKey);
 
         // Wait for task completion
-        await this.waitForTaskCompletion(taskArn);
+        await waitUntilTasksStopped(
+            { client: this.ecsClient, maxWaitTime: 300 },
+            { cluster: this.clusterArn, tasks: [taskArn] }
+        );
 
         // Download results from S3
         const [ccStdout, ccStderr, stdout, stderr, traceContent] = await Promise.all([
@@ -85,7 +92,7 @@ export class FargateRunner implements TraceRunner {
             containerOverrides: [{
                 name: "code-runner",
                 environment: [
-                    { name: "BUCKET", value: this.bucketName },
+                    { name: "TRACESTORE_NAME", value: this.bucketName },
                     { name: "CODE_KEY", value: codeKey },
                     { name: "TRACE_KEY", value: traceKey },
                     { name: "CC_STDOUT_KEY", value: ccStdoutKey },
@@ -115,34 +122,6 @@ export class FargateRunner implements TraceRunner {
         }
 
         return response.tasks[0].taskArn!;
-    }
-
-    private async waitForTaskCompletion(taskArn: string): Promise<void> {
-        const maxAttempts = 60; // 5 minutes max wait
-        const delayMs = 5000; // 5 seconds between checks
-
-        for (let i = 0; i < maxAttempts; i++) {
-            const response = await this.ecsClient.send(new DescribeTasksCommand({
-                cluster: this.clusterArn,
-                tasks: [taskArn]
-            }));
-
-            if (!response.tasks || response.tasks.length === 0) {
-                throw new Error(`Task ${taskArn} not found`);
-            }
-
-            const task = response.tasks[0];
-            if (task.lastStatus === "STOPPED") {
-                if (task.stoppedReason && task.stoppedReason !== "Essential container in task exited") {
-                    throw new Error(`Task failed: ${task.stoppedReason}`);
-                }
-                return;
-            }
-
-            await new Promise(resolve => setTimeout(resolve, delayMs));
-        }
-
-        throw new Error(`Task ${taskArn} did not complete within timeout`);
     }
 
     private async downloadFromS3(key: string): Promise<string> {

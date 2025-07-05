@@ -1,0 +1,40 @@
+# Backend service
+name: backend
+type: Backend Service
+
+# Container configuration.
+image:
+  build: backend/Dockerfile.prod
+  port: 3000
+
+# Resources configuration.
+cpu: 256
+memory: 512
+platform: linux/x86_64
+count:
+  range:
+    min: 1
+    max: 10
+exec: true                     # Enable running commands in container.
+network:
+  connect: true                # Enable Service Connect for intra-environment traffic between services.
+
+# Task configuration.
+task_role:
+  policy:          # minimal set
+    statements:
+      - effect: allow
+        actions: ["ecs:RunTask", "iam:PassRole"]
+        resources: ["*"]
+      - effect: allow
+        actions: ["s3:*"]
+        resources: ["arn:aws:s3:::${TRACESTORE_NAME}/*"]
+execution_role:
+  pass_through: true
+
+# Environment-specific overrides.
+environments:
+  test:
+    count: 1
+    deployment:
+      rolling: 'recreate'       # Stops existing tasks before new ones are started for faster deployments.
