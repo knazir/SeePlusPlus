@@ -6,6 +6,14 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm install
 
+# Setup arguments (required at build time so need to be build arguments)
+ARG SPP_API_URL
+ENV REACT_APP_SPP_API_URL=$SPP_API_URL
+
+# List arguments
+RUN echo "Building with arguments:"
+RUN echo "  REACT_APP_SPP_API_URL: $REACT_APP_SPP_API_URL"
+
 # Copy and build the rest of the code
 COPY . .
 RUN npm run build

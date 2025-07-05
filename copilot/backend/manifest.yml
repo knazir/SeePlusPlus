@@ -12,9 +12,12 @@ image:
   build:
     context: backend
     dockerfile: backend/Dockerfile.prod
-    args:
-      ALLOWED_ORIGIN_REGEX: '^https?:\/\/(?:[\w-]+\.)?(seepluspl\.us)$'
   port: 3000
+
+# Environment variables.
+variables:
+  ALLOWED_ORIGIN_REGEX: "^https?:\/\/(?:[\w-]+\.)?(seepluspl\.us)$"
+  EXEC_MODE: "fargate"
 
 # Resources configuration.
 cpu: 256

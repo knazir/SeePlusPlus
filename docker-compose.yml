@@ -4,8 +4,6 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile.dev
-      args:
-        FRONTEND_URL: "*"
     image: spp-backend:dev
     container_name: spp-backend
     ports:
@@ -16,7 +14,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock  # For spawning containers in local mode
     environment:
       - NODE_ENV=development
-      - EXEC_MODE=local
+      - EXEC_MODE=fargate
       - TRACE_TMP=/tmp/spp-usercode
       - USER_CODE_FILE_PREFIX=main
     networks:
