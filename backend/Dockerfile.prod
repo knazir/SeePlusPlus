@@ -1,0 +1,33 @@
+# ------------------------------------------------------------------------------------------------
+# Build Stage
+# ------------------------------------------------------------------------------------------------
+FROM node:23-alpine AS builder
+
+WORKDIR /app
+
+# Copy package.json and install dependencies
+COPY package*.json ./
+RUN npm install
+
+# Copy the rest of the codebase
+COPY . .
+
+# Build the app
+RUN npm run build
+
+# ------------------------------------------------------------------------------------------------
+# Production Stage
+# ------------------------------------------------------------------------------------------------
+FROM node:23-alpine
+
+WORKDIR /app
+
+# Copy package.json and install dependencies
+COPY package*.json ./
+RUN npm install --only=production
+
+# Copy the build output
+COPY --from=builder /app/dist ./dist
+
+EXPOSE 3000
+CMD ["node", "dist/index.js"]
