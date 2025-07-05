@@ -1,0 +1,16 @@
+FROM node:23-alpine AS builder
+
+WORKDIR /app
+
+# Copy package.json and install dependencies
+COPY package.json package-lock.json ./
+RUN npm install
+
+# Copy and build the rest of the code
+COPY . .
+RUN npm run build
+
+# Set environment to development and start the app
+ENV PORT=8080
+ENV CHOKIDAR_USEPOLLING=true
+CMD ["npm", "start"]

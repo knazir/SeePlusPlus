@@ -15,7 +15,4 @@ RUN npm run build
 
 # Open port 3000 and start the server
 EXPOSE 3000
-# CMD ["npm", "start"]
 CMD ["npm", "run", "dev"]
-
-# TODO: Add run command and no-internet network creation command

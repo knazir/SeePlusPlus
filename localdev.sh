@@ -58,22 +58,22 @@ function build_images() {
 
     case "$1" in
         backend)
-            docker build -t $BACKEND_IMAGE backend
+            docker build -f backend/Dockerfile.dev -t $BACKEND_IMAGE:dev backend
             ;;
         code-runner)
-            docker build -t $CODE_RUNNER_IMAGE code-runner
+            docker build -f code-runner/Dockerfile.dev -t $CODE_RUNNER_IMAGE:dev code-runner
             ;;
         frontend)
-            docker build -t $FRONTEND_IMAGE frontend
+            docker build -f frontend/Dockerfile.dev -t $FRONTEND_IMAGE:dev frontend
             ;;
         frontend-legacy)
-            docker build -t $FRONTEND_LEGACY_IMAGE frontend-legacy
+            docker build -f frontend-legacy/Dockerfile.dev -t $FRONTEND_LEGACY_IMAGE:dev frontend-legacy
             ;;
         "")
-            docker build -t $BACKEND_IMAGE backend
-            docker build -t $CODE_RUNNER_IMAGE code-runner
-            docker build -t $FRONTEND_IMAGE frontend
-            docker build -t $FRONTEND_LEGACY_IMAGE frontend-legacy
+            docker build -f backend/Dockerfile.dev -t $BACKEND_IMAGE:dev backend
+            docker build -f code-runner/Dockerfile.dev -t $CODE_RUNNER_IMAGE:dev code-runner
+            docker build -f frontend/Dockerfile.dev -t $FRONTEND_IMAGE:dev frontend
+            docker build -f frontend-legacy/Dockerfile.dev -t $FRONTEND_LEGACY_IMAGE:dev frontend-legacy
             ;;
         *)
             echo "Invalid image name: $1"

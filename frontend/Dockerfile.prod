@@ -1,0 +1,27 @@
+# ------------------------------------------------------------------------------
+# Build Stage
+# ------------------------------------------------------------------------------
+ARG PLATFORM=linux/amd64
+FROM --platform=${PLATFORM} node:18-bullseye AS builder
+WORKDIR /app
+
+# Install deps first (better layer caching)
+COPY package.json package-lock.json* ./
+RUN npm ci --silent
+
+# Copy source and build to /app/build
+COPY . .
+RUN npm run build
+
+# ------------------------------------------------------------------------------
+# Production Stage
+# ------------------------------------------------------------------------------
+FROM nginx:1.25-alpine
+ARG BUILD_DIR=/app/build
+
+# Copy compiled assets
+COPY --from=builder ${BUILD_DIR} /usr/share/nginx/html
+
+EXPOSE 80
+HEALTHCHECK CMD wget -qO- http://localhost/ || exit 1
+CMD ["nginx", "-g", "daemon off;"]
