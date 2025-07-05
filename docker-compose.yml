@@ -34,7 +34,7 @@ services:
       - ./frontend:/app
     environment:
       - NODE_ENV=development
-      - REACT_APP_API_URL=http://localhost:3000
+      - SPP_API_URL=http://localhost:3000
     networks:
       - spp-network
 
@@ -46,6 +46,11 @@ services:
     container_name: spp-frontend-legacy
     ports:
       - "8000:8000"
+    volumes:
+      - ./frontend-legacy:/app
+    environment:
+      - NODE_ENV=development
+      - SPP_API_URL=http://localhost:3000
     networks:
       - spp-network
 

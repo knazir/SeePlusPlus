@@ -13,7 +13,7 @@ class RawApi {
     }
 
     // Default to localhost:3000 for dockerized backend if no environment variable is set
-    const apiUrl = process.env.REACT_APP_API_URL || "http://localhost:3000";
+    const apiUrl = process.env.SPP_API_URL || "http://localhost:3000";
     const res = await fetch(`${apiUrl}/${path}`, opts);
     let json;
     try {
