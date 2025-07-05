@@ -11,6 +11,9 @@ RUN npm ci --silent
 
 # Copy source and build to /app/build
 COPY . .
+ARG SPP_API_URL
+ENV REACT_APP_SPP_API_URL=$SPP_API_URL
+RUN echo "Building with API URL: $REACT_APP_SPP_API_URL"
 RUN npm run build
 
 # ------------------------------------------------------------------------------

@@ -4,12 +4,14 @@ type: Load Balanced Web Service
 
 # Distribute traffic to the frontend service.
 http:
-  path: '/'
-  healthcheck: '/'
+  path: "/"
+  healthcheck: "/"
 
 # Container configuration.
 image:
-  build: frontend-legacy/Dockerfile.prod
+  build:
+    context: frontend-legacy
+    dockerfile: frontend-legacy/Dockerfile.prod
   port: 80
 
 # Resources configuration.
@@ -29,7 +31,15 @@ environments:
   test:
     count: 1
     deployment:
-      rolling: 'recreate'       # Stops existing tasks before new ones are started for faster deployments.
+      rolling: "recreate"       # Stops existing tasks before new ones are started for faster deployments.
+    image:
+      build:
+        args:
+          SPP_API_URL: "https://backend.test.spp.seepluspl.us/api"
   prod:
     http:
-      alias: ['seepluspl.us', 'legacy.seepluspl.us']
+      alias: ["seepluspl.us", "legacy.seepluspl.us"]
+    image:
+      build:
+        args:
+          SPP_API_URL: "https://backend.prod.spp.seepluspl.us/api"
