@@ -15,7 +15,6 @@
         "name": "spp-code-runner",
         "image": "098618787724.dkr.ecr.us-west-2.amazonaws.com/spp-code-runner:test",
         "essential": true,
-        "user": "1000",
         "logConfiguration": {
           "logDriver": "awslogs",
           "options": {

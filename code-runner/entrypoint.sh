@@ -47,16 +47,6 @@ if [ -n "${BUCKET:-}" ]; then
            --source-filename="$SRC_FILE" \
            --trace-filename="$TRACE_FILE" \
            "$EXE_FILE" > "$VAL_STDOUT_FILE" 2> "$VAL_STDERR_FILE"
-
-    # Cat contents of all the files
-    echo "CC_STDOUT:"
-    cat "$CC_STDOUT_FILE"
-    echo "CC_STDERR:"
-    cat "$CC_STDERR_FILE"
-    echo "VAL_STDOUT:"
-    cat "$VAL_STDOUT_FILE"
-    echo "VAL_STDERR:"
-    cat "$VAL_STDERR_FILE"
     
     # Upload results to S3
     echo "Uploading results to S3"
