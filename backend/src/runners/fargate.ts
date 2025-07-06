@@ -52,8 +52,6 @@ export class FargateRunner implements TraceRunner {
     }
 
     async run(code: string, uniqueId: string): Promise<RunnerResult> {
-        console.log(process.env);
-
         console.log("Running Fargate runner");
         
         const codeKey = `${uniqueId}/${uniqueId}_code.cpp`;
