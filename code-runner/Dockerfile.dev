@@ -28,7 +28,7 @@ RUN ./autogen.sh && \
 
 # Setup working directory
 WORKDIR /
-RUN mkdir /usercode && touch /spp_stdout.txt
+RUN touch /spp_stdout.txt
 
 # Copy entrypoint script
 COPY entrypoint.sh /entrypoint.sh
