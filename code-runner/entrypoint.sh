@@ -3,20 +3,22 @@
 set -euo pipefail
 
 # File paths
-SRC_FILE="/usercode/main.cpp"
-EXE_FILE="/usercode/main.out"
-TRACE_FILE="/usercode/main_vgtrace.txt"
-CC_STDOUT_FILE="/usercode/main_cc_out.txt"
-CC_STDERR_FILE="/usercode/main_cc_err.txt"
-VAL_STDOUT_FILE="/usercode/main_out.txt"
-VAL_STDERR_FILE="/usercode/main_err.txt"
+SRC_FILE="/main.cpp"
+EXE_FILE="/main.out"
+TRACE_FILE="/main_vgtrace.txt"
+CC_STDOUT_FILE="/main_cc_out.txt"
+CC_STDERR_FILE="/main_cc_err.txt"
+VAL_STDOUT_FILE="/main_out.txt"
+VAL_STDERR_FILE="/main_err.txt"
 
 # Check if running in AWS mode
 if [ -n "${BUCKET:-}" ]; then
-    echo "Running in AWS mode, downloading code from S3..."
+    echo "Running in AWS mode, downloading code from S3"
     
     # Download source code from S3
     aws s3 cp "s3://${BUCKET}/${CODE_KEY}" "${SRC_FILE}"
+
+    echo "Compiling user code"
     
     # Compile the user-provided C++ file
     g++-4.8 -std=c++11 -ggdb -O0 -fno-omit-frame-pointer \
@@ -25,6 +27,8 @@ if [ -n "${BUCKET:-}" ]; then
     
     # Capture compilation exit code
     COMPILATION_EXIT_CODE=$?
+
+    echo "Uploading compilation outputs"
     
     # Upload compilation outputs
     aws s3 cp "$CC_STDOUT_FILE" "s3://${BUCKET}/${CC_STDOUT_KEY}" || true
@@ -37,6 +41,7 @@ if [ -n "${BUCKET:-}" ]; then
     fi
     
     # Run under Valgrind to generate trace
+    echo "Running Valgrind"
     stdbuf -o0 /spp-valgrind/inst/bin/valgrind \
            --tool=memcheck \
            --source-filename="$SRC_FILE" \
@@ -54,23 +59,15 @@ if [ -n "${BUCKET:-}" ]; then
     cat "$VAL_STDERR_FILE"
     
     # Upload results to S3
+    echo "Uploading results to S3"
     aws s3 cp "$TRACE_FILE" "s3://${BUCKET}/${TRACE_KEY}" || true
     aws s3 cp "$VAL_STDOUT_FILE" "s3://${BUCKET}/${STDOUT_KEY}" || true
     aws s3 cp "$VAL_STDERR_FILE" "s3://${BUCKET}/${STDERR_KEY}" || true
     
-    echo "Execution completed, results uploaded to S3"
+    echo "Execution completed"
 else
     # Local mode - use mounted volumes
-    echo "Running in local mode..."
-    
-    # File paths for local mode (matching original behavior)
-    SRC_FILE="/main.cpp"
-    EXE_FILE="/main.out"
-    TRACE_FILE="/main_vgtrace.txt"
-    CC_STDOUT_FILE="/main_cc_out.txt"
-    CC_STDERR_FILE="/main_cc_err.txt"
-    VAL_STDOUT_FILE="/main_out.txt"
-    VAL_STDERR_FILE="/main_err.txt"
+    echo "Running in local mode, compiling user code"
     
     # Compile the user-provided C++ file
     g++-4.8 -std=c++11 -ggdb -O0 -fno-omit-frame-pointer \
@@ -79,6 +76,8 @@ else
     
     # Capture compilation exit code
     COMPILATION_EXIT_CODE=$?
+
+    echo "Compiled user code with exit code $COMPILATION_EXIT_CODE"
     
     # If compilation fails, exit gracefully
     if [ $COMPILATION_EXIT_CODE -ne 0 ]; then

@@ -34,7 +34,7 @@ export class LocalDockerRunner implements TraceRunner {
             // Run container
             const dockerCmd = [
                 "docker run",
-                // "--rm",
+                "--rm",
                 `--network ${this.userCodeNetworkName}`,
                 `-v ${files.userCode.accessible}:${files.userCode.isolated}`,
                 `-v ${files.trace.accessible}:${files.trace.isolated}`,
