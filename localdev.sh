@@ -61,7 +61,8 @@ function deploy_to_aws() {
     # Deploy code-runner if specified or if deploying all
     if [[ " ${SERVICES[*]} " =~ " code-runner " ]]; then
         echo "Building code-runner image..."
-        docker build -f code-runner/Dockerfile.prod -t $ECR_REPO:$ENV code-runner/
+
+        docker buildx build --platform linux/amd64 -f ./code-runner/Dockerfile.prod -t $ECR_REPO:$ENV code-runner/
         
         # Login to ECR before pushing
         echo "Logging in to ECR..."

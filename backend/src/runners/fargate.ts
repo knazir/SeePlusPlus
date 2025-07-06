@@ -156,6 +156,7 @@ export class FargateRunner implements TraceRunner {
     }
 
     private async waitForTask(taskArn: string) {
+        // TODO: This is cleaner, but still want finer grained control for now.
         // await waitUntilTasksStopped(
         //     { client: this.ecsClient, maxWaitTime: 300 },
         //     { cluster: this.clusterArn, tasks: [taskArn] }
@@ -169,13 +170,21 @@ export class FargateRunner implements TraceRunner {
         let task: Task | undefined;
         let waitCount = 0;
         
+        let lastStatus: string | undefined = "";
         while (waitCount++ < 60) { // 60 × 2s = 2 minutes max
             const describeResponse = await this.ecsClient.send(describeCommand);
             task = describeResponse.tasks?.[0];
             const status = task?.lastStatus;
-            console.log(`Task status: ${status}`);
+
+            if (status !== lastStatus) {
+                console.log(`Task status updated: ${status}`);
+                lastStatus = status;
+            }
             
-            if (status === "STOPPED") break;
+            if (status === "STOPPED") {
+                break;
+            }
+
             await new Promise(res => setTimeout(res, 2000));
         }
         
