@@ -6,6 +6,8 @@ type: Load Balanced Web Service
 http:
   path: "/api"
   healthcheck: "/api"
+  target_container:
+    timeout: 300s              # Temporary measure due to slow execution of fargate tasks
 
 # Container configuration.
 image:
@@ -47,7 +49,7 @@ task_role:
 
 # Environment variables.
 variables:
-  ALLOWED_ORIGIN_REGEX: '^https?:\/\/(?:[\w-]+\.)?(seepluspl\.us)$'
+  ALLOWED_ORIGIN_REGEX: '^https?:\/\/(?:[\w-]+\.)*?(seepluspl\.us)$'
   AWS_REGION: us-west-2
   EXEC_MODE: fargate
   PORT: 3000

@@ -28,6 +28,7 @@ const USER_CODE_FILE_PREFIX = process.env.USER_CODE_FILE_PREFIX || "main";
 app.use(express.json());
 
 const ALLOWED_ORIGIN_REGEX = new RegExp(process.env.ALLOWED_ORIGIN_REGEX || "");
+console.log(`Setting up CORS with allowed origin regex: ${ALLOWED_ORIGIN_REGEX}`);
 app.use(cors({
     origin: (origin, callback) => {
         if (process.env.NODE_ENV !== "development") {
