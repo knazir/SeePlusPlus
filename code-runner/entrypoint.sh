@@ -13,9 +13,10 @@ VAL_STDERR_FILE="/main_err.txt"
 
 # Check if running in AWS mode
 if [ -n "${BUCKET:-}" ]; then
-    echo "Running in AWS mode, downloading code from S3"
+    echo "Running in AWS mode"
     
     # Download source code from S3
+    echo "Downloading source code from S3 bucket ${BUCKET}"
     aws s3 cp "s3://${BUCKET}/${CODE_KEY}" "${SRC_FILE}"
 
     echo "Compiling user code"
