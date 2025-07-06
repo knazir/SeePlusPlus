@@ -3,13 +3,13 @@
 set -euo pipefail
 
 # File paths
-SRC_FILE="/tmp/main.cpp"
-EXE_FILE="/tmp/main.out"
-TRACE_FILE="/tmp/main_vgtrace.txt"
-CC_STDOUT_FILE="/tmp/main_cc_out.txt"
-CC_STDERR_FILE="/tmp/main_cc_err.txt"
-VAL_STDOUT_FILE="/tmp/main_out.txt"
-VAL_STDERR_FILE="/tmp/main_err.txt"
+SRC_FILE="/usercode/main.cpp"
+EXE_FILE="/usercode/main.out"
+TRACE_FILE="/usercode/main_vgtrace.txt"
+CC_STDOUT_FILE="/usercode/main_cc_out.txt"
+CC_STDERR_FILE="/usercode/main_cc_err.txt"
+VAL_STDOUT_FILE="/usercode/main_out.txt"
+VAL_STDERR_FILE="/usercode/main_err.txt"
 
 # Check if running in AWS mode
 if [ -n "${BUCKET:-}" ]; then
@@ -42,6 +42,16 @@ if [ -n "${BUCKET:-}" ]; then
            --source-filename="$SRC_FILE" \
            --trace-filename="$TRACE_FILE" \
            "$EXE_FILE" > "$VAL_STDOUT_FILE" 2> "$VAL_STDERR_FILE"
+
+    # Cat contents of all the files
+    echo "CC_STDOUT:"
+    cat "$CC_STDOUT_FILE"
+    echo "CC_STDERR:"
+    cat "$CC_STDERR_FILE"
+    echo "VAL_STDOUT:"
+    cat "$VAL_STDOUT_FILE"
+    echo "VAL_STDERR:"
+    cat "$VAL_STDERR_FILE"
     
     # Upload results to S3
     aws s3 cp "$TRACE_FILE" "s3://${BUCKET}/${TRACE_KEY}" || true

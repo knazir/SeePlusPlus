@@ -13,8 +13,8 @@ tmp/
 
 # Environment Variables
 .env*
-!.env.development
-!.env.production.template
+!.env.dev.template
+!.env.prod.template
 
 # AWS Copilot
 copilot/.workspace

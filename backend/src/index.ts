@@ -30,7 +30,7 @@ app.use(express.json());
 const ALLOWED_ORIGIN_REGEX = new RegExp(process.env.ALLOWED_ORIGIN_REGEX || "");
 app.use(cors({
     origin: (origin, callback) => {
-        if (process.env.NODE_ENV === "production") {
+        if (process.env.NODE_ENV !== "development") {
             if (!origin || ALLOWED_ORIGIN_REGEX.test(origin)) {
                 callback(null, true);
             } else {

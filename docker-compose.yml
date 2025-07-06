@@ -13,12 +13,19 @@ services:
       - /tmp:/tmp
       - /var/run/docker.sock:/var/run/docker.sock  # For spawning containers in local mode
     environment:
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY}
+      - AWS_REGION=${AWS_REGION}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - CLUSTER_ARN=${CLUSTER_ARN}
+      - EXEC_MODE=${EXEC_MODE}
       - NODE_ENV=development
-      - EXEC_MODE=fargate
-      - TRACE_TMP=/tmp/spp-usercode
-      - USER_CODE_FILE_PREFIX=main
-    networks:
-      - spp-network
+      - PORT=${PORT}
+      - SECURITY_GROUP=${SECURITY_GROUP}
+      - SUBNETS=${SUBNETS}
+      - TASK_DEF_ARN=${TASK_DEF_ARN}
+      - TRACE_TMP=${TRACE_TMP}
+      - TRACESTORE_NAME=${TRACESTORE_NAME}
+      - USER_CODE_FILE_PREFIX=${USER_CODE_FILE_PREFIX}
     depends_on:
       - code-runner-build
 
@@ -36,8 +43,6 @@ services:
       - ./frontend:/app
     environment:
       - NODE_ENV=development
-    networks:
-      - spp-network
 
   frontend-legacy:
     build:
@@ -53,9 +58,6 @@ services:
       - ./frontend-legacy:/app
     environment:
       - NODE_ENV=development
-    networks:
-      - spp-network
-
   # Build code-runner image as part of compose
   code-runner-build:
     build:
@@ -65,12 +67,11 @@ services:
     deploy:
       replicas: 0 # Don't spin up an instance of the code-runner image
     command: echo "code-runner image built"
-
-networks:
-  spp-network:
-    driver: bridge
+    networks:
+      - no-internet
   
-  # Isolated network for user code execution
-  spp-no-internet:
+# Isolated network for user code execution
+networks:
+  no-internet:
     driver: bridge
     internal: true
