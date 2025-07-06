@@ -47,6 +47,15 @@ function deploy_to_aws() {
     ENV="${1:-test}"
     shift  # Remove the environment argument, leaving only service arguments
     
+    # Validate environment parameter
+    if [[ "$ENV" != "test" && "$ENV" != "prod" ]]; then
+        echo "Error: Invalid environment '$ENV'"
+        echo "Valid environments are: test, prod"
+        echo "Usage: ./localdev.sh deploy <env> [services...]"
+        echo "Example: ./localdev.sh deploy test backend"
+        exit 1
+    fi
+    
     # If no services specified, deploy all
     if [ $# -eq 0 ]; then
         SERVICES=("code-runner" "backend" "frontend" "frontend-legacy")

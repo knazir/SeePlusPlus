@@ -6,8 +6,6 @@ type: Load Balanced Web Service
 http:
   path: "/api"
   healthcheck: "/api"
-  target_container:
-    timeout: 300s              # Temporary measure due to slow execution of fargate tasks
 
 # Container configuration.
 image:
@@ -24,6 +22,7 @@ count:
   range:
     min: 1
     max: 10
+  cpu_percentage: 70
 exec: true                     # Enable running commands in container.
 network:
   connect: true                # Enable Service Connect for intra-environment traffic between services.

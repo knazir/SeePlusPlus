@@ -1,0 +1,30 @@
+{
+    "family": "spp-code-runner-task-test",
+    "networkMode": "awsvpc",
+    "requiresCompatibilities": ["FARGATE"],
+    "cpu": "256",
+    "memory": "512",
+    "runtimePlatform": {
+        "operatingSystemFamily": "LINUX",
+        "cpuArchitecture": "X86_64"
+    },
+    "executionRoleArn": "arn:aws:iam::098618787724:role/spp-test-backend-ExecutionRole-44klbNWlnFrR",
+    "taskRoleArn": "arn:aws:iam::098618787724:role/spp-test-backend-TaskRole-iTZEZsgqIs2U",
+    "containerDefinitions": [
+      {
+        "name": "spp-code-runner",
+        "image": "098618787724.dkr.ecr.us-west-2.amazonaws.com/spp-code-runner:test",
+        "essential": true,
+        "logConfiguration": {
+          "logDriver": "awslogs",
+          "options": {
+            "awslogs-group": "/ecs/spp-code-runner",
+            "awslogs-region": "us-west-2",
+            "awslogs-stream-prefix": "ecs",
+            "awslogs-create-group": "true"
+          }
+        },
+        "environment": []
+      }
+    ]
+  }

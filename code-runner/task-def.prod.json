@@ -1,5 +1,5 @@
 {
-    "family": "spp-code-runner-task",
+    "family": "spp-code-runner-task-prod",
     "networkMode": "awsvpc",
     "requiresCompatibilities": ["FARGATE"],
     "cpu": "256",
@@ -8,12 +8,12 @@
         "operatingSystemFamily": "LINUX",
         "cpuArchitecture": "X86_64"
     },
-    "executionRoleArn": "arn:aws:iam::098618787724:role/spp-test-backend-ExecutionRole-44klbNWlnFrR",
-    "taskRoleArn": "arn:aws:iam::098618787724:role/spp-test-backend-TaskRole-iTZEZsgqIs2U",
+    "executionRoleArn": "arn:aws:iam::098618787724:role/spp-prod-backend-ExecutionRole-TOKCi7C2XoJa",
+    "taskRoleArn": "arn:aws:iam::098618787724:role/spp-prod-backend-TaskRole-EMvnPqayzu41",
     "containerDefinitions": [
       {
         "name": "spp-code-runner",
-        "image": "098618787724.dkr.ecr.us-west-2.amazonaws.com/spp-code-runner:test",
+        "image": "098618787724.dkr.ecr.us-west-2.amazonaws.com/spp-code-runner:prod",
         "essential": true,
         "logConfiguration": {
           "logDriver": "awslogs",

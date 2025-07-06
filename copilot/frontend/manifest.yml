@@ -22,6 +22,7 @@ count:
   range:
     min: 1
     max: 10
+  cpu_percentage: 70
 exec: true                     # Enable running commands in container.
 network:
   connect: true                # Enable Service Connect for intra-environment traffic between services.
