@@ -30,6 +30,12 @@ RUN ./autogen.sh && \
 WORKDIR /
 RUN mkdir /usercode && touch /spp_stdout.txt
 
+# Ensure /usercode is accessible by all users
+# RUN mkdir -p /usercode && \
+#     chmod 777 /usercode && \
+#     touch /spp_stdout.txt && \
+#     chmod 666 /spp_stdout.txt
+
 # Copy entrypoint script
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh

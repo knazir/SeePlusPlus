@@ -1,15 +1,28 @@
 import { 
+    DescribeTasksCommand,
     ECSClient, 
     RunTaskCommand, 
     TaskOverride,
+    Task
 } from "@aws-sdk/client-ecs";
 import { waitUntilTasksStopped } from "@aws-sdk/client-ecs";
 import { S3Client, PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
 import { TraceRunner, RunnerResult } from "./runner.interface";
 
+//------------------------------------------------------------------------------
+interface AWSClientConfig {
+    region: string;
+    credentials?: {
+        accessKeyId: string;
+        secretAccessKey: string;
+    };
+}
+
+//------------------------------------------------------------------------------
 export class FargateRunner implements TraceRunner {
     private ecsClient: ECSClient;
     private s3Client: S3Client;
+    private region: string;
     private bucketName: string;
     private clusterArn: string;
     private taskDefinitionArn: string;
@@ -17,10 +30,18 @@ export class FargateRunner implements TraceRunner {
     private securityGroup: string;
 
     constructor() {
-        const region = process.env.AWS_REGION || "us-west-2";
-        this.ecsClient = new ECSClient({ region });
-        this.s3Client = new S3Client({ region });
-        
+        this.region = process.env.AWS_REGION!;
+
+        const clientConfig: AWSClientConfig = { region: this.region };
+        if (process.env.NODE_ENV === "development") {
+            clientConfig.credentials = {
+                accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+                secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!
+            };
+        }
+        this.ecsClient = new ECSClient(clientConfig);
+        this.s3Client = new S3Client(clientConfig);
+
         this.bucketName = process.env.TRACESTORE_NAME!;
         this.clusterArn = process.env.CLUSTER_ARN!;
         this.taskDefinitionArn = process.env.TASK_DEF_ARN!;
@@ -31,6 +52,10 @@ export class FargateRunner implements TraceRunner {
     }
 
     async run(code: string, uniqueId: string): Promise<RunnerResult> {
+        console.log(process.env);
+
+        console.log("Running Fargate runner");
+        
         const codeKey = `${uniqueId}/${uniqueId}_code.cpp`;
         const traceKey = `${uniqueId}/${uniqueId}_trace.json`;
         const ccStdoutKey = `${uniqueId}/${uniqueId}_cc_stdout.txt`;
@@ -46,6 +71,8 @@ export class FargateRunner implements TraceRunner {
             ServerSideEncryption: "aws:kms"
         }));
 
+        console.log("Uploaded code to S3");
+
         // Run Fargate task
         const taskArn = await this.runFargateTask(uniqueId,
                                                   codeKey,
@@ -55,11 +82,12 @@ export class FargateRunner implements TraceRunner {
                                                   stdoutKey,
                                                   stderrKey);
 
+        console.log("Launched Fargate task");
+
         // Wait for task completion
-        await waitUntilTasksStopped(
-            { client: this.ecsClient, maxWaitTime: 300 },
-            { cluster: this.clusterArn, tasks: [taskArn] }
-        );
+        await this.waitForTask(taskArn);
+
+        console.log("Task completed");
 
         // Download results from S3
         const [ccStdout, ccStderr, stdout, stderr, traceContent] = await Promise.all([
@@ -69,6 +97,8 @@ export class FargateRunner implements TraceRunner {
             this.downloadFromS3(stderrKey),
             this.downloadFromS3(traceKey)
         ]);
+
+        console.log("Downloaded results from S3");
 
         return {
             ccStdout,
@@ -90,15 +120,16 @@ export class FargateRunner implements TraceRunner {
     ): Promise<string> {
         const overrides: TaskOverride = {
             containerOverrides: [{
-                name: "code-runner",
+                name: "spp-code-runner",
                 environment: [
-                    { name: "TRACESTORE_NAME", value: this.bucketName },
-                    { name: "CODE_KEY", value: codeKey },
-                    { name: "TRACE_KEY", value: traceKey },
-                    { name: "CC_STDOUT_KEY", value: ccStdoutKey },
-                    { name: "CC_STDERR_KEY", value: ccStderrKey },
-                    { name: "STDOUT_KEY", value: stdoutKey },
-                    { name: "STDERR_KEY", value: stderrKey }
+                    { name: "ID",               value: uniqueId         },
+                    { name: "BUCKET",           value: this.bucketName  },
+                    { name: "CODE_KEY",         value: codeKey          },
+                    { name: "TRACE_KEY",        value: traceKey         },
+                    { name: "CC_STDOUT_KEY",    value: ccStdoutKey      },
+                    { name: "CC_STDERR_KEY",    value: ccStderrKey      },
+                    { name: "STDOUT_KEY",       value: stdoutKey        },
+                    { name: "STDERR_KEY",       value: stderrKey        },
                 ]
             }]
         };
@@ -111,7 +142,7 @@ export class FargateRunner implements TraceRunner {
                 awsvpcConfiguration: {
                     subnets: this.subnets,
                     securityGroups: [this.securityGroup],
-                    assignPublicIp: "DISABLED"
+                    assignPublicIp: "ENABLED"
                 }
             },
             overrides
@@ -122,6 +153,39 @@ export class FargateRunner implements TraceRunner {
         }
 
         return response.tasks[0].taskArn!;
+    }
+
+    private async waitForTask(taskArn: string) {
+        // await waitUntilTasksStopped(
+        //     { client: this.ecsClient, maxWaitTime: 300 },
+        //     { cluster: this.clusterArn, tasks: [taskArn] }
+        // );
+
+        const describeCommand = new DescribeTasksCommand({
+            cluster: this.clusterArn,
+            tasks: [taskArn]
+        });
+          
+        let task: Task | undefined;
+        let waitCount = 0;
+        
+        while (waitCount++ < 60) { // 60 × 2s = 2 minutes max
+            const describeResponse = await this.ecsClient.send(describeCommand);
+            task = describeResponse.tasks?.[0];
+            const status = task?.lastStatus;
+            console.log(`Task status: ${status}`);
+            
+            if (status === "STOPPED") break;
+            await new Promise(res => setTimeout(res, 2000));
+        }
+        
+        if (!task || task.lastStatus !== "STOPPED") {
+            throw new Error("Task did not complete in time");
+        }
+
+        const container = task.containers?.[0];
+        console.log("Exit code:", container?.exitCode);
+        console.log("Reason:", container?.reason);
     }
 
     private async downloadFromS3(key: string): Promise<string> {
@@ -147,11 +211,12 @@ export class FargateRunner implements TraceRunner {
 
     private validateConfig() {
         const required = [
-            { name: "BUCKET", value: this.bucketName },
-            { name: "CLUSTER_ARN", value: this.clusterArn },
-            { name: "TASK_DEF_ARN", value: this.taskDefinitionArn },
-            { name: "SUBNETS", value: this.subnets.length > 0 ? "set" : "" },
-            { name: "SECURITY_GROUP", value: this.securityGroup }
+            { name: "AWS_REGION",       value: this.region                          },
+            { name: "TRACESTORE_NAME",  value: this.bucketName                      },
+            { name: "CLUSTER_ARN",      value: this.clusterArn                      },
+            { name: "TASK_DEF_ARN",     value: this.taskDefinitionArn               },
+            { name: "SUBNETS",          value: this.subnets.length > 0 ? "set" : "" },
+            { name: "SECURITY_GROUP",   value: this.securityGroup                   }
         ];
 
         const missing = required.filter(r => !r.value);

@@ -2,6 +2,12 @@
 
 set -e  # Exit immediately on error
 
+# Load environment variables from .env file if it exists
+if [ -f .env ]; then
+    echo "Loading environment variables from .env file..."
+    export $(grep -v '^#' .env | xargs)
+fi
+
 function show_logs() {
     if [ -z "$1" ]; then
         echo "Specify a service (frontend, backend, frontend-legacy)."
@@ -39,14 +45,40 @@ function deploy_to_aws() {
     fi
     
     ENV="${1:-test}"
-    echo "Deploying to AWS environment: $ENV"
+    shift  # Remove the environment argument, leaving only service arguments
+    
+    # If no services specified, deploy all
+    if [ $# -eq 0 ]; then
+        SERVICES=("code-runner" "backend" "frontend" "frontend-legacy")
+        echo "No services specified. Deploying all services to AWS environment: $ENV"
+    else
+        SERVICES=("$@")
+        echo "Deploying services: ${SERVICES[*]} to AWS environment: $ENV"
+    fi
+    
     echo "Building and pushing images..."
     
-    # Deploy services
-    copilot svc deploy --name backend --env $ENV
-    copilot svc deploy --name frontend --env $ENV
-    copilot svc deploy --name frontend-legacy --env $ENV
-    copilot job deploy --name code-runner --env $ENV
+    # Deploy code-runner if specified or if deploying all
+    if [[ " ${SERVICES[*]} " =~ " code-runner " ]]; then
+        echo "Building code-runner image..."
+        docker build -f code-runner/Dockerfile.prod -t $ECR_REPO:$ENV code-runner/
+        
+        # Login to ECR before pushing
+        echo "Logging in to ECR..."
+        aws ecr get-login-password --region $AWS_REGION \
+          | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
+        
+        echo "Pushing code-runner image to ECR..."
+        docker push $ECR_REPO:$ENV
+    fi
+    
+    # Deploy other services using Copilot
+    for service in "${SERVICES[@]}"; do
+        if [[ "$service" != "code-runner" ]]; then
+            echo "Deploying $service..."
+            copilot svc deploy --name $service --env $ENV
+        fi
+    done
     
     echo "Deployment complete!"
 }
@@ -66,14 +98,28 @@ function help_menu() {
     echo "                                 - With --tail: Continuously stream logs."
     echo "                                 - Supports: frontend, backend, frontend-legacy"
     echo "  exec <service>    Open shell in a running service."
-    echo "  deploy [env]      Deploy to AWS using Copilot (default: production)."
+    echo "  deploy [env] [services...] Deploy to AWS using Copilot."
+    echo "                                 - env: Environment name (default: test)"
+    echo "                                 - services: Space-separated list of services"
+    echo "                                 - If no services specified, deploys all"
+    echo "                                 - Supports: code-runner, backend, frontend, frontend-legacy"
     echo "  help              Show this menu."
+    echo ""
+    echo "Environment Configuration:"
+    echo "  Create a .env file in the project root to customize:"
+    echo "  - AWS_REGION: AWS region"
+    echo "  - AWS_ACCOUNT_ID: AWS account ID"
+    echo "  - ECR_REPO: AWS ECR repository URL"
     echo ""
     echo "Examples:"
     echo "  ./localdev.sh up                    # Start all services"
     echo "  ./localdev.sh build backend         # Build only backend"
     echo "  ./localdev.sh logs frontend --tail  # Tail frontend logs"
     echo "  ./localdev.sh exec backend          # Shell into backend"
+    echo "  ./localdev.sh deploy test           # Deploy all services to test env"
+    echo "  ./localdev.sh deploy prod           # Deploy all services to prod env"
+    echo "  ./localdev.sh deploy test backend   # Deploy only backend to test env"
+    echo "  ./localdev.sh deploy prod code-runner frontend  # Deploy specific services"
 }
 
 # Default behavior: Start everything if no arguments are passed
@@ -114,7 +160,7 @@ case "$1" in
         exec_container "$2"
         ;;
     deploy)
-        deploy_to_aws "$2"
+        deploy_to_aws "$2" "${@:3}"
         ;;
     help)
         help_menu

@@ -14,11 +14,6 @@ image:
     dockerfile: backend/Dockerfile.prod
   port: 3000
 
-# Environment variables.
-variables:
-  ALLOWED_ORIGIN_REGEX: "^https?:\/\/(?:[\w-]+\.)?(seepluspl\.us)$"
-  EXEC_MODE: "fargate"
-
 # Resources configuration.
 cpu: 256
 memory: 512
@@ -30,6 +25,39 @@ count:
 exec: true                     # Enable running commands in container.
 network:
   connect: true                # Enable Service Connect for intra-environment traffic between services.
+
+# Task role configuration.
+task_role:
+  policy:
+    statements:
+      # 1. Allow backend to launch your code-runner task
+      - effect: Allow
+        actions:
+          - ecs:RunTask
+          - ecs:DescribeTasks
+        resources:
+          - '*'
+
+      # 2. Allow it to pass the execution role that the TD needs
+      - effect: Allow
+        actions:
+          - iam:PassRole
+        resources:
+          - '*'
+
+# Environment variables.
+variables:
+  ALLOWED_ORIGIN_REGEX: '^https?:\/\/(?:[\w-]+\.)?(seepluspl\.us)$'
+  AWS_REGION: us-west-2
+  EXEC_MODE: fargate
+  PORT: 3000
+
+# Secrets configuration.
+secrets:
+  CLUSTER_ARN: /copilot/${COPILOT_APPLICATION_NAME}/${COPILOT_ENVIRONMENT_NAME}/secrets/CLUSTER_ARN
+  SUBNETS: /copilot/${COPILOT_APPLICATION_NAME}/${COPILOT_ENVIRONMENT_NAME}/secrets/SUBNETS
+  SECURITY_GROUP: /copilot/${COPILOT_APPLICATION_NAME}/${COPILOT_ENVIRONMENT_NAME}/secrets/SECURITY_GROUP
+  TASK_DEF_ARN: /copilot/${COPILOT_APPLICATION_NAME}/${COPILOT_ENVIRONMENT_NAME}/secrets/TASK_DEF_ARN
 
 # Environment-specific overrides.
 environments:
