@@ -90,7 +90,7 @@ The initial rewrite was completed in July 2025 that moved the system from runnin
 
 Today, See++ aims to serve not only students and instructors, but anyone who needs a fast, visual model of C++ code in action.
 
-## 🗺️ Roadmap
+## Roadmap
 Ordered from highest to lowest priority.
 - [ ] Speed up code execution in deployed environments (currently ~1m for simple programs)
 - [ ] Add linting for more consistent style and easier contribution
