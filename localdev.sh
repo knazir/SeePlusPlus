@@ -116,7 +116,6 @@ function help_menu() {
     echo "Environment Configuration:"
     echo "  Create a .env file in the project root to customize:"
     echo "  - AWS_REGION: AWS region"
-    echo "  - AWS_ACCOUNT_ID: AWS account ID"
     echo "  - ECR_REPO: AWS ECR repository URL"
     echo ""
     echo "Examples:"
