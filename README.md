@@ -140,15 +140,15 @@ Many thanks to these wonderful people:
 <table>
   <tr>
     <td align="center">
-      <a href="https://github.com/ataylor4">
-        <img src="docs/img/contributors/ataylor4.jpg" width="80" height="80"><br/>
-        <sub><b>Ashley Taylor</b></sub>
-      </a>
-    </td>
-    <td align="center">
       <a href="https://github.com/knazir">
         <img src="docs/img/contributors/knazir.jpg" width="80" height="80"><br/>
         <sub><b>Kashif Nazir</b></sub>
+      </a>
+    </td>
+    <td align="center">
+      <a href="https://github.com/ataylor4">
+        <img src="docs/img/contributors/ataylor4.jpg" width="80" height="80"><br/>
+        <sub><b>Ashley Taylor</b></sub>
       </a>
     </td>
     <td align="center">
