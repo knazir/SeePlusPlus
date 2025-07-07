@@ -3,6 +3,20 @@
   <img src="docs/img/logo_no_text.png" alt="See++ Logo"/>
 </p>
 
+<p align="center">
+  <a href="https://seepluspl.us">
+    <img alt="Live Site" src="https://img.shields.io/website?url=https%3A%2F%2Fseepluspl.us" />
+  </a>
+  <a href="https://github.com/knazir/SeePlusPlus/issues">
+    <img alt="Issues" src="https://img.shields.io/github/issues/knazir/SeePlusPlus" />
+  </a>
+  <a href="https://github.com/knazir/SeePlusPlus/pulls">
+    <img alt="Pull Requests" src="https://img.shields.io/github/issues-pr/knazir/SeePlusPlus" />
+  </a>
+  <a href="https://github.com/knazir/SeePlusPlus/stargazers">
+    <img alt="Stars" src="https://img.shields.io/github/stars/knazir/SeePlusPlus" />
+  </a>
+</p>
 
 ## A C++ Visualization Tool
 See++ is a tool for visualizing and debugging C++ code aimed at helping students, educators, and developers understand what their code is actually doing. It takes C++ code and shows a step-by-step execution trace including stack frames, heap memory, and variable values.
