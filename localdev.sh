@@ -65,8 +65,6 @@ function deploy_to_aws() {
         echo "Deploying services: ${SERVICES[*]} to AWS environment: $ENV"
     fi
     
-    echo "Building and pushing images..."
-    
     # Deploy code-runner if specified or if deploying all
     if [[ " ${SERVICES[*]} " =~ " code-runner " ]]; then
         echo "Building code-runner image..."
