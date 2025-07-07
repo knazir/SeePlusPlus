@@ -48,7 +48,7 @@ See++ is a tool for visualizing and debugging C++ code aimed at helping students
 3. Follow the instructions in the [wiki](https://github.com/knazir/SeePlusPlus/wiki) to configure and deploy the app via the AWS CLI.
 
 
-## 🎯 Project Goals
+## Project Goals
 |                        |                                                                                                           |
 | ---------------------- | --------------------------------------------------------------------------------------------------------- |
 | **Education**          | Demystify program flow, pointers, recursion, and memory models in C++.                                    |
@@ -57,7 +57,7 @@ See++ is a tool for visualizing and debugging C++ code aimed at helping students
 | **Safety**             | Allow users to run code in an isolated sandbox without worrying about the impact to others.               |
 | **Open & Extensible**  | Fully open source, including the infrastructure required to deploy your own service.                      |
 
-## ✨ Features
+## Features
 | Feature                         | Description                                                                                      |
 | ------------------------------- | ------------------------------------------------------------------------------------------------ |
 | **Step Through Execution**      | Step forward or backward through each program state.                                             |
@@ -72,7 +72,7 @@ See++ is a tool for visualizing and debugging C++ code aimed at helping students
 | **Automatic Layout**            | Smart auto-layout for stack and heap to reduce visual clutter.                                   |
 
 
-## 💬 Endorsements
+## Endorsements
 > Many students struggle to build a proper mental model of what their code is doing. Tools like See++ that visualize memory, state, and control flow are incredibly valuable — especially for recursion and data structures.
 >
 > I’m very excited about this project and can’t wait to show it to my students.
@@ -104,15 +104,15 @@ Ordered from highest to lowest priority.
 - [ ] Add support for other languages (C, Python, JavaScript, and more)
 
 
-## 🤝 Contributing
+## Contributing
 We welcome PRs and issue reports of all sizes! We're still getting a `CONTRIBUTING.md` guide and contributor license agreement setup, but feel free to explore the project and experiment in the meantime.
 
 
-## 🙏 Acknowledgements
+## Acknowledgements
 This project is based on the modifications made by [@pgbovine](https://github.com/pgbovine) to Valgrind to trace C++ program execution. These modifications and the work on top of them can be found in our linked repo [SPP-Valgrind](https://github.com/knazir/SPP-Valgrind). This project is licensed under GPL-2.0 as a derivative work.
 
 
-## 🛠️ Maintainers
+## Maintainers
 Please direct all quips, qualms, and conundrums to:
 
 <table>
@@ -126,7 +126,7 @@ Please direct all quips, qualms, and conundrums to:
   </tr>
 </table>
 
-## 👥 Contributors
+## Contributors
 Many thanks to these wonderful people:
 
 <table>
