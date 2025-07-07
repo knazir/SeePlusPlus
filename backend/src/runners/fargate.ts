@@ -83,7 +83,7 @@ export class FargateRunner implements TraceRunner {
         console.log("Launched Fargate task");
 
         // Wait for task completion
-        await this.waitForTask(taskArn);
+        await this.waitForTask(uniqueId, taskArn);
 
         console.log("Task completed");
 
@@ -153,7 +153,7 @@ export class FargateRunner implements TraceRunner {
         return response.tasks[0].taskArn!;
     }
 
-    private async waitForTask(taskArn: string) {
+    private async waitForTask(uniqueId: string, taskArn: string) {
         // TODO: This is cleaner, but still want finer grained control for now.
         // await waitUntilTasksStopped(
         //     { client: this.ecsClient, maxWaitTime: 300 },
@@ -175,7 +175,7 @@ export class FargateRunner implements TraceRunner {
             const status = task?.lastStatus;
 
             if (status !== lastStatus) {
-                console.log(`Task status updated: ${status}`);
+                console.log(`Task ${uniqueId} - Status updated: ${status}`);
                 lastStatus = status;
             }
             
@@ -187,12 +187,12 @@ export class FargateRunner implements TraceRunner {
         }
         
         if (!task || task.lastStatus !== "STOPPED") {
-            throw new Error("Task did not complete in time");
+            throw new Error(`Task ${uniqueId} - Did not complete in time`);
         }
 
         const container = task.containers?.[0];
-        console.log("Exit code:", container?.exitCode);
-        console.log("Reason:", container?.reason);
+        console.log(`Task ${uniqueId} - Exit code: ${container?.exitCode}`);
+        console.log(`Task ${uniqueId} - Reason: ${container?.reason}`);
     }
 
     private async downloadFromS3(key: string): Promise<string> {
