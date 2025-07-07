@@ -103,9 +103,17 @@ Ordered from highest to lowest priority.
 - [ ] Add smart assist features to help better understand your code and flow
 - [ ] Add support for other languages (C, Python, JavaScript, and more)
 
-
 ## Contributing
 We welcome PRs and issue reports of all sizes! We're still getting a `CONTRIBUTING.md` guide and contributor license agreement setup, but feel free to explore the project and experiment in the meantime.
+
+
+## License
+See++ is open source software, licensed under the GNU General Public License v2.0 (GPL-2.0).
+
+The name "See++" and the associated logo are separate from the code license.
+You’re welcome to use them to refer to the project, but please don’t use them for commercial purposes or in a way that suggests endorsement or affiliation.
+
+For more details, see [LICENSE](./LICENSE) and [TRADEMARK](./TRADEMARK).
 
 
 ## Acknowledgements
