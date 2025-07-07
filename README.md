@@ -100,43 +100,53 @@ This project is based on the modifications made by [@pgbovine](https://github.co
 
 ## 🛠️ Maintainers
 Please direct all quips, qualms, and conundrums to:
-<div align="left" style="display: flex; flex-wrap: wrap; gap: 24px;">
-  <a href="https://github.com/knazir" style="text-align: center;">
-    <img src="docs/img/contributors/knazir.jpg" width="80" height="80" style="border-radius: 50%;" />
-    <br />
-    <sub><b>Kashif Nazir</b></sub>
-  </a>
-</div>
 
+<table>
+  <tr>
+    <td align="center">
+      <a href="https://github.com/knazir">
+        <img src="docs/img/contributors/knazir.jpg" width="80" height="80"><br/>
+        <sub><b>Kashif Nazir</b></sub>
+      </a>
+    </td>
+  </tr>
+</table>
 
 ## 👥 Contributors
 Many thanks to these wonderful people:
 
-<div align="left" style="display: flex; flex-wrap: wrap; gap: 24px;">
-  <a href="https://github.com/ataylor4" style="text-align: center;">
-    <img src="docs/img/contributors/ataylor4.jpg" width="80" height="80" style="border-radius: 50%;" />
-    <br />
-    <sub><b>Ashley Taylor</b></sub>
-  </a>
-  <a href="https://github.com/knazir" style="text-align: center;">
-    <img src="docs/img/contributors/knazir.jpg" width="80" height="80" style="border-radius: 50%;" />
-    <br />
-    <sub><b>Kashif Nazir</b></sub>
-  </a>
-  <a href="https://github.com/ruechy" style="text-align: center;">
-    <img src="docs/img/contributors/ruechy.jpg" width="80" height="80" style="border-radius: 50%;" />
-    <br />
-    <sub><b>Lucy Wang</b></sub>
-  </a>
-  <a href="https://github.com/mariamyang" style="text-align: center;">
-    <img src="docs/img/contributors/mariamyang.jpg" width="80" height="80" style="border-radius: 50%;" />
-    <br />
-    <sub><b>Maria Yang</b></sub>
-  </a>
-  <a href="https://github.com/seally1186" style="text-align: center;">
-    <img src="docs/img/contributors/seally1186.jpg" width="80" height="80" style="border-radius: 50%;" />
-    <br />
-    <sub><b>Michael Chang</b></sub>
-  </a>
-</div>
+<table>
+  <tr>
+    <td align="center">
+      <a href="https://github.com/ataylor4">
+        <img src="docs/img/contributors/ataylor4.jpg" width="80" height="80"><br/>
+        <sub><b>Ashley Taylor</b></sub>
+      </a>
+    </td>
+    <td align="center">
+      <a href="https://github.com/knazir">
+        <img src="docs/img/contributors/knazir.jpg" width="80" height="80"><br/>
+        <sub><b>Kashif Nazir</b></sub>
+      </a>
+    </td>
+    <td align="center">
+      <a href="https://github.com/ruechy">
+        <img src="docs/img/contributors/ruechy.jpg" width="80" height="80"><br/>
+        <sub><b>Lucy Wang</b></sub>
+      </a>
+    </td>
+    <td align="center">
+      <a href="https://github.com/mariamyang">
+        <img src="docs/img/contributors/mariamyang.jpg" width="80" height="80"><br/>
+        <sub><b>Maria Yang</b></sub>
+      </a>
+    </td>
+    <td align="center">
+      <a href="https://github.com/seally1186">
+        <img src="docs/img/contributors/seally1186.jpg" width="80" height="80"><br/>
+        <sub><b>Michael Chang</b></sub>
+      </a>
+    </td>
+  </tr>
+</table>
 
