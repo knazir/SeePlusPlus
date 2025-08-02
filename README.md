@@ -45,7 +45,7 @@ See++ is a tool for visualizing and debugging C++ code aimed at helping students
 ### Deploy Your Own
 1. Clone the repo via `git clone https://github.com/knazir/SeePlusPlus.git`.
 2. Download and install [Docker Desktop](https://www.docker.com/products/docker-desktop/).
-3. Follow the instructions in the [wiki](https://github.com/knazir/SeePlusPlus/wiki) to configure and deploy the app via the AWS CLI.
+3. Follow the instructions in the [docs](https://github.com/knazir/SeePlusPlus/tree/master/docs) to configure and deploy the app via the AWS CLI.
 
 
 ## Project Goals
@@ -93,10 +93,11 @@ Today, See++ aims to serve not only students and instructors, but anyone who nee
 ## Roadmap
 Ordered from highest to lowest priority.
 - [ ] Speed up code execution in deployed environments (currently ~1m for simple programs)
+- [ ] Add caching for code execution in deployed environments
 - [ ] Add linting for more consistent style and easier contribution
 - [ ] Create GitHub Issue/PR templates
 - [ ] Create CONTRIBUTING.md and CLA for contributions
-- [ ] Create deployment and architecture guides in Wiki
+- [x] Create deployment and architecture guides in docs
 - [ ] Rewrite original 2018 frontend to be more robust, extensible, and use modern web patterns
 - [ ] Setup GitHub actions for automated deployment
 - [ ] Add test suite for each service and modified Valgrind
@@ -111,7 +112,7 @@ We welcome PRs and issue reports of all sizes! We're still getting a `CONTRIBUTI
 See++ is open source software, licensed under the GNU General Public License v2.0 (GPL-2.0).
 
 The name "See++" and the associated logo are separate from the code license.
-You’re welcome to use them to refer to the project, but please don’t use them for commercial purposes or in a way that suggests endorsement or affiliation.
+You’re welcome to use them to refer to the project, but not for commercial purposes or in a way that suggests endorsement or affiliation.
 
 For more details, see [LICENSE](./LICENSE) and [TRADEMARK](./TRADEMARK).
 
