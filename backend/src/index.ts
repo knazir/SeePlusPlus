@@ -67,7 +67,17 @@ app.post("/api/run", async (req: Request, res: Response) => {
         return;
     }
 
-    const uniqueId: crypto.UUID = crypto.randomUUID();
+    // Generate hash-based ID for caching in deployed environments
+    let uniqueId: string;
+    if (process.env.NODE_ENV !== "development") {
+        // Use SHA-256 hash of the preprocessed code as the unique ID
+        const hash = crypto.createHash('sha256');
+        hash.update(preprocessedUserCode);
+        uniqueId = hash.digest('hex');
+    } else {
+        // Use random UUID for development to avoid cache collisions during testing
+        uniqueId = crypto.randomUUID();
+    }
 
     try {
         // Use the runner abstraction to execute the code

@@ -53,13 +53,48 @@ export class FargateRunner implements TraceRunner {
 
     async run(code: string, uniqueId: string): Promise<RunnerResult> {
         console.log("Running Fargate runner");
-        
+
         const codeKey = `${uniqueId}/${uniqueId}_code.cpp`;
         const traceKey = `${uniqueId}/${uniqueId}_trace.json`;
         const ccStdoutKey = `${uniqueId}/${uniqueId}_cc_stdout.txt`;
         const ccStderrKey = `${uniqueId}/${uniqueId}_cc_stderr.txt`;
         const stdoutKey = `${uniqueId}/${uniqueId}_stdout.txt`;
         const stderrKey = `${uniqueId}/${uniqueId}_stderr.txt`;
+
+        // Check for cache in deployed environments
+        if (process.env.NODE_ENV !== "development") {
+            console.log("Checking for cached results...");
+
+            try {
+                // Try to download the trace file to check if cache exists
+                const traceContent = await this.downloadFromS3(traceKey);
+
+                if (traceContent) {
+                    console.log("Cache hit! Retrieving cached results...");
+
+                    // Download all cached results
+                    const [ccStdout, ccStderr, stdout, stderr] = await Promise.all([
+                        this.downloadFromS3(ccStdoutKey),
+                        this.downloadFromS3(ccStderrKey),
+                        this.downloadFromS3(stdoutKey),
+                        this.downloadFromS3(stderrKey)
+                    ]);
+
+                    console.log("Successfully retrieved cached results");
+
+                    return {
+                        ccStdout,
+                        ccStderr,
+                        stdout,
+                        stderr,
+                        traceContent
+                    };
+                }
+            } catch (error) {
+                // Cache miss - continue with normal execution
+                console.log("No cache found, proceeding with normal execution");
+            }
+        }
 
         // Upload code to S3
         await this.s3Client.send(new PutObjectCommand({
