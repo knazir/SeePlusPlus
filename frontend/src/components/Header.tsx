@@ -16,7 +16,7 @@ interface HeaderProps {
 const Header: React.FC<HeaderProps> = ({ height }) => {
     return (
         <header className="header" style={{ height }}>
-            <img className="logo" src={logo}/>
+            <img className="logo" src={logo} alt="See++ Logo"/>
             <div className="headerButtons">
                 <button className="headerButton">
                     <img src={supportIcon} alt="Support Icon"/>
