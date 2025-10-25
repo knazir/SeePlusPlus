@@ -204,7 +204,7 @@ export class FargateRunner implements TraceRunner {
         let waitCount = 0;
         
         let lastStatus: string | undefined = "";
-        while (waitCount++ < 60) { // 60 × 2s = 2 minutes max
+        while (waitCount++ < 120) { // 120 × 2s = 4 minutes max (ALB timeout is 5min)
             const describeResponse = await this.ecsClient.send(describeCommand);
             task = describeResponse.tasks?.[0];
             const status = task?.lastStatus;
@@ -213,7 +213,7 @@ export class FargateRunner implements TraceRunner {
                 console.log(`Task ${uniqueId} - Status updated: ${status}`);
                 lastStatus = status;
             }
-            
+
             if (status === "STOPPED") {
                 break;
             }
