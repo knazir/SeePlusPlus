@@ -1,3 +1,0 @@
-{
-  "body": "{\"code\": \"#include <stdio.h>\\n#include <stdlib.h>\\n\\nint main() {\\n  int ret = 42;\\n  char stack_str[10];\\n  stack_str[0] = 'q';\\n  stack_str[1] = 'z';\\n  stack_str[2] = '!';\\n  printf(\\\"ret = %d\\\\n\\\", ret);\\n  return ret;\\n}\"}"
-}

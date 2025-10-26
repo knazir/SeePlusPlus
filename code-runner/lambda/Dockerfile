@@ -1,0 +1,42 @@
+# AWS Lambda container image for C++ trace generation with Valgrind 3.27.0
+# Based on Amazon Linux 2023
+FROM public.ecr.aws/lambda/python:3.12
+
+# Install build dependencies and runtime requirements
+RUN dnf update -y && \
+    dnf install -y \
+        gcc \
+        gcc-c++ \
+        make \
+        automake \
+        autoconf \
+        libtool \
+        glibc-devel \
+        tar \
+        xz \
+        which && \
+    dnf clean all
+
+# Copy Valgrind source and build it
+COPY lambda/valgrind /tmp/valgrind-src
+WORKDIR /tmp/valgrind-src
+
+# Build and install Valgrind to /opt/valgrind
+RUN ./autogen.sh && \
+    ./configure --prefix=/opt/valgrind && \
+    make -j$(nproc) && \
+    make install && \
+    rm -rf /tmp/valgrind-src
+
+# Reset working directory to Lambda task root
+WORKDIR ${LAMBDA_TASK_ROOT}
+
+# Copy Lambda handler
+COPY lambda/handler.py ${LAMBDA_TASK_ROOT}/
+
+# Set environment variables
+ENV PATH="/opt/valgrind/bin:${PATH}"
+ENV LD_LIBRARY_PATH="/opt/valgrind/lib:${LD_LIBRARY_PATH}"
+
+# Set the Lambda handler
+CMD [ "handler.lambda_handler" ]
