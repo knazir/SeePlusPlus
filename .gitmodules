@@ -1,6 +1,6 @@
-[submodule "code-runner/fargate/SPP-Valgrind"]
-	path = code-runner/fargate/SPP-Valgrind
+[submodule "code-runner/fargate/SPP-Valgrind-Legacy"]
+	path = code-runner/fargate/SPP-Valgrind-Legacy
 	url = git@github.com:knazir/SPP-Valgrind.git
-[submodule "code-runner/lambda/valgrind"]
-	path = code-runner/lambda/valgrind
+[submodule "code-runner/lambda/SPP-Valgrind"]
+	path = code-runner/lambda/SPP-Valgrind
 	url = git@github.com:knazir/SPP-Valgrind-New.git

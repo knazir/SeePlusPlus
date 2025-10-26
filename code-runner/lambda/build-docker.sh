@@ -9,9 +9,9 @@ echo "================================"
 echo ""
 
 # Check if Valgrind is built
-if [ ! -f "valgrind/vg-in-place" ]; then
-    echo "ERROR: Valgrind not found at valgrind/vg-in-place"
-    echo "Please build Valgrind first or ensure valgrind/ directory exists"
+if [ ! -f "SPP-Valgrind/vg-in-place" ]; then
+    echo "ERROR: Valgrind not found at SPP-Valgrind/vg-in-place"
+    echo "Please build Valgrind first or ensure SPP-Valgrind/ directory exists"
     exit 1
 fi
 

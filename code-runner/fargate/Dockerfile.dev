@@ -19,7 +19,7 @@ RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2
     rm -rf awscliv2.zip aws /var/lib/apt/lists/*
 
 # Copy and build Valgrind
-COPY SPP-Valgrind /spp-valgrind
+COPY SPP-Valgrind-Legacy /spp-valgrind
 WORKDIR /spp-valgrind
 RUN ./autogen.sh && \
     ./configure --prefix=/spp-valgrind/inst CFLAGS="-fcommon" && \

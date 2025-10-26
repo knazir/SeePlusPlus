@@ -25,7 +25,7 @@ RUN dnf update -y && \
     dnf clean all
 
 # Copy Valgrind source and build it
-COPY lambda/valgrind /tmp/valgrind-src
+COPY lambda/SPP-Valgrind /tmp/valgrind-src
 WORKDIR /tmp/valgrind-src
 
 # Build and install Valgrind to /spp/valgrind
