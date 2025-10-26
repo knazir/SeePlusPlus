@@ -1,17 +1,3 @@
-/**
- * Lambda-based trace runner for See++ backend
- *
- * This runner invokes the Lambda function instead of Fargate tasks
- * for faster cold starts and better cost efficiency.
- *
- * Usage:
- * 1. Copy this file to backend/src/runners/lambda.ts
- * 2. Update backend/src/index.ts to use LambdaRunner when EXEC_MODE=lambda
- * 3. Set environment variables:
- *    - LAMBDA_FUNCTION_NAME=spp-trace-executor-prod
- *    - AWS_REGION=us-west-2
- */
-
 import { LambdaClient, InvokeCommand } from "@aws-sdk/client-lambda";
 import { TraceRunner, RunnerResult } from "./runner.interface";
 
@@ -149,29 +135,3 @@ export class LambdaRunner implements TraceRunner {
         }
     }
 }
-
-/**
- * Example usage in backend/src/index.ts:
- *
- * import { LambdaRunner } from './runners/lambda';
- *
- * let runner: TraceRunner;
- *
- * if (process.env.EXEC_MODE === 'lambda') {
- *     runner = new LambdaRunner();
- * } else if (process.env.EXEC_MODE === 'fargate') {
- *     runner = new FargateRunner();
- * } else {
- *     runner = new LocalRunner();
- * }
- *
- * // Health check endpoint
- * app.get('/health', async (req, res) => {
- *     if (runner instanceof LambdaRunner) {
- *         const healthy = await runner.healthCheck();
- *         res.status(healthy ? 200 : 503).json({ healthy });
- *     } else {
- *         res.json({ healthy: true });
- *     }
- * });
- */

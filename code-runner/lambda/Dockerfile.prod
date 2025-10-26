@@ -1,0 +1,64 @@
+# AWS Lambda container image for C++ trace generation with Valgrind 3.27.0
+# Production version with multi-stage build for minimal image size
+# Based on Amazon Linux 2023
+
+ARG TARGETPLATFORM=linux/amd64
+
+# ------------------------------------------------------------------------------
+# Build Stage - Compile Valgrind
+# ------------------------------------------------------------------------------
+FROM --platform=$TARGETPLATFORM public.ecr.aws/lambda/python:3.12 AS builder
+
+# Install build dependencies
+RUN dnf update -y && \
+    dnf install -y \
+        gcc \
+        gcc-c++ \
+        make \
+        automake \
+        autoconf \
+        libtool \
+        glibc-devel \
+        tar \
+        xz \
+        which && \
+    dnf clean all
+
+# Copy Valgrind source and build it
+COPY lambda/valgrind /tmp/valgrind-src
+WORKDIR /tmp/valgrind-src
+
+# Build and install Valgrind to /spp/valgrind
+RUN ./autogen.sh && \
+    ./configure --prefix=/spp/valgrind && \
+    make -j$(nproc) && \
+    make install
+
+# ------------------------------------------------------------------------------
+# Production Stage - Minimal runtime image
+# ------------------------------------------------------------------------------
+FROM --platform=$TARGETPLATFORM public.ecr.aws/lambda/python:3.12
+
+# Install only runtime dependencies needed for compiling and running user code
+RUN dnf update -y && \
+    dnf install -y \
+        gcc \
+        gcc-c++ \
+        glibc-devel && \
+    dnf clean all
+
+# Copy built Valgrind from build stage
+COPY --from=builder /spp/valgrind/ /spp/valgrind/
+
+# Reset working directory to Lambda task root
+WORKDIR ${LAMBDA_TASK_ROOT}
+
+# Copy Lambda handler
+COPY lambda/handler.py ${LAMBDA_TASK_ROOT}/
+
+# Set environment variables
+ENV PATH="/spp/valgrind/bin:${PATH}"
+ENV LD_LIBRARY_PATH="/spp/valgrind/lib:${LD_LIBRARY_PATH}"
+
+# Set the Lambda handler
+CMD [ "handler.lambda_handler" ]
