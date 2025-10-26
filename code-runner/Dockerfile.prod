@@ -1,0 +1,56 @@
+ARG TARGETPLATFORM=linux/amd64
+
+# ------------------------------------------------------------------------------
+# Build Stage
+# ------------------------------------------------------------------------------
+FROM --platform=$TARGETPLATFORM ubuntu:14.04 AS builder
+
+# Install all build dependencies required for building Valgrind
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    gcc-4.8 g++-4.8 make autoconf automake libtool libc6-dbg \
+    curl ca-certificates && \
+    update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.8 100 && \
+    update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-4.8 100 && \
+    rm -rf /var/lib/apt/lists/*
+
+# Copy and build Valgrind
+COPY SPP-Valgrind /spp-valgrind
+WORKDIR /spp-valgrind
+RUN ./autogen.sh && \
+    ./configure --prefix=/spp-valgrind/inst CFLAGS="-fcommon" && \
+    make -j$(nproc) && \
+    make install
+
+# ------------------------------------------------------------------------------
+# Production Stage
+# ------------------------------------------------------------------------------
+FROM --platform=$TARGETPLATFORM ubuntu:14.04
+
+# Install only runtime dependencies needed for compiling and running user code
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    gcc-4.8 g++-4.8 libc6-dbg curl ca-certificates && \
+    update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.8 100 && \
+    update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-4.8 100 && \
+    rm -rf /var/lib/apt/lists/*
+
+# Install AWS CLI v2 for S3 operations (using bundled installer for Ubuntu 14.04 compatibility)
+RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" && \
+    apt-get update && apt-get install -y unzip && \
+    unzip awscliv2.zip && \
+    ./aws/install && \
+    rm -rf awscliv2.zip aws /var/lib/apt/lists/*
+
+# Copy built Valgrind from build stage
+COPY --from=builder /spp-valgrind/inst/ /spp-valgrind/inst/
+
+# Setup working directory
+WORKDIR /
+RUN touch /spp_stdout.txt
+
+# Copy entrypoint script
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+ENTRYPOINT ["/entrypoint.sh"] 
