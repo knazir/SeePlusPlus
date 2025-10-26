@@ -3,6 +3,7 @@ tests/examples/*.vgtrace
 tests/examples/*.trace.js
 tests/examples/*.exe
 tests/examples/*.out
+tests/examples/*.stdout
 tests/examples/a.out
 tests/examples/*.dSYM/
 

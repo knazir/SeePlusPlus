@@ -10,7 +10,7 @@ TESTDIRS = ['.']
 INPUT_FILE_EXTENSIONS = ['.c', '.cpp']
 
 # program to run, with input file as an extra argument
-PROGRAM = ['python', 'run_test_from_scratch.py']
+PROGRAM = ['python3', 'run_test_from_scratch.py']
 
 # this program should output to stdout, which will be redirected to this
 # extension:
@@ -61,19 +61,19 @@ def execute(input_filename):
   (stdout, stderr) = Popen(PROGRAM + [input_filename], stdout=PIPE, stderr=PIPE).communicate()
 
   if stderr:
-    print '(has stderr)'
+    print('(has stderr)')
   #  print '  stderr {'
   #  print stderr, '}'
   else:
-    print
+    print()
 
   # capture stdout into outfile, filtering out machine-specific addresses
   outfile = base + OUTPUT_FILE_EXTENSION
   outf = open(outfile, 'w')
 
   for line in stdout.splitlines():
-    filtered_line = re.sub(' 0x.+?>', ' 0xADDR>', line)
-    print >> outf, filtered_line
+    filtered_line = re.sub(' 0x.+?>', ' 0xADDR>', line.decode('utf-8') if isinstance(line, bytes) else line)
+    print(filtered_line, file=outf)
 
   outf.close()
 
@@ -82,7 +82,7 @@ def clobber_golden_file(golden_file):
   (base, ext) = os.path.splitext(golden_file)
   outfile = base + OUTPUT_FILE_EXTENSION
   assert os.path.isfile(outfile)
-  print '  Clobber %s => %s' % (outfile, golden_file)
+  print('  Clobber %s => %s' % (outfile, golden_file))
   shutil.copy(outfile, golden_file)
 
 
@@ -111,7 +111,7 @@ def print_filtered_outfile(test_name):
   out_s = open(outfile).readlines()
   out_s_filtered = filter_output(out_s)
   for line in out_s_filtered:
-    print line
+    print(line)
 
 
 def diff_test_output(test_name):
@@ -132,13 +132,13 @@ def diff_test_output(test_name):
   for line in difflib.unified_diff(golden_s_filtered, out_s_filtered, \
                                    fromfile=golden_file, tofile=outfile):
     if first_line:
-      print # print an extra line to ease readability
+      print() # print an extra line to ease readability
       first_line = False
-    print line
+    print(line)
 
 
 def run_test(input_filename, clobber_golden=False):
-  print 'Testing', input_filename,
+  print('Testing', input_filename, end=' ')
 
   (base, ext) = os.path.splitext(input_filename)
   assert ext in INPUT_FILE_EXTENSIONS
@@ -154,7 +154,7 @@ def run_test(input_filename, clobber_golden=False):
   golden_file = base + GOLDEN_FILE_EXTENSION
   if os.path.isfile(golden_file):
     if golden_differs_from_out(golden_file):
-      print "  " + RED + "FAILED!!!" + ENDC
+      print("  " + RED + "FAILED!!!" + ENDC)
     if clobber_golden:
       clobber_golden_file(golden_file)
   else:
@@ -200,9 +200,9 @@ if __name__ == "__main__":
 
   if options.run_all:
     if options.clobber:
-      print 'Running all tests and clobbering results ...'
+      print('Running all tests and clobbering results ...')
     else:
-      print 'Running all tests ...'
+      print('Running all tests ...')
     run_all_tests(options.clobber)
 
   elif options.diff_all:

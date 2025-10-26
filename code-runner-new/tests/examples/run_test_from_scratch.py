@@ -12,6 +12,6 @@ assert os.path.exists(trace_f)
 
 # print out trace_f to stdout
 for line in open(trace_f):
-    print line,
+    print(line, end='')
 
 #os.remove(trace_f) # clean up
