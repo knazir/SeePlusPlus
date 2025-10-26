@@ -15,7 +15,7 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 # Copy and build Valgrind
-COPY SPP-Valgrind /spp-valgrind
+COPY SPP-Valgrind-Legacy /spp-valgrind
 WORKDIR /spp-valgrind
 RUN ./autogen.sh && \
     ./configure --prefix=/spp-valgrind/inst CFLAGS="-fcommon" && \
