@@ -62,14 +62,15 @@ all-traces: basic.trace \
 
 %.vgtrace: %.c ../../valgrind/vg-in-place
 	@gcc -ggdb -O0 -fno-omit-frame-pointer $< -o $(basename $@)
-	@../../valgrind/vg-in-place --tool=memcheck --source-filename=$< --trace-filename=$(basename $<).vgtrace ./$(basename $<) || true
+	@../../valgrind/vg-in-place --tool=memcheck --source-filename=$< --trace-filename=$(basename $<).vgtrace ./$(basename $<) > /dev/null 2>&1 || true
 
 %.vgtrace: %.cpp ../../valgrind/vg-in-place
 	@g++ -ggdb -O0 -fno-omit-frame-pointer $< -o $(basename $@)
-	@../../valgrind/vg-in-place --tool=memcheck --source-filename=$< --trace-filename=$(basename $<).vgtrace ./$(basename $<) || true
+	@../../valgrind/vg-in-place --tool=memcheck --source-filename=$< --trace-filename=$(basename $<).vgtrace ./$(basename $<) > /dev/null 2>&1 || true
 
 %.trace: %.vgtrace ../vg_to_opt_trace.py
-	@python3 ../vg_to_opt_trace.py --create_jsvar=trace $(basename $<) > $(basename $<).trace || true
+	@python3 ../vg_to_opt_trace.py --create_jsvar=trace $(basename $<) > $(basename $<).trace 2>&1 || true
+	@rm -f $(basename $<).vgtrace
 
 clean:
 	rm -f *.trace *.vgtrace *.out
