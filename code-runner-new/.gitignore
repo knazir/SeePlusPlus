@@ -6,6 +6,8 @@ tests/examples/*.out
 tests/examples/*.stdout
 tests/examples/a.out
 tests/examples/*.dSYM/
+tests/examples/*.trace
+tests/examples/*.txt
 
 # Python cache
 __pycache__/

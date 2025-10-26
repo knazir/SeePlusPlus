@@ -16,6 +16,6 @@ echo "Running tests in Docker container..."
 docker run --rm \
     --platform linux/amd64 \
     -v "$SCRIPT_DIR:/workspace" \
-    -w /workspace \
+    -w /workspace/tests/examples \
     "$IMAGE_NAME" \
-    ./test.sh "$@"
+    python3 golden_test.py "$@"
