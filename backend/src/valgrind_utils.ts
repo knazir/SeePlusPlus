@@ -36,7 +36,11 @@ export function buildValgrindResponse(
         return handleGccError(userCodeFileName, originalUserCode, stderr);
     }
 
-    return parseValgrindTrace(vgTrace, originalUserCode);
+    // Lambda mode: shift stdout by 1 step to compensate for timing offset
+    // (stdout appears 1 instruction after the actual cout call due to buffering)
+    const shiftStdout = process.env.EXEC_MODE === "lambda" ? 1 : undefined;
+
+    return parseValgrindTrace(vgTrace, originalUserCode, undefined, shiftStdout);
 }
 
 //------------------------------------------------------------------------------

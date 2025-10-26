@@ -28,7 +28,8 @@ export interface ProgramTrace {
 export function parseValgrindTrace(
     rawValgrindOutput: string,
     userCode: string,
-    endOfTraceErrorMessage?: string
+    endOfTraceErrorMessage?: string,
+    shiftStdout?: number
 ): ProgramTrace {
     const allExecutionPoints: ExecutionPoint[] = [];
 
@@ -68,7 +69,7 @@ export function parseValgrindTrace(
 
     let finalTrace: ExecutionPoint[] = [];
     if (parseOk) {
-        finalTrace = finalizeTrace(allExecutionPoints, endOfTraceErrorMessage);
+        finalTrace = finalizeTrace(allExecutionPoints, endOfTraceErrorMessage, shiftStdout);
     }
 
     return {
@@ -147,7 +148,8 @@ function processRecord(allExecutionPoints: ExecutionPoint[], lines: string[]): b
 //------------------------------------------------------------------------------
 function finalizeTrace(
     allExecutionPoints: ExecutionPoint[],
-    endOfTraceErrorMessage?: string
+    endOfTraceErrorMessage?: string,
+    shiftStdout?: number
 ): ExecutionPoint[] {
     // 1. Filter out points with 0x0 frame pointer or ??? funcName
     const filtered: ExecutionPoint[] = [];
@@ -284,7 +286,19 @@ function finalizeTrace(
     }
     let finalFiltered = finalPoints.filter(p => !p.toDelete);
 
-    // 7. Truncate to MAX_STEPS
+    // 7. Shift stdout backward by shiftStdout steps if specified
+    //    (compensates for stdout appearing N instructions after the actual cout call)
+    if (shiftStdout && shiftStdout > 0) {
+        for (let i = 0; i < finalFiltered.length - shiftStdout; i++) {
+            finalFiltered[i].stdout = finalFiltered[i + shiftStdout].stdout;
+        }
+        // Clear stdout for the last shiftStdout steps since we shifted everything back
+        for (let i = Math.max(0, finalFiltered.length - shiftStdout); i < finalFiltered.length; i++) {
+            finalFiltered[i].stdout = "";
+        }
+    }
+
+    // 8. Truncate to MAX_STEPS
     if (finalFiltered.length > MAX_STEPS) {
         finalFiltered = finalFiltered.slice(0, MAX_STEPS);
         const last = finalFiltered[finalFiltered.length - 1];
