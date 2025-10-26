@@ -182,10 +182,12 @@ def generate_trace(code: str, unique_id: str) -> dict:
             }
 
         # Run under Valgrind to generate trace
+        # NOTE: source-filename must be just the basename, not full path
+        # because DWARF debug info stores only the basename
         valgrind_cmd = [
             VALGRIND_BIN,
             '--tool=memcheck',
-            f'--source-filename={str(cpp_file)}',
+            f'--source-filename={cpp_file.name}',  # Use basename only
             f'--trace-filename={str(vgtrace_file)}',
             '--read-var-info=yes',
             str(exe_file)
