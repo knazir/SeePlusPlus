@@ -109,13 +109,15 @@ run_test() {
     local actual_json=$(sed 's/^var trace = //; s/;$//' "$trace_file")
     local golden_json=$(sed 's/^var trace = //; s/;$//' "$golden_file" | grep -v '^ret = ' | grep -v '^rm ')
 
-    # Normalize addresses in both
+    # Normalize addresses in both (including unique_hash values)
     local actual_normalized=$(echo "$actual_json" | python3 -c "
 import json, sys, re
 data = json.load(sys.stdin)
 # Normalize addresses
 s = json.dumps(data, indent=2, sort_keys=True)
 s = re.sub(r'\"0x[0-9A-Fa-f]+\"', '\"0xADDR\"', s)
+# Normalize hex in unique_hash values (e.g., main_0x1234 -> main_0xADDR)
+s = re.sub(r'_0x[0-9A-Fa-f]+', '_0xADDR', s)
 print(s)
 " 2>/dev/null)
 
@@ -125,6 +127,8 @@ data = json.load(sys.stdin)
 # Normalize addresses
 s = json.dumps(data, indent=2, sort_keys=True)
 s = re.sub(r'\"0x[0-9A-Fa-f]+\"', '\"0xADDR\"', s)
+# Normalize hex in unique_hash values (e.g., main_0x1234 -> main_0xADDR)
+s = re.sub(r'_0x[0-9A-Fa-f]+', '_0xADDR', s)
 print(s)
 " 2>/dev/null)
 
