@@ -23,7 +23,7 @@ CACHE_BUCKET = os.environ.get('CACHE_BUCKET', '')
 ENABLE_CACHE = bool(CACHE_BUCKET)
 
 # Paths (can be overridden by environment variables for testing)
-VALGRIND_BIN = os.environ.get('VALGRIND_BIN', '/opt/valgrind/bin/valgrind')
+VALGRIND_BIN = os.environ.get('VALGRIND_BIN', '/spp/valgrind/bin/valgrind')
 
 def lambda_handler(event, context):
     """
@@ -185,28 +185,27 @@ def generate_trace(code: str, unique_id: str) -> dict:
         # because DWARF debug info stores only the basename
         #
         # IMPORTANT: Valgrind's custom code reads stdout by rewinding and reading
-        # from file descriptor 1 (stdout). We redirect the program's stdout to a file
-        # so that Valgrind's custom trace code can rewind and read from FD 1.
+        # from file descriptor 1 (stdout). We need to redirect FD 1 to a file
+        # opened in READ-WRITE mode so that Valgrind can lseek/read from it.
         #
         # The approach:
         # 1. Create a temp file for the program's stdout
-        # 2. Redirect stdout (FD 1) to this file using shell redirection
+        # 2. Use exec to redirect FD 1 to this file in read-write mode (1<>file)
         # 3. Use stdbuf -o0 to disable buffering so Valgrind can read immediately
         # 4. Valgrind's mc_translate.c will lseek(stdout_fd, 0, SEEK_SET) and read from FD 1
 
         # Create a temp file for the program's stdout
         program_stdout_file = tmpdir_path / f"{unique_id}_program_stdout.txt"
 
-        # Build the command with shell redirection
-        # Important: Only redirect stdout (>), not stderr (2>&1)
-        # Valgrind's diagnostics go to stderr, program output goes to stdout
-        valgrind_cmd_str = f"""stdbuf -o0 {VALGRIND_BIN} \\
+        # Build the command with exec to redirect FD 1 in read-write mode
+        # The exec 1<> syntax opens FD 1 for both reading and writing
+        # This allows Valgrind to lseek and read from FD 1
+        valgrind_cmd_str = f"""exec 1<>{str(program_stdout_file)}; stdbuf -o0 {VALGRIND_BIN} \\
             --tool=memcheck \\
             --source-filename={cpp_file.name} \\
             --trace-filename={str(vgtrace_file)} \\
             --read-var-info=yes \\
-            {str(exe_file)} \\
-            > {str(program_stdout_file)}"""
+            {str(exe_file)}"""
 
         try:
             valgrind_result = subprocess.run(
@@ -219,7 +218,6 @@ def generate_trace(code: str, unique_id: str) -> dict:
             )
 
             # Valgrind's stderr contains its diagnostic messages
-            # Valgrind's stdout should be empty (program stdout went to file)
             valgrind_stderr = valgrind_result.stderr
 
             # Read the program's actual stdout from the file
