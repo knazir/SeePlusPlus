@@ -70,7 +70,10 @@ all-traces: basic.trace \
 
 %.trace: %.vgtrace ../vg_to_opt_trace.py
 	@python3 ../vg_to_opt_trace.py --create_jsvar=trace $(basename $<) > $(basename $<).trace 2>&1 || true
-	@rm -f $(basename $<).vgtrace
+	@rm -f $(basename $<).vgtrace $(basename $<)
 
 clean:
 	rm -f *.trace *.vgtrace *.out
+	@for file in *.c *.cpp; do \
+		if [ -f "$${file%.*}" ]; then rm -f "$${file%.*}"; fi; \
+	done
