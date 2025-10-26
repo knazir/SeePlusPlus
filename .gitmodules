@@ -1,6 +1,6 @@
 [submodule "code-runner/SPP-Valgrind"]
 	path = code-runner/SPP-Valgrind
 	url = git@github.com:knazir/SPP-Valgrind.git
-[submodule "code-runner/valgrind"]
-	path = code-runner/valgrind
+[submodule "code-runner-new/valgrind"]
+	path = code-runner-new/valgrind
 	url = https://sourceware.org/git/valgrind.git

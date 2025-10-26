@@ -1,0 +1,266 @@
+rm type-qualifiers.vgtrace
+var trace = {
+  "code": "int main() {\n  volatile int foo = 111; \n  unsigned long int volatile bar = 222;\n  const volatile int* baz = &foo;\n  volatile const unsigned long int* rt_clk = &bar;\n}\n", 
+  "trace": [
+    {
+      "event": "step_line", 
+      "func_name": "main", 
+      "globals": {}, 
+      "heap": {}, 
+      "line": 2, 
+      "ordered_globals": [], 
+      "stack_to_render": [
+        {
+          "encoded_locals": {
+            "bar": [
+              "C_DATA", 
+              "0xFFEFFFF28", 
+              "long unsigned int", 
+              "<UNINITIALIZED>"
+            ], 
+            "baz": [
+              "C_DATA", 
+              "0xFFEFFFF30", 
+              "pointer", 
+              "<UNINITIALIZED>"
+            ], 
+            "foo": [
+              "C_DATA", 
+              "0xFFEFFFF24", 
+              "int", 
+              "<UNINITIALIZED>"
+            ], 
+            "rt_clk": [
+              "C_DATA", 
+              "0xFFEFFFF38", 
+              "pointer", 
+              "<UNINITIALIZED>"
+            ]
+          }, 
+          "frame_id": "0xFFEFFFF40", 
+          "func_name": "main", 
+          "is_highlighted": true, 
+          "is_parent": false, 
+          "is_zombie": false, 
+          "ordered_varnames": [
+            "foo", 
+            "bar", 
+            "baz", 
+            "rt_clk"
+          ], 
+          "parent_frame_id_list": [], 
+          "unique_hash": "main_0xFFEFFFF40"
+        }
+      ], 
+      "stdout": ""
+    }, 
+    {
+      "event": "step_line", 
+      "func_name": "main", 
+      "globals": {}, 
+      "heap": {}, 
+      "line": 3, 
+      "ordered_globals": [], 
+      "stack_to_render": [
+        {
+          "encoded_locals": {
+            "bar": [
+              "C_DATA", 
+              "0xFFEFFFF28", 
+              "long unsigned int", 
+              "<UNINITIALIZED>"
+            ], 
+            "baz": [
+              "C_DATA", 
+              "0xFFEFFFF30", 
+              "pointer", 
+              "<UNINITIALIZED>"
+            ], 
+            "foo": [
+              "C_DATA", 
+              "0xFFEFFFF24", 
+              "int", 
+              111
+            ], 
+            "rt_clk": [
+              "C_DATA", 
+              "0xFFEFFFF38", 
+              "pointer", 
+              "<UNINITIALIZED>"
+            ]
+          }, 
+          "frame_id": "0xFFEFFFF40", 
+          "func_name": "main", 
+          "is_highlighted": true, 
+          "is_parent": false, 
+          "is_zombie": false, 
+          "ordered_varnames": [
+            "foo", 
+            "bar", 
+            "baz", 
+            "rt_clk"
+          ], 
+          "parent_frame_id_list": [], 
+          "unique_hash": "main_0xFFEFFFF40"
+        }
+      ], 
+      "stdout": ""
+    }, 
+    {
+      "event": "step_line", 
+      "func_name": "main", 
+      "globals": {}, 
+      "heap": {}, 
+      "line": 4, 
+      "ordered_globals": [], 
+      "stack_to_render": [
+        {
+          "encoded_locals": {
+            "bar": [
+              "C_DATA", 
+              "0xFFEFFFF28", 
+              "long unsigned int", 
+              222
+            ], 
+            "baz": [
+              "C_DATA", 
+              "0xFFEFFFF30", 
+              "pointer", 
+              "<UNINITIALIZED>"
+            ], 
+            "foo": [
+              "C_DATA", 
+              "0xFFEFFFF24", 
+              "int", 
+              111
+            ], 
+            "rt_clk": [
+              "C_DATA", 
+              "0xFFEFFFF38", 
+              "pointer", 
+              "<UNINITIALIZED>"
+            ]
+          }, 
+          "frame_id": "0xFFEFFFF40", 
+          "func_name": "main", 
+          "is_highlighted": true, 
+          "is_parent": false, 
+          "is_zombie": false, 
+          "ordered_varnames": [
+            "foo", 
+            "bar", 
+            "baz", 
+            "rt_clk"
+          ], 
+          "parent_frame_id_list": [], 
+          "unique_hash": "main_0xFFEFFFF40"
+        }
+      ], 
+      "stdout": ""
+    }, 
+    {
+      "event": "step_line", 
+      "func_name": "main", 
+      "globals": {}, 
+      "heap": {}, 
+      "line": 5, 
+      "ordered_globals": [], 
+      "stack_to_render": [
+        {
+          "encoded_locals": {
+            "bar": [
+              "C_DATA", 
+              "0xFFEFFFF28", 
+              "long unsigned int", 
+              222
+            ], 
+            "baz": [
+              "C_DATA", 
+              "0xFFEFFFF30", 
+              "pointer", 
+              "0xFFEFFFF24"
+            ], 
+            "foo": [
+              "C_DATA", 
+              "0xFFEFFFF24", 
+              "int", 
+              111
+            ], 
+            "rt_clk": [
+              "C_DATA", 
+              "0xFFEFFFF38", 
+              "pointer", 
+              "<UNINITIALIZED>"
+            ]
+          }, 
+          "frame_id": "0xFFEFFFF40", 
+          "func_name": "main", 
+          "is_highlighted": true, 
+          "is_parent": false, 
+          "is_zombie": false, 
+          "ordered_varnames": [
+            "foo", 
+            "bar", 
+            "baz", 
+            "rt_clk"
+          ], 
+          "parent_frame_id_list": [], 
+          "unique_hash": "main_0xFFEFFFF40"
+        }
+      ], 
+      "stdout": ""
+    }, 
+    {
+      "event": "return", 
+      "func_name": "main", 
+      "globals": {}, 
+      "heap": {}, 
+      "line": 6, 
+      "ordered_globals": [], 
+      "stack_to_render": [
+        {
+          "encoded_locals": {
+            "bar": [
+              "C_DATA", 
+              "0xFFEFFFF28", 
+              "long unsigned int", 
+              222
+            ], 
+            "baz": [
+              "C_DATA", 
+              "0xFFEFFFF30", 
+              "pointer", 
+              "0xFFEFFFF24"
+            ], 
+            "foo": [
+              "C_DATA", 
+              "0xFFEFFFF24", 
+              "int", 
+              111
+            ], 
+            "rt_clk": [
+              "C_DATA", 
+              "0xFFEFFFF38", 
+              "pointer", 
+              "0xFFEFFFF28"
+            ]
+          }, 
+          "frame_id": "0xFFEFFFF40", 
+          "func_name": "main", 
+          "is_highlighted": true, 
+          "is_parent": false, 
+          "is_zombie": false, 
+          "ordered_varnames": [
+            "foo", 
+            "bar", 
+            "baz", 
+            "rt_clk"
+          ], 
+          "parent_frame_id_list": [], 
+          "unique_hash": "main_0xFFEFFFF40"
+        }
+      ], 
+      "stdout": ""
+    }
+  ]
+};

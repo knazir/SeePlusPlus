@@ -1,0 +1,5 @@
+rm fjalar-string-arrays.vgtrace
+var trace = {
+  "code": "// From the test suite of https://github.com/codespecs/daikon\n//   daikon/tests/kvasir-tests/\n\n#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\n#include <ctype.h>\n\nint f(char *arg, char **strings) {\n    return 12;\n}\n\nchar *uppercase (char *s) {\n    static char upcasestr[128];\n    int i;\n\n    for (i = 0; i < strlen (s); i++)\n\tupcasestr[i] = toupper(s[i]);\n    upcasestr[i] = '\\0';\n\n    return (upcasestr);\n}\n\nint main()\n{\n    char *none = 0;\n    static char *strings[] = {\"apple\", \"banana\", \"carrot\", \"daikon\",\n\t\t\t      \"eggplant\", \"fig\", \"grape\", 0 };\n    f(strings[1], strings);\n\n    uppercase(\"huckleberry\");\n\n    return 0;\n}\n", 
+  "trace": []
+};
