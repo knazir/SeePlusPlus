@@ -28,6 +28,9 @@ RUN ./autogen.sh && \
     make install && \
     rm -rf /tmp/valgrind-src
 
+# Reset working directory to Lambda task root
+WORKDIR ${LAMBDA_TASK_ROOT}
+
 # Copy the trace conversion script
 COPY tests/vg_to_opt_trace.py /opt/
 
