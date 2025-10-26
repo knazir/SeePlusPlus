@@ -46,6 +46,13 @@ task_role:
         resources:
           - '*'
 
+      # 3. Allow backend to invoke Lambda functions
+      - effect: Allow
+        actions:
+          - lambda:InvokeFunction
+        resources:
+          - '*'
+
 # Environment variables.
 variables:
   ALLOWED_ORIGIN_REGEX: '^https?:\/\/(?:[\w-]+\.)*?(seepluspl\.us)$'
@@ -66,3 +73,6 @@ environments:
     count: 1
     deployment:
       rolling: "recreate"       # Stops existing tasks before new ones are started for faster deployments.
+    variables:
+      EXEC_MODE: lambda
+      LAMBDA_FUNCTION_NAME: spp-trace-executor-test
