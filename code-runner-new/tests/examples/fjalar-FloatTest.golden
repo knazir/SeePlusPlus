@@ -1,0 +1,5 @@
+rm fjalar-FloatTest.vgtrace
+var trace = {
+  "code": "// From the test suite of https://github.com/codespecs/daikon\n//   daikon/tests/kvasir-tests/\n\n#include <stdio.h>\n#include <stdlib.h>\n\ndouble globalDouble[] = {123e-6, 123e1, 123e10, 123e100, 123e1000};\n\nfloat floatMultiply(float a, float b) {\n  return a*b;\n}\n\nfloat floatDivide(float a, float b) {\n  return a/b;\n}\n\nfloat floatAdd(float a, float b) {\n  return a+b;\n}\n\nfloat floatSub(float a, float b) {\n  return a-b;\n}\n\ndouble doubleMultiply(double a, double b) {\n  return a*b;\n}\n\ndouble doubleDivide(double a, double b) {\n  return a/b;\n}\n\ndouble doubleAdd(double a, double b) {\n  return a+b;\n}\n\ndouble doubleSub(double a, double b) {\n  return a-b;\n}\n\n\nint main()\n{\n\n  // Test large(~ 10^100), medium, and small inputs\n  floatMultiply(10e12, 12e23);\n  floatDivide(1.0, 254);\n  floatAdd(100.345, 34.456);\n  floatSub(34, -3415.234242);\n\n  doubleMultiply(10e130, 54e45);\n  doubleDivide(1.0, 541234);\n  doubleAdd(450.3451516134, 64.123413151);\n  doubleSub(15, -5246.5415143232);\n    \n  return 0;\n}\n", 
+  "trace": []
+};

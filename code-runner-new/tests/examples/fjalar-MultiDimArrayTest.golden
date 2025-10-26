@@ -1,0 +1,5 @@
+rm fjalar-MultiDimArrayTest.vgtrace
+var trace = {
+  "code": "// From the test suite of https://github.com/codespecs/daikon\n//   daikon/tests/kvasir-tests/\n\n#include <stdio.h>\n\nconst int DIM1 = 10;\nconst int DIM2 = 20;\n\nstruct boo {\n  int a;\n  int b;\n  int c[40][50];\n  int* d[90][70];\n};\n\nstruct boo globalBoo;\n\nvoid fint(int param[DIM1][DIM2]) {\n  return;\n}\n\nvoid ffixedint(int param[987][654][321]) {};\n\nvoid __attribute__(()) fcrashint(int param[10000][321], struct boo booParam) {\n  printf(\"fcrashint: &param=%p &booParam=%p, diff=%d\\n\",\n         &param, &booParam, (void*)&booParam - (void*)&param);\n};\n\nvoid fchar(char p[DIM1][DIM2]) {\n  return;\n}\n\nint main() {\n  int x[DIM1][DIM2];\n  int i, j;\n  for (i = 0; i < DIM1; i++)\n    for(j = 0; j < DIM2; j++)\n      x[i][j] = i+j*i;\n  globalBoo.a = 42;\n  globalBoo.b = 9876;\n  globalBoo.c[0][0] = 12345;\n  globalBoo.c[1][0] = 54321;\n  globalBoo.c[2][0] = 42;\n  globalBoo.c[9][49] = 949;\n  fint(x);\n  fcrashint(x, globalBoo);\n  printf(\"sizeof(struct boo): %d\\n\", sizeof(struct boo));\n  return 0;\n}\n", 
+  "trace": []
+};

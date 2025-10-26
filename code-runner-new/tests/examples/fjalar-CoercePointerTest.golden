@@ -1,0 +1,1559 @@
+rm fjalar-CoercePointerTest.vgtrace
+var trace = {
+  "code": "// From the test suite of https://github.com/codespecs/daikon\n//   daikon/tests/kvasir-tests/\n\n// Test of the Kvasir .disambig option for coercing pointers into\n// types different than their declared types.  Useful for handling\n// C faux-polymorphism\n\n#include <stdlib.h>\n#include <string.h>\n\ntypedef struct {\n  int foo_int;\n  char* foo_str;\n  double foo_double;\n  void* foo_baz; // This should be observed as type baz\n} foo;\n\nstruct bar {\n  int bar_int;\n};\n\ntypedef struct {\n  int baz_int;\n  char baz_str[10];\n} baz;\n\nvoid normal_view(foo* f) {}\n\n// Observe f as a pointer to type foo\nvoid view_foo(void* f) {}\n// Observe b as a pointer to type bar\nvoid view_bar(void* b) {}\n\nvoid view_foo_and_bar(void* f, void* b) {}\n\n// We need to have this here so that Kvasir recognizes that some\n// variable has type baz so that it creates an entry for it in\n// DaikonTypesTable.  We need to fix this in the future.\nbaz junk;\n\n// Observe bar_as_foo as a pointer to type foo\nvoid view_bar_as_foo(struct bar* bar_as_foo) {}\n\nint main() {\n  foo* f = (foo*)malloc(sizeof(*f));\n  struct bar* b = (struct bar*)malloc(sizeof(*b));\n\n  f->foo_int = 42;\n  f->foo_str = (char*)strdup(\"f->foo_str\");\n  f->foo_double = 2.718;\n  f->foo_baz = (void*)malloc(sizeof(baz));\n  ((baz*)(f->foo_baz))->baz_int = 103083;\n  strcpy(((baz*)(f->foo_baz))->baz_str, \"TEN_BYTES\");\n\n  b->bar_int = 123456;\n\n  normal_view(f);\n  view_foo(f);\n  view_bar(b);\n  view_foo_and_bar(f, b);\n  view_bar_as_foo((struct bar*)f);\n\n  return 0;\n}\n", 
+  "trace": [
+    {
+      "event": "step_line", 
+      "func_name": "main", 
+      "globals": {
+        "junk": [
+          "C_STRUCT", 
+          "0x601060", 
+          "baz", 
+          [
+            "baz_int", 
+            [
+              "C_DATA", 
+              "0x601060", 
+              "int", 
+              0
+            ]
+          ], 
+          [
+            "baz_str", 
+            [
+              "C_ARRAY", 
+              "0x601064", 
+              [
+                "C_DATA", 
+                "0x601064", 
+                "char", 
+                "\\0"
+              ], 
+              [
+                "C_DATA", 
+                "0x601065", 
+                "char", 
+                "\\0"
+              ], 
+              [
+                "C_DATA", 
+                "0x601066", 
+                "char", 
+                "\\0"
+              ], 
+              [
+                "C_DATA", 
+                "0x601067", 
+                "char", 
+                "\\0"
+              ], 
+              [
+                "C_DATA", 
+                "0x601068", 
+                "char", 
+                "\\0"
+              ], 
+              [
+                "C_DATA", 
+                "0x601069", 
+                "char", 
+                "\\0"
+              ], 
+              [
+                "C_DATA", 
+                "0x60106A", 
+                "char", 
+                "\\0"
+              ], 
+              [
+                "C_DATA", 
+                "0x60106B", 
+                "char", 
+                "\\0"
+              ], 
+              [
+                "C_DATA", 
+                "0x60106C", 
+                "char", 
+                "\\0"
+              ], 
+              [
+                "C_DATA", 
+                "0x60106D", 
+                "char", 
+                "\\0"
+              ]
+            ]
+          ]
+        ]
+      }, 
+      "heap": {}, 
+      "line": 44, 
+      "ordered_globals": [
+        "junk"
+      ], 
+      "stack_to_render": [
+        {
+          "encoded_locals": {
+            "b": [
+              "C_DATA", 
+              "0xFFEFFFE20", 
+              "pointer", 
+              "<UNINITIALIZED>"
+            ], 
+            "f": [
+              "C_DATA", 
+              "0xFFEFFFE18", 
+              "pointer", 
+              "<UNINITIALIZED>"
+            ]
+          }, 
+          "frame_id": "0xFFEFFFE30", 
+          "func_name": "main", 
+          "is_highlighted": true, 
+          "is_parent": false, 
+          "is_zombie": false, 
+          "ordered_varnames": [
+            "f", 
+            "b"
+          ], 
+          "parent_frame_id_list": [], 
+          "unique_hash": "main_0xFFEFFFE30"
+        }
+      ], 
+      "stdout": ""
+    }, 
+    {
+      "event": "step_line", 
+      "func_name": "main", 
+      "globals": {
+        "junk": [
+          "C_STRUCT", 
+          "0x601060", 
+          "baz", 
+          [
+            "baz_int", 
+            [
+              "C_DATA", 
+              "0x601060", 
+              "int", 
+              0
+            ]
+          ], 
+          [
+            "baz_str", 
+            [
+              "C_ARRAY", 
+              "0x601064", 
+              [
+                "C_DATA", 
+                "0x601064", 
+                "char", 
+                "\\0"
+              ], 
+              [
+                "C_DATA", 
+                "0x601065", 
+                "char", 
+                "\\0"
+              ], 
+              [
+                "C_DATA", 
+                "0x601066", 
+                "char", 
+                "\\0"
+              ], 
+              [
+                "C_DATA", 
+                "0x601067", 
+                "char", 
+                "\\0"
+              ], 
+              [
+                "C_DATA", 
+                "0x601068", 
+                "char", 
+                "\\0"
+              ], 
+              [
+                "C_DATA", 
+                "0x601069", 
+                "char", 
+                "\\0"
+              ], 
+              [
+                "C_DATA", 
+                "0x60106A", 
+                "char", 
+                "\\0"
+              ], 
+              [
+                "C_DATA", 
+                "0x60106B", 
+                "char", 
+                "\\0"
+              ], 
+              [
+                "C_DATA", 
+                "0x60106C", 
+                "char", 
+                "\\0"
+              ], 
+              [
+                "C_DATA", 
+                "0x60106D", 
+                "char", 
+                "\\0"
+              ]
+            ]
+          ]
+        ]
+      }, 
+      "heap": {}, 
+      "line": 45, 
+      "ordered_globals": [
+        "junk"
+      ], 
+      "stack_to_render": [
+        {
+          "encoded_locals": {
+            "b": [
+              "C_DATA", 
+              "0xFFEFFFE20", 
+              "pointer", 
+              "<UNINITIALIZED>"
+            ], 
+            "f": [
+              "C_DATA", 
+              "0xFFEFFFE18", 
+              "pointer", 
+              "<UNINITIALIZED>"
+            ]
+          }, 
+          "frame_id": "0xFFEFFFE30", 
+          "func_name": "main", 
+          "is_highlighted": true, 
+          "is_parent": false, 
+          "is_zombie": false, 
+          "ordered_varnames": [
+            "f", 
+            "b"
+          ], 
+          "parent_frame_id_list": [], 
+          "unique_hash": "main_0xFFEFFFE30"
+        }
+      ], 
+      "stdout": ""
+    }, 
+    {
+      "event": "step_line", 
+      "func_name": "main", 
+      "globals": {
+        "junk": [
+          "C_STRUCT", 
+          "0x601060", 
+          "baz", 
+          [
+            "baz_int", 
+            [
+              "C_DATA", 
+              "0x601060", 
+              "int", 
+              0
+            ]
+          ], 
+          [
+            "baz_str", 
+            [
+              "C_ARRAY", 
+              "0x601064", 
+              [
+                "C_DATA", 
+                "0x601064", 
+                "char", 
+                "\\0"
+              ], 
+              [
+                "C_DATA", 
+                "0x601065", 
+                "char", 
+                "\\0"
+              ], 
+              [
+                "C_DATA", 
+                "0x601066", 
+                "char", 
+                "\\0"
+              ], 
+              [
+                "C_DATA", 
+                "0x601067", 
+                "char", 
+                "\\0"
+              ], 
+              [
+                "C_DATA", 
+                "0x601068", 
+                "char", 
+                "\\0"
+              ], 
+              [
+                "C_DATA", 
+                "0x601069", 
+                "char", 
+                "\\0"
+              ], 
+              [
+                "C_DATA", 
+                "0x60106A", 
+                "char", 
+                "\\0"
+              ], 
+              [
+                "C_DATA", 
+                "0x60106B", 
+                "char", 
+                "\\0"
+              ], 
+              [
+                "C_DATA", 
+                "0x60106C", 
+                "char", 
+                "\\0"
+              ], 
+              [
+                "C_DATA", 
+                "0x60106D", 
+                "char", 
+                "\\0"
+              ]
+            ]
+          ]
+        ]
+      }, 
+      "heap": {
+        "0x51FC040": [
+          "C_ARRAY", 
+          "0x51FC040", 
+          [
+            "C_STRUCT", 
+            "0x51FC040", 
+            "foo", 
+            [
+              "foo_int", 
+              [
+                "C_DATA", 
+                "0x51FC040", 
+                "int", 
+                "<UNINITIALIZED>"
+              ]
+            ], 
+            [
+              "foo_str", 
+              [
+                "C_DATA", 
+                "0x51FC048", 
+                "pointer", 
+                "<UNINITIALIZED>"
+              ]
+            ], 
+            [
+              "foo_double", 
+              [
+                "C_DATA", 
+                "0x51FC050", 
+                "double", 
+                "<UNINITIALIZED>"
+              ]
+            ], 
+            [
+              "foo_baz", 
+              [
+                "C_DATA", 
+                "0x51FC058", 
+                "pointer", 
+                "<UNINITIALIZED>"
+              ]
+            ]
+          ]
+        ]
+      }, 
+      "line": 46, 
+      "ordered_globals": [
+        "junk"
+      ], 
+      "stack_to_render": [
+        {
+          "encoded_locals": {
+            "b": [
+              "C_DATA", 
+              "0xFFEFFFE28", 
+              "pointer", 
+              "<UNINITIALIZED>"
+            ], 
+            "f": [
+              "C_DATA", 
+              "0xFFEFFFE20", 
+              "pointer", 
+              "0x51FC040"
+            ]
+          }, 
+          "frame_id": "0xFFEFFFE30", 
+          "func_name": "main", 
+          "is_highlighted": true, 
+          "is_parent": false, 
+          "is_zombie": false, 
+          "ordered_varnames": [
+            "f", 
+            "b"
+          ], 
+          "parent_frame_id_list": [], 
+          "unique_hash": "main_0xFFEFFFE30"
+        }
+      ], 
+      "stdout": ""
+    }, 
+    {
+      "event": "step_line", 
+      "func_name": "main", 
+      "globals": {
+        "junk": [
+          "C_STRUCT", 
+          "0x601060", 
+          "baz", 
+          [
+            "baz_int", 
+            [
+              "C_DATA", 
+              "0x601060", 
+              "int", 
+              0
+            ]
+          ], 
+          [
+            "baz_str", 
+            [
+              "C_ARRAY", 
+              "0x601064", 
+              [
+                "C_DATA", 
+                "0x601064", 
+                "char", 
+                "\\0"
+              ], 
+              [
+                "C_DATA", 
+                "0x601065", 
+                "char", 
+                "\\0"
+              ], 
+              [
+                "C_DATA", 
+                "0x601066", 
+                "char", 
+                "\\0"
+              ], 
+              [
+                "C_DATA", 
+                "0x601067", 
+                "char", 
+                "\\0"
+              ], 
+              [
+                "C_DATA", 
+                "0x601068", 
+                "char", 
+                "\\0"
+              ], 
+              [
+                "C_DATA", 
+                "0x601069", 
+                "char", 
+                "\\0"
+              ], 
+              [
+                "C_DATA", 
+                "0x60106A", 
+                "char", 
+                "\\0"
+              ], 
+              [
+                "C_DATA", 
+                "0x60106B", 
+                "char", 
+                "\\0"
+              ], 
+              [
+                "C_DATA", 
+                "0x60106C", 
+                "char", 
+                "\\0"
+              ], 
+              [
+                "C_DATA", 
+                "0x60106D", 
+                "char", 
+                "\\0"
+              ]
+            ]
+          ]
+        ]
+      }, 
+      "heap": {
+        "0x51FC040": [
+          "C_ARRAY", 
+          "0x51FC040", 
+          [
+            "C_STRUCT", 
+            "0x51FC040", 
+            "foo", 
+            [
+              "foo_int", 
+              [
+                "C_DATA", 
+                "0x51FC040", 
+                "int", 
+                "<UNINITIALIZED>"
+              ]
+            ], 
+            [
+              "foo_str", 
+              [
+                "C_DATA", 
+                "0x51FC048", 
+                "pointer", 
+                "<UNINITIALIZED>"
+              ]
+            ], 
+            [
+              "foo_double", 
+              [
+                "C_DATA", 
+                "0x51FC050", 
+                "double", 
+                "<UNINITIALIZED>"
+              ]
+            ], 
+            [
+              "foo_baz", 
+              [
+                "C_DATA", 
+                "0x51FC058", 
+                "pointer", 
+                "<UNINITIALIZED>"
+              ]
+            ]
+          ]
+        ], 
+        "0x51FC0A0": [
+          "C_ARRAY", 
+          "0x51FC0A0", 
+          [
+            "C_STRUCT", 
+            "0x51FC0A0", 
+            "bar", 
+            [
+              "bar_int", 
+              [
+                "C_DATA", 
+                "0x51FC0A0", 
+                "int", 
+                "<UNINITIALIZED>"
+              ]
+            ]
+          ]
+        ]
+      }, 
+      "line": 48, 
+      "ordered_globals": [
+        "junk"
+      ], 
+      "stack_to_render": [
+        {
+          "encoded_locals": {
+            "b": [
+              "C_DATA", 
+              "0xFFEFFFE28", 
+              "pointer", 
+              "0x51FC0A0"
+            ], 
+            "f": [
+              "C_DATA", 
+              "0xFFEFFFE20", 
+              "pointer", 
+              "0x51FC040"
+            ]
+          }, 
+          "frame_id": "0xFFEFFFE30", 
+          "func_name": "main", 
+          "is_highlighted": true, 
+          "is_parent": false, 
+          "is_zombie": false, 
+          "ordered_varnames": [
+            "f", 
+            "b"
+          ], 
+          "parent_frame_id_list": [], 
+          "unique_hash": "main_0xFFEFFFE30"
+        }
+      ], 
+      "stdout": ""
+    }, 
+    {
+      "event": "step_line", 
+      "func_name": "main", 
+      "globals": {
+        "junk": [
+          "C_STRUCT", 
+          "0x601060", 
+          "baz", 
+          [
+            "baz_int", 
+            [
+              "C_DATA", 
+              "0x601060", 
+              "int", 
+              0
+            ]
+          ], 
+          [
+            "baz_str", 
+            [
+              "C_ARRAY", 
+              "0x601064", 
+              [
+                "C_DATA", 
+                "0x601064", 
+                "char", 
+                "\\0"
+              ], 
+              [
+                "C_DATA", 
+                "0x601065", 
+                "char", 
+                "\\0"
+              ], 
+              [
+                "C_DATA", 
+                "0x601066", 
+                "char", 
+                "\\0"
+              ], 
+              [
+                "C_DATA", 
+                "0x601067", 
+                "char", 
+                "\\0"
+              ], 
+              [
+                "C_DATA", 
+                "0x601068", 
+                "char", 
+                "\\0"
+              ], 
+              [
+                "C_DATA", 
+                "0x601069", 
+                "char", 
+                "\\0"
+              ], 
+              [
+                "C_DATA", 
+                "0x60106A", 
+                "char", 
+                "\\0"
+              ], 
+              [
+                "C_DATA", 
+                "0x60106B", 
+                "char", 
+                "\\0"
+              ], 
+              [
+                "C_DATA", 
+                "0x60106C", 
+                "char", 
+                "\\0"
+              ], 
+              [
+                "C_DATA", 
+                "0x60106D", 
+                "char", 
+                "\\0"
+              ]
+            ]
+          ]
+        ]
+      }, 
+      "heap": {
+        "0x51FC040": [
+          "C_ARRAY", 
+          "0x51FC040", 
+          [
+            "C_STRUCT", 
+            "0x51FC040", 
+            "foo", 
+            [
+              "foo_int", 
+              [
+                "C_DATA", 
+                "0x51FC040", 
+                "int", 
+                42
+              ]
+            ], 
+            [
+              "foo_str", 
+              [
+                "C_DATA", 
+                "0x51FC048", 
+                "pointer", 
+                "<UNINITIALIZED>"
+              ]
+            ], 
+            [
+              "foo_double", 
+              [
+                "C_DATA", 
+                "0x51FC050", 
+                "double", 
+                "<UNINITIALIZED>"
+              ]
+            ], 
+            [
+              "foo_baz", 
+              [
+                "C_DATA", 
+                "0x51FC058", 
+                "pointer", 
+                "<UNINITIALIZED>"
+              ]
+            ]
+          ]
+        ], 
+        "0x51FC0A0": [
+          "C_ARRAY", 
+          "0x51FC0A0", 
+          [
+            "C_STRUCT", 
+            "0x51FC0A0", 
+            "bar", 
+            [
+              "bar_int", 
+              [
+                "C_DATA", 
+                "0x51FC0A0", 
+                "int", 
+                "<UNINITIALIZED>"
+              ]
+            ]
+          ]
+        ]
+      }, 
+      "line": 49, 
+      "ordered_globals": [
+        "junk"
+      ], 
+      "stack_to_render": [
+        {
+          "encoded_locals": {
+            "b": [
+              "C_DATA", 
+              "0xFFEFFFE28", 
+              "pointer", 
+              "0x51FC0A0"
+            ], 
+            "f": [
+              "C_DATA", 
+              "0xFFEFFFE20", 
+              "pointer", 
+              "0x51FC040"
+            ]
+          }, 
+          "frame_id": "0xFFEFFFE30", 
+          "func_name": "main", 
+          "is_highlighted": true, 
+          "is_parent": false, 
+          "is_zombie": false, 
+          "ordered_varnames": [
+            "f", 
+            "b"
+          ], 
+          "parent_frame_id_list": [], 
+          "unique_hash": "main_0xFFEFFFE30"
+        }
+      ], 
+      "stdout": ""
+    }, 
+    {
+      "event": "step_line", 
+      "func_name": "main", 
+      "globals": {
+        "junk": [
+          "C_STRUCT", 
+          "0x601060", 
+          "baz", 
+          [
+            "baz_int", 
+            [
+              "C_DATA", 
+              "0x601060", 
+              "int", 
+              0
+            ]
+          ], 
+          [
+            "baz_str", 
+            [
+              "C_ARRAY", 
+              "0x601064", 
+              [
+                "C_DATA", 
+                "0x601064", 
+                "char", 
+                "\\0"
+              ], 
+              [
+                "C_DATA", 
+                "0x601065", 
+                "char", 
+                "\\0"
+              ], 
+              [
+                "C_DATA", 
+                "0x601066", 
+                "char", 
+                "\\0"
+              ], 
+              [
+                "C_DATA", 
+                "0x601067", 
+                "char", 
+                "\\0"
+              ], 
+              [
+                "C_DATA", 
+                "0x601068", 
+                "char", 
+                "\\0"
+              ], 
+              [
+                "C_DATA", 
+                "0x601069", 
+                "char", 
+                "\\0"
+              ], 
+              [
+                "C_DATA", 
+                "0x60106A", 
+                "char", 
+                "\\0"
+              ], 
+              [
+                "C_DATA", 
+                "0x60106B", 
+                "char", 
+                "\\0"
+              ], 
+              [
+                "C_DATA", 
+                "0x60106C", 
+                "char", 
+                "\\0"
+              ], 
+              [
+                "C_DATA", 
+                "0x60106D", 
+                "char", 
+                "\\0"
+              ]
+            ]
+          ]
+        ]
+      }, 
+      "heap": {
+        "0x51FC040": [
+          "C_ARRAY", 
+          "0x51FC040", 
+          [
+            "C_STRUCT", 
+            "0x51FC040", 
+            "foo", 
+            [
+              "foo_int", 
+              [
+                "C_DATA", 
+                "0x51FC040", 
+                "int", 
+                42
+              ]
+            ], 
+            [
+              "foo_str", 
+              [
+                "C_DATA", 
+                "0x51FC048", 
+                "pointer", 
+                "0x51FC0F0"
+              ]
+            ], 
+            [
+              "foo_double", 
+              [
+                "C_DATA", 
+                "0x51FC050", 
+                "double", 
+                "<UNINITIALIZED>"
+              ]
+            ], 
+            [
+              "foo_baz", 
+              [
+                "C_DATA", 
+                "0x51FC058", 
+                "pointer", 
+                "<UNINITIALIZED>"
+              ]
+            ]
+          ]
+        ], 
+        "0x51FC0A0": [
+          "C_ARRAY", 
+          "0x51FC0A0", 
+          [
+            "C_STRUCT", 
+            "0x51FC0A0", 
+            "bar", 
+            [
+              "bar_int", 
+              [
+                "C_DATA", 
+                "0x51FC0A0", 
+                "int", 
+                "<UNINITIALIZED>"
+              ]
+            ]
+          ]
+        ], 
+        "0x51FC0F0": [
+          "C_ARRAY", 
+          "0x51FC0F0", 
+          [
+            "C_DATA", 
+            "0x51FC0F0", 
+            "char", 
+            "f"
+          ], 
+          [
+            "C_DATA", 
+            "0x51FC0F1", 
+            "char", 
+            "-"
+          ], 
+          [
+            "C_DATA", 
+            "0x51FC0F2", 
+            "char", 
+            ">"
+          ], 
+          [
+            "C_DATA", 
+            "0x51FC0F3", 
+            "char", 
+            "f"
+          ], 
+          [
+            "C_DATA", 
+            "0x51FC0F4", 
+            "char", 
+            "o"
+          ], 
+          [
+            "C_DATA", 
+            "0x51FC0F5", 
+            "char", 
+            "o"
+          ], 
+          [
+            "C_DATA", 
+            "0x51FC0F6", 
+            "char", 
+            "_"
+          ], 
+          [
+            "C_DATA", 
+            "0x51FC0F7", 
+            "char", 
+            "s"
+          ], 
+          [
+            "C_DATA", 
+            "0x51FC0F8", 
+            "char", 
+            "t"
+          ], 
+          [
+            "C_DATA", 
+            "0x51FC0F9", 
+            "char", 
+            "r"
+          ], 
+          [
+            "C_DATA", 
+            "0x51FC0FA", 
+            "char", 
+            "\\0"
+          ]
+        ]
+      }, 
+      "line": 50, 
+      "ordered_globals": [
+        "junk"
+      ], 
+      "stack_to_render": [
+        {
+          "encoded_locals": {
+            "b": [
+              "C_DATA", 
+              "0xFFEFFFE28", 
+              "pointer", 
+              "0x51FC0A0"
+            ], 
+            "f": [
+              "C_DATA", 
+              "0xFFEFFFE20", 
+              "pointer", 
+              "0x51FC040"
+            ]
+          }, 
+          "frame_id": "0xFFEFFFE30", 
+          "func_name": "main", 
+          "is_highlighted": true, 
+          "is_parent": false, 
+          "is_zombie": false, 
+          "ordered_varnames": [
+            "f", 
+            "b"
+          ], 
+          "parent_frame_id_list": [], 
+          "unique_hash": "main_0xFFEFFFE30"
+        }
+      ], 
+      "stdout": ""
+    }, 
+    {
+      "event": "step_line", 
+      "func_name": "main", 
+      "globals": {
+        "junk": [
+          "C_STRUCT", 
+          "0x601060", 
+          "baz", 
+          [
+            "baz_int", 
+            [
+              "C_DATA", 
+              "0x601060", 
+              "int", 
+              0
+            ]
+          ], 
+          [
+            "baz_str", 
+            [
+              "C_ARRAY", 
+              "0x601064", 
+              [
+                "C_DATA", 
+                "0x601064", 
+                "char", 
+                "\\0"
+              ], 
+              [
+                "C_DATA", 
+                "0x601065", 
+                "char", 
+                "\\0"
+              ], 
+              [
+                "C_DATA", 
+                "0x601066", 
+                "char", 
+                "\\0"
+              ], 
+              [
+                "C_DATA", 
+                "0x601067", 
+                "char", 
+                "\\0"
+              ], 
+              [
+                "C_DATA", 
+                "0x601068", 
+                "char", 
+                "\\0"
+              ], 
+              [
+                "C_DATA", 
+                "0x601069", 
+                "char", 
+                "\\0"
+              ], 
+              [
+                "C_DATA", 
+                "0x60106A", 
+                "char", 
+                "\\0"
+              ], 
+              [
+                "C_DATA", 
+                "0x60106B", 
+                "char", 
+                "\\0"
+              ], 
+              [
+                "C_DATA", 
+                "0x60106C", 
+                "char", 
+                "\\0"
+              ], 
+              [
+                "C_DATA", 
+                "0x60106D", 
+                "char", 
+                "\\0"
+              ]
+            ]
+          ]
+        ]
+      }, 
+      "heap": {
+        "0x51FC040": [
+          "C_ARRAY", 
+          "0x51FC040", 
+          [
+            "C_STRUCT", 
+            "0x51FC040", 
+            "foo", 
+            [
+              "foo_int", 
+              [
+                "C_DATA", 
+                "0x51FC040", 
+                "int", 
+                42
+              ]
+            ], 
+            [
+              "foo_str", 
+              [
+                "C_DATA", 
+                "0x51FC048", 
+                "pointer", 
+                "0x51FC0F0"
+              ]
+            ], 
+            [
+              "foo_double", 
+              [
+                "C_DATA", 
+                "0x51FC050", 
+                "double", 
+                2.718
+              ]
+            ], 
+            [
+              "foo_baz", 
+              [
+                "C_DATA", 
+                "0x51FC058", 
+                "pointer", 
+                "<UNINITIALIZED>"
+              ]
+            ]
+          ]
+        ], 
+        "0x51FC0A0": [
+          "C_ARRAY", 
+          "0x51FC0A0", 
+          [
+            "C_STRUCT", 
+            "0x51FC0A0", 
+            "bar", 
+            [
+              "bar_int", 
+              [
+                "C_DATA", 
+                "0x51FC0A0", 
+                "int", 
+                "<UNINITIALIZED>"
+              ]
+            ]
+          ]
+        ], 
+        "0x51FC0F0": [
+          "C_ARRAY", 
+          "0x51FC0F0", 
+          [
+            "C_DATA", 
+            "0x51FC0F0", 
+            "char", 
+            "f"
+          ], 
+          [
+            "C_DATA", 
+            "0x51FC0F1", 
+            "char", 
+            "-"
+          ], 
+          [
+            "C_DATA", 
+            "0x51FC0F2", 
+            "char", 
+            ">"
+          ], 
+          [
+            "C_DATA", 
+            "0x51FC0F3", 
+            "char", 
+            "f"
+          ], 
+          [
+            "C_DATA", 
+            "0x51FC0F4", 
+            "char", 
+            "o"
+          ], 
+          [
+            "C_DATA", 
+            "0x51FC0F5", 
+            "char", 
+            "o"
+          ], 
+          [
+            "C_DATA", 
+            "0x51FC0F6", 
+            "char", 
+            "_"
+          ], 
+          [
+            "C_DATA", 
+            "0x51FC0F7", 
+            "char", 
+            "s"
+          ], 
+          [
+            "C_DATA", 
+            "0x51FC0F8", 
+            "char", 
+            "t"
+          ], 
+          [
+            "C_DATA", 
+            "0x51FC0F9", 
+            "char", 
+            "r"
+          ], 
+          [
+            "C_DATA", 
+            "0x51FC0FA", 
+            "char", 
+            "\\0"
+          ]
+        ]
+      }, 
+      "line": 51, 
+      "ordered_globals": [
+        "junk"
+      ], 
+      "stack_to_render": [
+        {
+          "encoded_locals": {
+            "b": [
+              "C_DATA", 
+              "0xFFEFFFE28", 
+              "pointer", 
+              "0x51FC0A0"
+            ], 
+            "f": [
+              "C_DATA", 
+              "0xFFEFFFE20", 
+              "pointer", 
+              "0x51FC040"
+            ]
+          }, 
+          "frame_id": "0xFFEFFFE30", 
+          "func_name": "main", 
+          "is_highlighted": true, 
+          "is_parent": false, 
+          "is_zombie": false, 
+          "ordered_varnames": [
+            "f", 
+            "b"
+          ], 
+          "parent_frame_id_list": [], 
+          "unique_hash": "main_0xFFEFFFE30"
+        }
+      ], 
+      "stdout": ""
+    }, 
+    {
+      "event": "exception", 
+      "exception_msg": "Oh noes, your code just crashed!\nSend bug reports to philip@pgbovine.net", 
+      "func_name": "main", 
+      "globals": {
+        "junk": [
+          "C_STRUCT", 
+          "0x601060", 
+          "baz", 
+          [
+            "baz_int", 
+            [
+              "C_DATA", 
+              "0x601060", 
+              "int", 
+              0
+            ]
+          ], 
+          [
+            "baz_str", 
+            [
+              "C_ARRAY", 
+              "0x601064", 
+              [
+                "C_DATA", 
+                "0x601064", 
+                "char", 
+                "\\0"
+              ], 
+              [
+                "C_DATA", 
+                "0x601065", 
+                "char", 
+                "\\0"
+              ], 
+              [
+                "C_DATA", 
+                "0x601066", 
+                "char", 
+                "\\0"
+              ], 
+              [
+                "C_DATA", 
+                "0x601067", 
+                "char", 
+                "\\0"
+              ], 
+              [
+                "C_DATA", 
+                "0x601068", 
+                "char", 
+                "\\0"
+              ], 
+              [
+                "C_DATA", 
+                "0x601069", 
+                "char", 
+                "\\0"
+              ], 
+              [
+                "C_DATA", 
+                "0x60106A", 
+                "char", 
+                "\\0"
+              ], 
+              [
+                "C_DATA", 
+                "0x60106B", 
+                "char", 
+                "\\0"
+              ], 
+              [
+                "C_DATA", 
+                "0x60106C", 
+                "char", 
+                "\\0"
+              ], 
+              [
+                "C_DATA", 
+                "0x60106D", 
+                "char", 
+                "\\0"
+              ]
+            ]
+          ]
+        ]
+      }, 
+      "heap": {
+        "0x51FC040": [
+          "C_ARRAY", 
+          "0x51FC040", 
+          [
+            "C_STRUCT", 
+            "0x51FC040", 
+            "foo", 
+            [
+              "foo_int", 
+              [
+                "C_DATA", 
+                "0x51FC040", 
+                "int", 
+                42
+              ]
+            ], 
+            [
+              "foo_str", 
+              [
+                "C_DATA", 
+                "0x51FC048", 
+                "pointer", 
+                "0x51FC0F0"
+              ]
+            ], 
+            [
+              "foo_double", 
+              [
+                "C_DATA", 
+                "0x51FC050", 
+                "double", 
+                2.718
+              ]
+            ], 
+            [
+              "foo_baz", 
+              [
+                "C_DATA", 
+                "0x51FC058", 
+                "pointer", 
+                "<UNINITIALIZED>"
+              ]
+            ]
+          ]
+        ], 
+        "0x51FC0A0": [
+          "C_ARRAY", 
+          "0x51FC0A0", 
+          [
+            "C_STRUCT", 
+            "0x51FC0A0", 
+            "bar", 
+            [
+              "bar_int", 
+              [
+                "C_DATA", 
+                "0x51FC0A0", 
+                "int", 
+                "<UNINITIALIZED>"
+              ]
+            ]
+          ]
+        ], 
+        "0x51FC0F0": [
+          "C_ARRAY", 
+          "0x51FC0F0", 
+          [
+            "C_DATA", 
+            "0x51FC0F0", 
+            "char", 
+            "f"
+          ], 
+          [
+            "C_DATA", 
+            "0x51FC0F1", 
+            "char", 
+            "-"
+          ], 
+          [
+            "C_DATA", 
+            "0x51FC0F2", 
+            "char", 
+            ">"
+          ], 
+          [
+            "C_DATA", 
+            "0x51FC0F3", 
+            "char", 
+            "f"
+          ], 
+          [
+            "C_DATA", 
+            "0x51FC0F4", 
+            "char", 
+            "o"
+          ], 
+          [
+            "C_DATA", 
+            "0x51FC0F5", 
+            "char", 
+            "o"
+          ], 
+          [
+            "C_DATA", 
+            "0x51FC0F6", 
+            "char", 
+            "_"
+          ], 
+          [
+            "C_DATA", 
+            "0x51FC0F7", 
+            "char", 
+            "s"
+          ], 
+          [
+            "C_DATA", 
+            "0x51FC0F8", 
+            "char", 
+            "t"
+          ], 
+          [
+            "C_DATA", 
+            "0x51FC0F9", 
+            "char", 
+            "r"
+          ], 
+          [
+            "C_DATA", 
+            "0x51FC0FA", 
+            "char", 
+            "\\0"
+          ]
+        ]
+      }, 
+      "line": 51, 
+      "ordered_globals": [
+        "junk"
+      ], 
+      "stack_to_render": [
+        {
+          "encoded_locals": {
+            "b": [
+              "C_DATA", 
+              "0xFFEFFFE28", 
+              "pointer", 
+              "0x51FC0A0"
+            ], 
+            "f": [
+              "C_DATA", 
+              "0xFFEFFFE20", 
+              "pointer", 
+              "0x51FC040"
+            ]
+          }, 
+          "frame_id": "0xFFEFFFE30", 
+          "func_name": "main", 
+          "is_highlighted": true, 
+          "is_parent": false, 
+          "is_zombie": false, 
+          "ordered_varnames": [
+            "f", 
+            "b"
+          ], 
+          "parent_frame_id_list": [], 
+          "unique_hash": "main_0xFFEFFFE30"
+        }
+      ], 
+      "stdout": ""
+    }
+  ]
+};

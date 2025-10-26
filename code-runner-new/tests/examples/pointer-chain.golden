@@ -1,0 +1,266 @@
+rm pointer-chain.vgtrace
+var trace = {
+  "code": "int main() {\n  // inception?!?\n  int x = 42;\n  int *y = &x;\n  int **z = &y;\n  int ***wtf = &z;\n}\n", 
+  "trace": [
+    {
+      "event": "step_line", 
+      "func_name": "main", 
+      "globals": {}, 
+      "heap": {}, 
+      "line": 3, 
+      "ordered_globals": [], 
+      "stack_to_render": [
+        {
+          "encoded_locals": {
+            "wtf": [
+              "C_DATA", 
+              "0xFFEFFFF38", 
+              "pointer", 
+              "<UNINITIALIZED>"
+            ], 
+            "x": [
+              "C_DATA", 
+              "0xFFEFFFF24", 
+              "int", 
+              "<UNINITIALIZED>"
+            ], 
+            "y": [
+              "C_DATA", 
+              "0xFFEFFFF28", 
+              "pointer", 
+              "<UNINITIALIZED>"
+            ], 
+            "z": [
+              "C_DATA", 
+              "0xFFEFFFF30", 
+              "pointer", 
+              "<UNINITIALIZED>"
+            ]
+          }, 
+          "frame_id": "0xFFEFFFF40", 
+          "func_name": "main", 
+          "is_highlighted": true, 
+          "is_parent": false, 
+          "is_zombie": false, 
+          "ordered_varnames": [
+            "x", 
+            "y", 
+            "z", 
+            "wtf"
+          ], 
+          "parent_frame_id_list": [], 
+          "unique_hash": "main_0xFFEFFFF40"
+        }
+      ], 
+      "stdout": ""
+    }, 
+    {
+      "event": "step_line", 
+      "func_name": "main", 
+      "globals": {}, 
+      "heap": {}, 
+      "line": 4, 
+      "ordered_globals": [], 
+      "stack_to_render": [
+        {
+          "encoded_locals": {
+            "wtf": [
+              "C_DATA", 
+              "0xFFEFFFF38", 
+              "pointer", 
+              "<UNINITIALIZED>"
+            ], 
+            "x": [
+              "C_DATA", 
+              "0xFFEFFFF24", 
+              "int", 
+              42
+            ], 
+            "y": [
+              "C_DATA", 
+              "0xFFEFFFF28", 
+              "pointer", 
+              "<UNINITIALIZED>"
+            ], 
+            "z": [
+              "C_DATA", 
+              "0xFFEFFFF30", 
+              "pointer", 
+              "<UNINITIALIZED>"
+            ]
+          }, 
+          "frame_id": "0xFFEFFFF40", 
+          "func_name": "main", 
+          "is_highlighted": true, 
+          "is_parent": false, 
+          "is_zombie": false, 
+          "ordered_varnames": [
+            "x", 
+            "y", 
+            "z", 
+            "wtf"
+          ], 
+          "parent_frame_id_list": [], 
+          "unique_hash": "main_0xFFEFFFF40"
+        }
+      ], 
+      "stdout": ""
+    }, 
+    {
+      "event": "step_line", 
+      "func_name": "main", 
+      "globals": {}, 
+      "heap": {}, 
+      "line": 5, 
+      "ordered_globals": [], 
+      "stack_to_render": [
+        {
+          "encoded_locals": {
+            "wtf": [
+              "C_DATA", 
+              "0xFFEFFFF38", 
+              "pointer", 
+              "<UNINITIALIZED>"
+            ], 
+            "x": [
+              "C_DATA", 
+              "0xFFEFFFF24", 
+              "int", 
+              42
+            ], 
+            "y": [
+              "C_DATA", 
+              "0xFFEFFFF28", 
+              "pointer", 
+              "0xFFEFFFF24"
+            ], 
+            "z": [
+              "C_DATA", 
+              "0xFFEFFFF30", 
+              "pointer", 
+              "<UNINITIALIZED>"
+            ]
+          }, 
+          "frame_id": "0xFFEFFFF40", 
+          "func_name": "main", 
+          "is_highlighted": true, 
+          "is_parent": false, 
+          "is_zombie": false, 
+          "ordered_varnames": [
+            "x", 
+            "y", 
+            "z", 
+            "wtf"
+          ], 
+          "parent_frame_id_list": [], 
+          "unique_hash": "main_0xFFEFFFF40"
+        }
+      ], 
+      "stdout": ""
+    }, 
+    {
+      "event": "step_line", 
+      "func_name": "main", 
+      "globals": {}, 
+      "heap": {}, 
+      "line": 6, 
+      "ordered_globals": [], 
+      "stack_to_render": [
+        {
+          "encoded_locals": {
+            "wtf": [
+              "C_DATA", 
+              "0xFFEFFFF38", 
+              "pointer", 
+              "<UNINITIALIZED>"
+            ], 
+            "x": [
+              "C_DATA", 
+              "0xFFEFFFF24", 
+              "int", 
+              42
+            ], 
+            "y": [
+              "C_DATA", 
+              "0xFFEFFFF28", 
+              "pointer", 
+              "0xFFEFFFF24"
+            ], 
+            "z": [
+              "C_DATA", 
+              "0xFFEFFFF30", 
+              "pointer", 
+              "0xFFEFFFF28"
+            ]
+          }, 
+          "frame_id": "0xFFEFFFF40", 
+          "func_name": "main", 
+          "is_highlighted": true, 
+          "is_parent": false, 
+          "is_zombie": false, 
+          "ordered_varnames": [
+            "x", 
+            "y", 
+            "z", 
+            "wtf"
+          ], 
+          "parent_frame_id_list": [], 
+          "unique_hash": "main_0xFFEFFFF40"
+        }
+      ], 
+      "stdout": ""
+    }, 
+    {
+      "event": "return", 
+      "func_name": "main", 
+      "globals": {}, 
+      "heap": {}, 
+      "line": 7, 
+      "ordered_globals": [], 
+      "stack_to_render": [
+        {
+          "encoded_locals": {
+            "wtf": [
+              "C_DATA", 
+              "0xFFEFFFF38", 
+              "pointer", 
+              "0xFFEFFFF30"
+            ], 
+            "x": [
+              "C_DATA", 
+              "0xFFEFFFF24", 
+              "int", 
+              42
+            ], 
+            "y": [
+              "C_DATA", 
+              "0xFFEFFFF28", 
+              "pointer", 
+              "0xFFEFFFF24"
+            ], 
+            "z": [
+              "C_DATA", 
+              "0xFFEFFFF30", 
+              "pointer", 
+              "0xFFEFFFF28"
+            ]
+          }, 
+          "frame_id": "0xFFEFFFF40", 
+          "func_name": "main", 
+          "is_highlighted": true, 
+          "is_parent": false, 
+          "is_zombie": false, 
+          "ordered_varnames": [
+            "x", 
+            "y", 
+            "z", 
+            "wtf"
+          ], 
+          "parent_frame_id_list": [], 
+          "unique_hash": "main_0xFFEFFFF40"
+        }
+      ], 
+      "stdout": ""
+    }
+  ]
+};
