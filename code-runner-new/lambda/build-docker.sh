@@ -22,8 +22,11 @@ echo ""
 cd ..
 
 echo "Building Docker image..."
+# Build with explicit platform for Lambda compatibility
 docker build \
     --platform linux/amd64 \
+    --provenance=false \
+    --sbom=false \
     -t spp-lambda-trace:latest \
     -f lambda/Dockerfile \
     .
