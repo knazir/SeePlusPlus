@@ -56,8 +56,9 @@ case "${1:-help}" in
 
         echo "Running Valgrind..."
         ./vg-in-place \
-            --tool=pgprint \
-            --log-file="${BASE_NAME}.vgtrace" \
+            --tool=memcheck \
+            --trace-filename="${BASE_NAME}.vgtrace" \
+            --source-filename="$TEST_FILE" \
             --read-var-info=yes \
             "${BASE_NAME}.exe"
 
