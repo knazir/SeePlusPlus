@@ -23,7 +23,7 @@ CACHE_BUCKET = os.environ.get('CACHE_BUCKET', '')
 ENABLE_CACHE = bool(CACHE_BUCKET)
 
 # Paths (can be overridden by environment variables for testing)
-VALGRIND_BIN = os.environ.get('VALGRIND_BIN', '/opt/valgrind/bin/vg-in-place')
+VALGRIND_BIN = os.environ.get('VALGRIND_BIN', '/opt/valgrind/bin/valgrind')
 VG_TO_OPT_SCRIPT = os.environ.get('VG_TO_OPT_SCRIPT', '/opt/vg_to_opt_trace.py')
 
 def lambda_handler(event, context):

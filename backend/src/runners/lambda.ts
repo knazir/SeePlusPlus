@@ -40,13 +40,17 @@ export class LambdaRunner implements TraceRunner {
 
         const clientConfig: any = { region: this.region };
 
-        // Use explicit credentials in development
-        if (process.env.NODE_ENV === "development") {
+        // Use explicit credentials only if provided (and not placeholder values)
+        if (process.env.AWS_ACCESS_KEY_ID &&
+            process.env.AWS_SECRET_ACCESS_KEY &&
+            !process.env.AWS_ACCESS_KEY_ID.includes('your_') &&
+            !process.env.AWS_SECRET_ACCESS_KEY.includes('your_')) {
             clientConfig.credentials = {
-                accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-                secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!
+                accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+                secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
             };
         }
+        // Otherwise, let SDK use default credential chain (~/.aws/credentials)
 
         this.lambdaClient = new LambdaClient(clientConfig);
     }
