@@ -18,7 +18,7 @@ RUN dnf update -y && \
     dnf clean all
 
 # Copy Valgrind source and build it
-COPY ../valgrind /tmp/valgrind-src
+COPY valgrind /tmp/valgrind-src
 WORKDIR /tmp/valgrind-src
 
 # Build and install Valgrind to /opt/valgrind
@@ -29,10 +29,10 @@ RUN ./autogen.sh && \
     rm -rf /tmp/valgrind-src
 
 # Copy the trace conversion script
-COPY ../tests/vg_to_opt_trace.py /opt/
+COPY tests/vg_to_opt_trace.py /opt/
 
 # Copy Lambda handler
-COPY handler.py ${LAMBDA_TASK_ROOT}/
+COPY lambda/handler.py ${LAMBDA_TASK_ROOT}/
 
 # Set environment variables
 ENV PATH="/opt/valgrind/bin:${PATH}"
