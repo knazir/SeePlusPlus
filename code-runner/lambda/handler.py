@@ -183,28 +183,54 @@ def generate_trace(code: str, unique_id: str) -> dict:
         # Run under Valgrind to generate trace
         # NOTE: source-filename must be just the basename, not full path
         # because DWARF debug info stores only the basename
-        valgrind_cmd = [
-            VALGRIND_BIN,
-            '--tool=memcheck',
-            f'--source-filename={cpp_file.name}',  # Use basename only
-            f'--trace-filename={str(vgtrace_file)}',
-            '--read-var-info=yes',
-            str(exe_file)
-        ]
+        #
+        # IMPORTANT: Valgrind's custom code reads stdout by rewinding and reading
+        # from file descriptor 1 (stdout). We redirect the program's stdout to a file
+        # so that Valgrind's custom trace code can rewind and read from FD 1.
+        #
+        # The approach:
+        # 1. Create a temp file for the program's stdout
+        # 2. Redirect stdout (FD 1) to this file using shell redirection
+        # 3. Use stdbuf -o0 to disable buffering so Valgrind can read immediately
+        # 4. Valgrind's mc_translate.c will lseek(stdout_fd, 0, SEEK_SET) and read from FD 1
+
+        # Create a temp file for the program's stdout
+        program_stdout_file = tmpdir_path / f"{unique_id}_program_stdout.txt"
+
+        # Build the command with shell redirection
+        # Important: Only redirect stdout (>), not stderr (2>&1)
+        # Valgrind's diagnostics go to stderr, program output goes to stdout
+        valgrind_cmd_str = f"""stdbuf -o0 {VALGRIND_BIN} \\
+            --tool=memcheck \\
+            --source-filename={cpp_file.name} \\
+            --trace-filename={str(vgtrace_file)} \\
+            --read-var-info=yes \\
+            {str(exe_file)} \\
+            > {str(program_stdout_file)}"""
 
         try:
             valgrind_result = subprocess.run(
-                valgrind_cmd,
+                valgrind_cmd_str,
+                shell=True,
                 capture_output=True,
                 text=True,
-                timeout=120  # 2 minute timeout for execution
+                timeout=120,  # 2 minute timeout for execution
+                cwd=str(tmpdir_path)  # Run in temp directory
             )
 
-            stdout = valgrind_result.stdout
-            stderr = valgrind_result.stderr
+            # Valgrind's stderr contains its diagnostic messages
+            # Valgrind's stdout should be empty (program stdout went to file)
+            valgrind_stderr = valgrind_result.stderr
 
-            stdout_file.write_text(stdout)
-            stderr_file.write_text(stderr)
+            # Read the program's actual stdout from the file
+            if program_stdout_file.exists():
+                program_stdout = program_stdout_file.read_text()
+            else:
+                program_stdout = ''
+
+            # Store outputs
+            stdout_file.write_text(program_stdout)
+            stderr_file.write_text(valgrind_stderr)
 
         except subprocess.TimeoutExpired:
             return {
@@ -235,8 +261,8 @@ def generate_trace(code: str, unique_id: str) -> dict:
                 'traceContent': '',
                 'ccStdout': cc_stdout,
                 'ccStderr': cc_stderr,
-                'stdout': stdout,
-                'stderr': stderr,
+                'stdout': program_stdout,
+                'stderr': valgrind_stderr,
                 'error': 'No trace file generated'
             }
 
@@ -249,8 +275,8 @@ def generate_trace(code: str, unique_id: str) -> dict:
                 'traceContent': trace_content,
                 'ccStdout': cc_stdout,
                 'ccStderr': cc_stderr,
-                'stdout': stdout,
-                'stderr': stderr,
+                'stdout': program_stdout,
+                'stderr': valgrind_stderr,
                 'error': None
             }
 
@@ -260,8 +286,8 @@ def generate_trace(code: str, unique_id: str) -> dict:
                 'trace': None,
                 'ccStdout': cc_stdout,
                 'ccStderr': cc_stderr,
-                'stdout': stdout,
-                'stderr': stderr,
+                'stdout': program_stdout,
+                'stderr': valgrind_stderr,
                 'error': f'Trace conversion error: {str(e)}'
             }
 
