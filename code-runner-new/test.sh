@@ -82,8 +82,9 @@ run_test() {
     # Run Valgrind to generate trace
     local vgtrace_file="$base_name.vgtrace"
     "$VALGRIND_DIR/vg-in-place" \
-        --tool=pgprint \
-        --log-file="$vgtrace_file" \
+        --tool=memcheck \
+        --trace-filename="$vgtrace_file" \
+        --source-filename="$test_file" \
         --read-var-info=yes \
         "$exe_file" > /dev/null 2>&1
 
