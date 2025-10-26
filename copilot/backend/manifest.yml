@@ -57,7 +57,7 @@ task_role:
 variables:
   ALLOWED_ORIGIN_REGEX: '^https?:\/\/(?:[\w-]+\.)*?(seepluspl\.us)$'
   AWS_REGION: us-west-2
-  EXEC_MODE: fargate
+  EXEC_MODE: lambda
   PORT: 3000
 
 # Secrets configuration.
@@ -74,5 +74,8 @@ environments:
     deployment:
       rolling: "recreate"       # Stops existing tasks before new ones are started for faster deployments.
     variables:
-      EXEC_MODE: lambda
       LAMBDA_FUNCTION_NAME: spp-trace-executor-test
+
+  prod:
+    variables:
+      LAMBDA_FUNCTION_NAME: spp-trace-executor-prod

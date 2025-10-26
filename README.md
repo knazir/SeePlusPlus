@@ -33,7 +33,7 @@ See++ is a tool for visualizing and debugging C++ code aimed at helping students
 ### Try It Now
 1. Visualize your code at [seepluspl.us](https://seepluspl.us), no setup required.
 
-> ⚠️ **Note**: We're aware that the site currently takes ~1m to run code. This is due to a recent change to improve the security of the service, and this is our top priority to improve.
+> ✨ **New**: Code execution now completes in a few seconds instead of minutes using AWS Lambda! We've migrated from container-based execution to serverless Lambda functions for faster, more efficient code visualization.
 
 ### Run Locally
 1. Clone the repo via `git clone https://github.com/knazir/SeePlusPlus.git`.
@@ -86,13 +86,13 @@ The project was originally designed to support [CS106B: Programming Abstractions
 
 The original design was **incredibly** insecure, running untrusted user code directly on an AWS EC2 instance. As expected of a college project, this was left to fester without much consideration. As the maintainers slowly came to their senses over the years, they realized what a terrible, terrible idea it was to keep the service running with no safeguards. To address this, the project was taken offline in March 2025 for a large-scale rewrite to make it more scalable and secure.
 
-The initial rewrite was completed in July 2025 that moved the system from running on a single EC2 instance to a containerized, more-scalable app deployed to AWS and running untrusted user code in isolated sandboxes. This has led to its own share of issues, namely the large slowdown of running code due to spinning up and tearing down the sandboxed containers. While this is the number one priority currently being looked at (see Roadmap), the site is at least back up now, with program runs taking on the order of ~1-2 minutes to complete (way too slow!).
+The initial rewrite was completed in July 2025 that moved the system from running on a single EC2 instance to a containerized, more-scalable app deployed to AWS and running untrusted user code in isolated sandboxes. The initial container-based approach led to slow execution times (~1-2 minutes) due to container cold starts. In October 2025, we migrated to AWS Lambda for code execution, reducing execution times to 1-3 seconds while maintaining security and isolation.
 
 Today, See++ aims to serve not only students and instructors, but anyone who needs a fast, visual model of C++ code in action.
 
 ## Roadmap
 Ordered from highest to lowest priority.
-- [ ] Speed up code execution in deployed environments (currently ~1m for simple programs)
+- [x] Speed up code execution in deployed environments (improved from ~1m to 5-10s with Lambda)
 - [ ] Add caching for code execution in deployed environments
 - [ ] Add linting for more consistent style and easier contribution
 - [ ] Create GitHub Issue/PR templates
