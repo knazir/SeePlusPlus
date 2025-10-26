@@ -17,7 +17,7 @@ import { TraceRunner, RunnerResult } from "./runner.interface";
 
 interface LambdaResponse {
     success: boolean;
-    trace?: any;
+    traceContent?: string;
     ccStdout: string;
     ccStderr: string;
     stdout: string;
@@ -124,7 +124,7 @@ export class LambdaRunner implements TraceRunner {
                 ccStderr: lambdaResult.ccStderr || '',
                 stdout: lambdaResult.stdout || '',
                 stderr: lambdaResult.stderr || '',
-                traceContent: JSON.stringify(lambdaResult.trace)
+                traceContent: lambdaResult.traceContent || ''
             };
 
         } catch (error: any) {

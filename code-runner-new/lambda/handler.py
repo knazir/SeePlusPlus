@@ -233,7 +233,7 @@ def generate_trace(code: str, unique_id: str) -> dict:
         if not vgtrace_file.exists():
             return {
                 'success': False,
-                'trace': None,
+                'traceContent': '',
                 'ccStdout': cc_stdout,
                 'ccStderr': cc_stderr,
                 'stdout': stdout,
@@ -241,51 +241,13 @@ def generate_trace(code: str, unique_id: str) -> dict:
                 'error': 'No trace file generated'
             }
 
-        # Convert vgtrace to OPT format
+        # Read the raw vgtrace file (backend will parse it)
         try:
-            convert_cmd = [
-                'python3',
-                VG_TO_OPT_SCRIPT,
-                '--create_jsvar=trace',
-                str(tmpdir_path / unique_id)
-            ]
-
-            convert_result = subprocess.run(
-                convert_cmd,
-                capture_output=True,
-                text=True,
-                timeout=30,
-                cwd=str(tmpdir_path)
-            )
-
-            if convert_result.returncode != 0:
-                return {
-                    'success': False,
-                    'trace': None,
-                    'ccStdout': cc_stdout,
-                    'ccStderr': cc_stderr,
-                    'stdout': stdout,
-                    'stderr': stderr,
-                    'error': f'Trace conversion failed: {convert_result.stderr}'
-                }
-
-            # Parse the JavaScript variable output
-            trace_output = convert_result.stdout.strip()
-
-            # Remove 'var trace = ' prefix and trailing semicolon
-            if trace_output.startswith('var trace = '):
-                trace_json = trace_output[len('var trace = '):]
-                # Remove trailing semicolon if present
-                if trace_json.endswith(';'):
-                    trace_json = trace_json[:-1]
-                trace_json = trace_json.strip()
-                trace_data = json.loads(trace_json)
-            else:
-                trace_data = json.loads(trace_output)
+            trace_content = vgtrace_file.read_text()
 
             return {
                 'success': True,
-                'trace': trace_data,
+                'traceContent': trace_content,
                 'ccStdout': cc_stdout,
                 'ccStderr': cc_stderr,
                 'stdout': stdout,

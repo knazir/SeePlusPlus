@@ -36,17 +36,6 @@ export function buildValgrindResponse(
         return handleGccError(userCodeFileName, originalUserCode, stderr);
     }
 
-    // Check if vgTrace is already in OPT format (from Lambda runner)
-    try {
-        const parsed = JSON.parse(vgTrace);
-        if (parsed && typeof parsed === 'object' && 'code' in parsed && 'trace' in parsed) {
-            // Already in OPT format, return directly
-            return parsed as ValgrindTrace;
-        }
-    } catch {
-        // Not JSON or not in OPT format, continue to parse as raw Valgrind trace
-    }
-
     return parseValgrindTrace(vgTrace, originalUserCode);
 }
 
