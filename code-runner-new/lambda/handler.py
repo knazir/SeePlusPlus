@@ -22,9 +22,9 @@ s3_client = boto3.client('s3')
 CACHE_BUCKET = os.environ.get('CACHE_BUCKET', '')
 ENABLE_CACHE = bool(CACHE_BUCKET)
 
-# Paths
-VALGRIND_BIN = '/opt/valgrind/bin/vg-in-place'
-VG_TO_OPT_SCRIPT = '/opt/vg_to_opt_trace.py'
+# Paths (can be overridden by environment variables for testing)
+VALGRIND_BIN = os.environ.get('VALGRIND_BIN', '/opt/valgrind/bin/vg-in-place')
+VG_TO_OPT_SCRIPT = os.environ.get('VG_TO_OPT_SCRIPT', '/opt/vg_to_opt_trace.py')
 
 def lambda_handler(event, context):
     """
@@ -268,13 +268,15 @@ def generate_trace(code: str, unique_id: str) -> dict:
                 }
 
             # Parse the JavaScript variable output
-            trace_output = convert_result.stdout
+            trace_output = convert_result.stdout.strip()
 
             # Remove 'var trace = ' prefix and trailing semicolon
             if trace_output.startswith('var trace = '):
                 trace_json = trace_output[len('var trace = '):]
+                # Remove trailing semicolon if present
                 if trace_json.endswith(';'):
                     trace_json = trace_json[:-1]
+                trace_json = trace_json.strip()
                 trace_data = json.loads(trace_json)
             else:
                 trace_data = json.loads(trace_output)
