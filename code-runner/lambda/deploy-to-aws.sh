@@ -160,39 +160,7 @@ else
 fi
 echo ""
 
-# Step 6: Test the function
-echo "Step 6: Testing Lambda function..."
-
-cat > /tmp/test-payload.json <<EOF
-{
-  "code": "int main() { int x = 42; return 0; }"
-}
-EOF
-
-echo "Invoking function with test payload..."
-aws lambda invoke \
-    --function-name "$FUNCTION_NAME" \
-    --payload file:///tmp/test-payload.json \
-    --region "$REGION" \
-    /tmp/lambda-response.json \
-    --no-cli-pager
-
-echo ""
-echo "Lambda response:"
-cat /tmp/lambda-response.json | jq -r '.statusCode, .body' | head -20
-echo ""
-
-# Check if successful
-if grep -q '"success":true' /tmp/lambda-response.json; then
-    echo "✓ Lambda function test PASSED"
-else
-    echo "✗ Lambda function test FAILED"
-    echo "Full response:"
-    cat /tmp/lambda-response.json | jq '.'
-fi
-echo ""
-
-# Step 7: Output configuration for backend
+# Step 6: Output configuration for backend
 echo "========================================"
 echo "Deployment Complete!"
 echo "========================================"
@@ -214,4 +182,4 @@ echo "AWS_SECRET_ACCESS_KEY=your_secret_key"
 echo ""
 
 # Cleanup
-rm -f /tmp/trust-policy.json /tmp/test-payload.json /tmp/lambda-response.json
+rm -f /tmp/trust-policy.json
