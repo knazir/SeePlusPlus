@@ -1,0 +1,110 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: See++ Lambda-based trace execution with Valgrind 3.27.0
+
+Globals:
+  Function:
+    Timeout: 180  # 3 minutes (vs 5 minutes for Fargate)
+    MemorySize: 3008  # Maximum memory for faster execution
+    Environment:
+      Variables:
+        CACHE_BUCKET: !Ref TraceCacheBucket
+
+Parameters:
+  Environment:
+    Type: String
+    Default: dev
+    AllowedValues:
+      - dev
+      - test
+      - prod
+    Description: Deployment environment
+
+Resources:
+  # Lambda Function
+  TraceExecutionFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub 'spp-trace-executor-${Environment}'
+      PackageType: Image
+      ImageUri: .  # Built from Dockerfile
+      Architectures:
+        - x86_64
+      MemorySize: 3008  # ~3GB for better performance
+      Timeout: 180  # 3 minutes
+      Environment:
+        Variables:
+          CACHE_BUCKET: !Ref TraceCacheBucket
+          ENVIRONMENT: !Ref Environment
+      Policies:
+        - S3CrudPolicy:
+            BucketName: !Ref TraceCacheBucket
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Path: /run
+            Method: post
+            RestApiId: !Ref TraceApi
+
+    Metadata:
+      Dockerfile: Dockerfile
+      DockerContext: .
+      DockerTag: latest
+
+  # API Gateway
+  TraceApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: !Sub 'spp-trace-api-${Environment}'
+      StageName: !Ref Environment
+      Cors:
+        AllowMethods: "'POST, OPTIONS'"
+        AllowHeaders: "'Content-Type'"
+        AllowOrigin: "'*'"
+      BinaryMediaTypes:
+        - '*/*'
+
+  # S3 Bucket for trace caching
+  TraceCacheBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub 'spp-trace-cache-${Environment}-${AWS::AccountId}'
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: aws:kms
+      VersioningConfiguration:
+        Status: Enabled
+      LifecycleConfiguration:
+        Rules:
+          - Id: DeleteOldVersions
+            Status: Enabled
+            NoncurrentVersionExpirationInDays: 30
+          - Id: DeleteOldCaches
+            Status: Enabled
+            ExpirationInDays: 90  # Cache for 3 months
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
+Outputs:
+  TraceApiUrl:
+    Description: API Gateway endpoint URL
+    Value: !Sub 'https://${TraceApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/run'
+    Export:
+      Name: !Sub '${AWS::StackName}-ApiUrl'
+
+  FunctionArn:
+    Description: Lambda Function ARN
+    Value: !GetAtt TraceExecutionFunction.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-FunctionArn'
+
+  CacheBucketName:
+    Description: S3 cache bucket name
+    Value: !Ref TraceCacheBucket
+    Export:
+      Name: !Sub '${AWS::StackName}-CacheBucket'
