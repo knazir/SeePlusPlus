@@ -1,0 +1,17 @@
+# Build artifacts
+valgrind-build/
+valgrind-install/
+valgrind-tests/
+
+# Temporary files
+*.o
+*.a
+*.so
+*.log
+*.txt
+
+# Editor files
+*.swp
+*.swo
+*~
+.DS_Store

@@ -1,0 +1,48 @@
+# Dockerfile for Valgrind 3.26.0 development on Amazon Linux 2023
+# This container is used for building, testing, and developing the modernized
+# SPP-Valgrind with support for DWARF5, GCC 11+, and modern toolchain.
+
+FROM public.ecr.aws/amazonlinux/amazonlinux:2023
+
+# Install development tools and dependencies
+RUN yum update -y && \
+    yum install -y \
+    # Core build tools
+    gcc \
+    gcc-c++ \
+    make \
+    automake \
+    autoconf \
+    libtool \
+    git \
+    # Development headers
+    glibc-devel \
+    # Debugging tools
+    gdb \
+    strace \
+    # Utilities
+    vim \
+    wget \
+    tar \
+    bzip2 \
+    xz \
+    && yum clean all
+
+# Verify toolchain versions
+RUN echo "=== Toolchain Versions ===" && \
+    gcc --version && \
+    g++ --version && \
+    make --version && \
+    autoconf --version && \
+    automake --version
+
+# Set working directory
+WORKDIR /work
+
+# Environment variables for build
+ENV VALGRIND_SRC=/work/code-runner/valgrind
+ENV VALGRIND_BUILD=/work/code-runner-new/valgrind-build
+ENV VALGRIND_INSTALL=/work/code-runner-new/valgrind-install
+
+# Default command
+CMD ["/bin/bash"]
