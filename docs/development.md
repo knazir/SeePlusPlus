@@ -40,7 +40,6 @@ touch .env
 EXEC_MODE=local
 PORT=3000
 USER_CODE_FILE_PREFIX=main
-TRACESTORE_NAME=local-traces
 
 # AWS Configuration (only needed for deployment)
 AWS_REGION=us-west-2
@@ -270,7 +269,6 @@ The `docker-compose.yml` defines the complete local environment:
 EXEC_MODE=local                   # Use local Docker runner
 PORT=3000                         # Backend port
 USER_CODE_FILE_PREFIX=main        # Default filename for user code
-TRACESTORE_NAME=local-traces      # Local storage identifier
 
 # Development Mode
 NODE_ENV=development              # Enable development features

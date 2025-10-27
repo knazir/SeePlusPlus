@@ -1,7 +1,6 @@
 //------------------------------------------------------------------------------
 import cors from "cors";
 import crypto from "crypto";
-import dotenv from "dotenv";
 import express, { Express, Request, Response } from "express";
 
 import {
@@ -16,7 +15,6 @@ import {
 
 // Setup
 //------------------------------------------------------------------------------
-dotenv.config();
 const app: Express = express();
 const runner: TraceRunner = createRunner();
 
