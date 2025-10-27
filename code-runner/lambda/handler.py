@@ -8,7 +8,7 @@ This handler:
 4. Converts the trace to OPT visualization format
 5. Returns the trace data
 """
-
+#------------------------------------------------------------------------------
 import json
 import os
 import subprocess
@@ -18,13 +18,16 @@ import boto3
 from pathlib import Path
 
 # Initialize S3 client for caching (optional)
+#------------------------------------------------------------------------------
 s3_client = boto3.client('s3')
 CACHE_BUCKET = os.environ.get('CACHE_BUCKET', '')
 ENABLE_CACHE = bool(CACHE_BUCKET)
 
 # Paths (can be overridden by environment variables for testing)
+#------------------------------------------------------------------------------
 VALGRIND_BIN = os.environ.get('VALGRIND_BIN', '/spp/valgrind/bin/valgrind')
 
+#------------------------------------------------------------------------------
 def lambda_handler(event, context):
     """
     Lambda handler entry point
@@ -89,7 +92,7 @@ def lambda_handler(event, context):
         traceback.print_exc()
         return error_response(f"Internal error: {str(e)}", 500)
 
-
+#------------------------------------------------------------------------------
 def generate_trace(code: str, unique_id: str) -> dict:
     """
     Generate execution trace for C++ code
@@ -289,7 +292,7 @@ def generate_trace(code: str, unique_id: str) -> dict:
                 'error': f'Trace conversion error: {str(e)}'
             }
 
-
+#------------------------------------------------------------------------------
 def check_cache(unique_id: str):
     """Check S3 cache for existing results"""
     if not ENABLE_CACHE:
@@ -306,7 +309,7 @@ def check_cache(unique_id: str):
         print(f"Cache check error: {str(e)}")
         return None
 
-
+#------------------------------------------------------------------------------
 def cache_result(unique_id: str, result: dict):
     """Cache successful results to S3"""
     if not ENABLE_CACHE:
@@ -324,7 +327,7 @@ def cache_result(unique_id: str, result: dict):
     except Exception as e:
         print(f"Cache write error: {str(e)}")
 
-
+#------------------------------------------------------------------------------
 def success_response(data: dict):
     """Format successful response"""
     return {
@@ -336,7 +339,7 @@ def success_response(data: dict):
         'body': json.dumps(data)
     }
 
-
+#------------------------------------------------------------------------------
 def error_response(message: str, status_code: int = 500):
     """Format error response"""
     return {
