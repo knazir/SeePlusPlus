@@ -1,7 +1,6 @@
 # AWS Lambda container image for C++ trace generation with Valgrind 3.27.0
 # Production version with multi-stage build for minimal image size
 # Based on Amazon Linux 2023
-
 ARG TARGETPLATFORM=linux/amd64
 
 # ------------------------------------------------------------------------------
@@ -25,7 +24,7 @@ RUN dnf update -y && \
     dnf clean all
 
 # Copy Valgrind source and build it
-COPY lambda/SPP-Valgrind /tmp/valgrind-src
+COPY SPP-Valgrind /tmp/valgrind-src
 WORKDIR /tmp/valgrind-src
 
 # Build and install Valgrind to /spp/valgrind

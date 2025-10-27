@@ -1,16 +1,16 @@
 # See++ Deployment Guide
 
-This guide documents how to deploy See++ to AWS using AWS Lambda for code execution (recommended) or Fargate as a fallback option.
+This guide documents how to deploy See++ to AWS using AWS Lambda for code execution.
 
 ## Overview
 
-See++ uses **AWS Lambda** as the primary code execution method for all environments:
-- **Faster execution**: Lambda containers start in 1-3 seconds vs 30-60 seconds for Fargate
-- **Lower costs**: Pay only for execution time, no idle container costs
-- **Auto-scaling**: Handles concurrent executions automatically up to 1000+
-- **Modern stack**: Uses Valgrind 3.27.0 and Amazon Linux 2023
+See++ uses **AWS Lambda** for code execution across all environments.
 
-> **Note**: For legacy Fargate-based deployment (not recommended), see [Fargate Deployment Guide](./deployment-fargate.md)
+**Technical specifications**:
+- **Execution**: Lambda containers with 1-3 second cold start, <1s warm
+- **Scaling**: Automatic concurrency up to 1000+ executions
+- **Stack**: Valgrind 3.27.0 on Amazon Linux 2023
+- **Deployment**: Serverless functions (no container orchestration)
 
 ## Architecture
 
@@ -26,7 +26,7 @@ Frontend → Backend (ECS) → Lambda Function (spp-trace-executor-test)
 - AWS CLI configured with credentials
 - Docker installed and running
 - Copilot CLI installed
-- Valgrind submodule checked out at `code-runner/lambda/SPP-Valgrind`
+- Valgrind submodule checked out at `code-runner/SPP-Valgrind`
 
 ## Deployment Steps
 
@@ -64,7 +64,7 @@ State: Active
 
 ### 2. Configure Backend for Lambda Execution
 
-The backend must be configured to invoke Lambda instead of launching Fargate tasks.
+The backend must be configured to invoke the Lambda function for code execution.
 
 #### 2.1. Environment Variables
 
@@ -77,8 +77,8 @@ environments:
     deployment:
       rolling: "recreate"
     variables:
-      EXEC_MODE: lambda                              # Use Lambda instead of Fargate
-      LAMBDA_FUNCTION_NAME: spp-trace-executor-test  # Function to invoke
+      EXEC_MODE: lambda
+      LAMBDA_FUNCTION_NAME: spp-trace-executor-test
 ```
 
 #### 2.2. IAM Permissions
@@ -206,11 +206,10 @@ When Valgrind or handler code changes:
 
 ```bash
 cd code-runner/lambda
-./build-docker.sh  # Build locally first to verify
-./deploy-to-aws.sh test us-west-2  # Push and update Lambda
+./deploy-to-aws.sh test us-west-2  # Build, push, and update Lambda
 ```
 
-Lambda will automatically use the new image on next invocation (no restart needed).
+The deployment script will build the Docker image, push it to ECR, and update the Lambda function. Lambda will automatically use the new image on next invocation (no restart needed).
 
 ## Cost Optimization
 
@@ -220,13 +219,14 @@ Lambda pricing (us-west-2):
 
 At 3GB memory allocation:
 - 1 second execution = ~$0.00005
-- 1000 executions = ~$0.05
+- 1000 executions/day = ~$1.50/month
+- 10,000 executions/day = ~$15/month
 
-Compared to Fargate:
-- Fargate: ~$0.04/hour for 1 vCPU, 2GB (minimum ~$30/month even at low usage)
-- Lambda: Pay only for execution (~$0.05/1000 runs)
-
-**Recommendation:** Use Lambda for test/dev, Fargate for production with consistent traffic.
+**Cost characteristics**:
+- Pay-per-invocation model (no idle costs)
+- Scales to zero when not in use
+- Automatic concurrency scaling
+- Serverless infrastructure (no manual provisioning)
 
 ## Files Reference
 
@@ -234,34 +234,33 @@ Compared to Fargate:
 - `code-runner/lambda/handler.py` - Lambda entry point
 - `code-runner/lambda/Dockerfile.prod` - Production multi-stage build
 - `code-runner/lambda/Dockerfile.dev` - Development single-stage build
-- `code-runner/lambda/build-docker.sh` - Local build script
-- `code-runner/lambda/deploy-to-aws.sh` - Deploy to AWS script
-- `code-runner/lambda/SPP-Valgrind/` - Valgrind 3.27.0 source (git submodule)
+- `code-runner/lambda/deploy-to-aws.sh` - Build and deploy to AWS script
+- `code-runner/SPP-Valgrind/` - Valgrind 3.27.0 source (git submodule)
 
 ### Backend Configuration
 - `copilot/backend/manifest.yml` - Backend service configuration
 - `copilot/backend/addons/lambda-permissions.yml` - IAM permissions for Lambda invoke
 - `backend/src/services/lambda-runner.ts` - Lambda invocation logic
 
-## Execution Method Comparison
+## Lambda Specifications
 
-| Feature | Lambda (Recommended) | Fargate (Legacy) |
-|---------|----------------------|------------------|
-| Execution Mode | Lambda container | Fargate task |
-| Cold Start | 1-3 seconds | 30-60 seconds |
-| Cost Model | Per-invocation (~$0.00005/run) | Per-hour (~$0.04/hour minimum) |
-| Concurrency | Auto-scales to 1000+ | Manual scaling (1-10) |
-| Valgrind Version | 3.27.0 (modern) | 3.14.0 (legacy) |
-| Base Image | Amazon Linux 2023 | Ubuntu 14.04 |
-| Memory | 3008 MB | 2048 MB |
-| Timeout | 180 seconds | 300 seconds |
-| Deployment | All environments | Legacy fallback only |
-
-> **Recommendation**: Use Lambda for all new deployments. Fargate support is maintained for backward compatibility only.
+| Feature | Configuration |
+|---------|--------------|
+| Execution Mode | Lambda container |
+| Cold Start | 1-3 seconds |
+| Warm Execution | <1 second |
+| Cost Model | Per-invocation (~$0.00005/run) |
+| Concurrency | Auto-scales to 1000+ |
+| Valgrind Version | 3.27.0 (modern) |
+| Base Image | Amazon Linux 2023 |
+| Memory | 10GB (10240 MB) |
+| Timeout | 120 seconds (2 minutes) |
+| Platform | x86_64 |
 
 ## Next Steps
 
 - Monitor Lambda performance in CloudWatch
 - Adjust memory/timeout based on actual usage patterns
-- Consider migrating production to Lambda if test performance is satisfactory
 - Set up CloudWatch alarms for Lambda errors/throttling
+- Consider Lambda Provisioned Concurrency for consistent performance
+- Review Lambda execution logs for optimization opportunities

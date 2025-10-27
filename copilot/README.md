@@ -17,17 +17,14 @@ To deploy a complete environment (including all manual configuration steps):
 The script will:
 - ✅ Create the environment (if it doesn't exist)
 - ✅ Deploy backend service
-- ✅ Configure IAM roles and policies
+- ✅ Configure IAM roles and policies (Lambda invoke permissions)
 - ✅ Set load balancer timeout to 300 seconds
-- ✅ Create ECR repository
-- ✅ Build and push code-runner image
-- ✅ Register ECS task definition
-- ✅ Configure all Parameter Store secrets
+- ✅ Build and deploy Lambda function (code execution)
 - ✅ Set S3 bucket lifecycle policy
 - ✅ Deploy frontend services
 - ✅ Verify deployment
 
-**Time estimate**: 30-45 minutes (mostly Docker build time)
+**Time estimate**: 20-25 minutes (includes Lambda Docker build and push)
 
 ### Prerequisites
 
@@ -105,13 +102,10 @@ copilot svc deploy --name frontend --env test
 
 After deploying services, you must complete these manual steps:
 
-1. **Configure IAM Roles** - See [deployment.md](../docs/deployment.md#step-31-configure-iam-roles)
-2. **Set Load Balancer Timeout** - See [deployment.md](../docs/deployment.md#step-32-configure-load-balancer)
-3. **Setup ECR Repository** - See [deployment.md](../docs/deployment.md#step-34-setup-ecr-repository)
-4. **Build Code Runner** - See [deployment.md](../docs/deployment.md#4-code-runner-deployment)
-5. **Register Task Definition** - See [deployment.md](../docs/deployment.md#step-35-register-code-runner-task-definition)
-6. **Configure Secrets** - See [deployment.md](../docs/deployment.md#step-33-setup-secrets)
-7. **Set S3 Lifecycle** - See [deployment.md](../docs/deployment.md#step-36-set-s3-bucket-retention-policy)
+1. **Configure IAM Roles** - See [deployment.md](../docs/deployment.md)
+2. **Set Load Balancer Timeout** - See [deployment.md](../docs/deployment.md)
+3. **Build and Deploy Lambda Function** - See [deployment.md](../docs/deployment.md)
+4. **Set S3 Lifecycle** - See [deployment.md](../docs/deployment.md)
 
 Refer to the [full deployment guide](../docs/deployment.md) for detailed instructions.
 
@@ -140,10 +134,11 @@ Both frontends use the same resource configuration:
 
 ### Code Runner
 
-- **Type**: Fargate task (on-demand)
-- **Resources**: 1024 CPU, 2048 MB memory
-- **Platform**: linux/amd64
-- **Isolation**: No internet access, private subnets only
+- **Type**: AWS Lambda function
+- **Resources**: 10GB memory (scales CPU automatically)
+- **Timeout**: 2 minutes
+- **Platform**: Amazon Linux 2023 (x86_64)
+- **Deployment**: Automated via `deploy-environment.sh` script
 
 ## Environment Differences
 
@@ -203,16 +198,14 @@ copilot env delete --name test
 
 ## Secrets Management
 
-All secrets are stored in AWS Systems Manager Parameter Store under:
+Secrets are stored in AWS Systems Manager Parameter Store. The backend service requires minimal secrets since code execution is handled by Lambda:
 
 ```
 /copilot/spp/{environment}/secrets/
-├── CLUSTER_ARN       # ECS cluster for code runner
-├── ECR_REPO          # Code runner image repository
-├── SECURITY_GROUP    # Security group for code runner
-├── SUBNETS          # Private subnets for code runner
-└── TASK_DEF_ARN     # Task definition for code runner
+└── ECR_REPO          # (Optional) ECR repository for frontend images
 ```
+
+Lambda function configuration (function name, timeout, etc.) is managed through environment variables in the Copilot manifest.
 
 ### View Secrets
 
@@ -226,8 +219,8 @@ aws ssm get-parameters-by-path \
 
 ```bash
 aws ssm put-parameter \
-    --name "/copilot/spp/test/secrets/CLUSTER_ARN" \
-    --value "arn:aws:ecs:us-west-2:123456789:cluster/new-cluster" \
+    --name "/copilot/spp/test/secrets/ECR_REPO" \
+    --value "123456789.dkr.ecr.us-west-2.amazonaws.com/spp-frontend" \
     --type "SecureString" \
     --overwrite
 ```
@@ -258,20 +251,29 @@ aws ecs describe-services --cluster spp-test-Cluster --services backend
 
 ### Code Execution Fails
 
-1. Check code runner logs:
+1. Check Lambda function logs:
    ```bash
-   aws logs tail /ecs/spp-code-runner-test --follow
-   aws logs tail /ecs/spp-code-runner-prod --follow
+   aws logs tail /aws/lambda/spp-trace-executor-test --follow
+   aws logs tail /aws/lambda/spp-trace-executor-prod --follow
    ```
 
-2. Verify secrets are configured:
+2. Verify Lambda function exists and is configured:
    ```bash
-   aws ssm get-parameters-by-path --path "/copilot/spp/test/secrets"
+   aws lambda get-function --function-name spp-trace-executor-test
+   aws lambda get-function-configuration --function-name spp-trace-executor-test
    ```
 
-3. Check task definition exists:
+3. Test Lambda function directly:
    ```bash
-   aws ecs describe-task-definition --task-definition spp-code-runner-task-test
+   aws lambda invoke \
+     --function-name spp-trace-executor-test \
+     --payload '{"code":"int main() { return 0; }"}' \
+     response.json
+   ```
+
+4. Check backend has Lambda invoke permissions:
+   ```bash
+   copilot svc show --name backend --env test --json | grep -A 10 "taskRole"
    ```
 
 ### Load Balancer Timeout Errors

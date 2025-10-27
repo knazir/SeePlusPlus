@@ -11,20 +11,20 @@ See++ is a distributed web application that compiles and executes C++ code in is
 ```
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
 │   Frontend      │    │    Backend      │    │  Code Runner    │
-│  (React/JSX)    │◄──►│  (Node.js/TS)   │◄──►│   (Valgrind)    │
+│  (React/JSX)    │◄──►│  (Node.js/TS)   │◄──►│   (Lambda)      │
 │                 │    │                 │    │                 │
 │ - Code Editor   │    │ - API Server    │    │ - Compilation   │
 │ - Visualization │    │ - Orchestration │    │ - Execution     │
-│ - UI Controls   │    │ - S3 Storage    │    │ - Trace Gen     │
+│ - UI Controls   │    │ - Runner Invoke │    │ - Trace Gen     │
 └─────────────────┘    └─────────────────┘    └─────────────────┘
                                 │                       │
                                 │                       │
                        ┌─────────────────┐    ┌─────────────────┐
-                       │   S3 Storage    │    │  ECS Fargate    │
-                       │                 │    │                 │
-                       │ - User Code     │    │ - Task Execution│
-                       │ - Trace Files   │    │ - Isolation     │
-                       │ - Output Files  │    │ - Security      │
+                       │   S3 Storage    │    │  AWS Lambda     │
+                       │    (Optional)   │    │                 │
+                       │ - Trace Cache   │    │ - Serverless    │
+                       │                 │    │ - Isolation     │
+                       │                 │    │ - Security      │
                        └─────────────────┘    └─────────────────┘
 ```
 
@@ -89,7 +89,7 @@ backend/src/
 ├── runners/
 │   ├── runner.interface.ts   # Common runner interface
 │   ├── local.ts             # Local Docker runner (development)
-│   ├── fargate.ts           # AWS Fargate runner (production)
+│   ├── lambda.ts            # AWS Lambda runner (production)
 │   └── index.ts             # Runner factory
 ├── valgrind_utils.ts        # Trace parsing and processing
 └── parse_vg_trace.ts        # Valgrind output parser
@@ -125,7 +125,7 @@ backend/src/
 
 ### 4. Modified Valgrind (SPP-Valgrind)
 
-**Location**: `code-runner/SPP-Valgrind/` (Git submodule)
+**Location**: `code-runner/SPP-Valgrind/` (git submodule)
 
 **Purpose**: 
 - Traces C++ program execution at the instruction level
@@ -141,32 +141,26 @@ backend/src/
 2. **Submission**: Frontend sends POST request to `/api/run` with code
 3. **Preprocessing**: Backend preprocesses code (adds necessary headers)
 4. **Unique ID**: Backend generates UUID for the execution session
-5. **Runner Selection**: Backend selects appropriate runner (Local vs Fargate)
+5. **Runner Selection**: Backend selects appropriate runner (Local vs Lambda)
 
-**AWS Fargate Execution Path**:
-6. **S3 Upload**: Backend uploads preprocessed code to S3 as `[uuid]/[uuid]_code.cpp`
-7. **Task Launch**: Backend launches ECS Fargate task with environment variables:
-   - `BUCKET`: S3 bucket name
-   - `CODE_KEY`: Path to user code file
-   - `TRACE_KEY`, `CC_STDOUT_KEY`, etc.: Paths for result files
-8. **Code Download**: Code runner downloads user code from S3 using AWS CLI
-9. **Compilation**: Code runner compiles code using g++ and uploads compilation outputs to S3
-10. **Execution**: If compilation succeeds, code runner executes under modified Valgrind
-11. **Result Upload**: Code runner uploads all outputs to S3:
-    - `[uuid]_trace.json`: Valgrind execution trace
-    - `[uuid]_cc_stdout.txt` / `[uuid]_cc_stderr.txt`: Compilation output
-    - `[uuid]_stdout.txt` / `[uuid]_stderr.txt`: Program execution output
-12. **Task Monitoring**: Backend waits for ECS task completion
-13. **Result Download**: Backend downloads all result files from S3 in parallel
-14. **Response Processing**: Backend processes trace data into visualization format
-15. **Frontend Response**: Processed trace data is returned to frontend
-16. **Visualization**: Frontend renders interactive visualization
+**AWS Lambda Execution Path**:
+6. **Lambda Invoke**: Backend invokes Lambda function with code as payload
+7. **Compilation**: Lambda compiles code using g++ in `/tmp` directory
+8. **Execution**: If compilation succeeds, Lambda executes under modified Valgrind
+9. **Trace Generation**: Valgrind generates execution trace with memory/variable information
+10. **Direct Response**: Lambda returns complete execution results:
+    - `traceContent`: Raw Valgrind execution trace
+    - `ccStdout` / `ccStderr`: Compilation output
+    - `stdout` / `stderr`: Program execution output
+11. **Response Processing**: Backend processes trace data into visualization format
+12. **Frontend Response**: Processed trace data is returned to frontend
+13. **Visualization**: Frontend renders interactive visualization
 
-**Local Development Path** (steps 6-13 replaced):
-6. **File System**: Backend writes code to local filesystem (`/tmp/spp-usercode/[uuid]/`)
+**Local Development Path** (steps 6-10 replaced):
+6. **File System**: Backend writes code to local filesystem (`/tmp/spp-usercode/[uuid]/input/`)
 7. **Container Launch**: Backend launches local Docker container with volume mounts
 8. **Direct Execution**: Code runner compiles and executes with results written to mounted volumes
-9. **File Reading**: Backend reads results directly from local filesystem
+9. **File Reading**: Backend reads results directly from local filesystem (`/tmp/spp-usercode/[uuid]/output/`)
 
 ### Memory Management
 
@@ -207,46 +201,43 @@ backend/src/
 
 ```
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   CloudFront    │    │  Load Balancer  │    │   ECS Fargate   │
+│   CloudFront    │    │  Load Balancer  │    │  AWS Lambda     │
 │   (Frontend)    │    │   (Backend)     │    │ (Code Runner)   │
 └─────────────────┘    └─────────────────┘    └─────────────────┘
           │                       │                       │
           │                       │                       │
-          │              ┌────────┴────────┐              │
-          │              │                 │              │
-          │              ▼                 ▼              │
-          │    ┌─────────────────┐    ┌─────────────────┐ │
-          │    │   User Code     │    │  Trace Results  │ │
-          │    │   (Upload)      │    │   (Download)    │ │
-          │    │                 │    │                 │ │
-          └────┼─────────────────┼────┼─────────────────┼─┘
+          │                       │        ┌──────────────────┐
+          │                       │        │  Lambda Process  │
+          │                       │        │                  │
+          │                       ├───────►│ 1. Receive code  │
+          │                       │        │ 2. Compile (g++) │
+          │                       │        │ 3. Run Valgrind  │
+          │                       │◄───────│ 4. Return trace  │
+          │                       │        └──────────────────┘
+          │                       │
+          │              ┌────────┴────────┐
+          │              │                 │
+          │              ▼                 ▼
+          │    ┌─────────────────┐    ┌─────────────────┐
+          │    │  Backend ECS    │    │   S3 Storage    │
+          │    │    Service      │    │   (Optional)    │
+          │    │                 │    │                 │
+          └────┼─────────────────┼────┤ • Trace cache   │
                │                 │    │                 │
-               ▼                 │    │                 ▼
-      ┌─────────────────────────────┐ │ ┌──────────────────┐
-      │       S3 Storage            │ │ │  Code Runner     │
-      │                             │ │ │    Process       │
-      │ Files per execution:        │ │ │                  │
-      │ • [id]_code.cpp             │ │ │ 1. Download code │
-      │ • [id]_trace.json           │◄┘ │ 2. Compile       │
-      │ • [id]_cc_stdout.txt        │   │ 3. Run Valgrind  │
-      │ • [id]_cc_stderr.txt        │◄──│ 4. Upload results│
-      │ • [id]_stdout.txt           │   └──────────────────┘
-      │ • [id]_stderr.txt           │
-      └─────────────────────────────┘
-                  │
-        ┌─────────────────┐
-        │      IAM        │
-        │ (Roles/Policies)│
-        └─────────────────┘
+               └─────────────────┘    └─────────────────┘
+                        │
+              ┌─────────────────┐
+              │      IAM        │
+              │ (Roles/Policies)│
+              └─────────────────┘
 ```
 
 **Data Flow Details**:
-1. **Backend → S3**: Uploads user code to `[unique-id]/[id]_code.cpp`
-2. **Backend → ECS**: Launches Fargate task with S3 keys as environment variables
-3. **Code Runner → S3**: Downloads user code using AWS CLI
-4. **Code Runner**: Compiles code with g++, runs under modified Valgrind
-5. **Code Runner → S3**: Uploads all results (trace, stdout, stderr, compilation outputs)
-6. **Backend ← S3**: Downloads and processes results for frontend response
+1. **Backend → Lambda**: Invokes Lambda function with code as synchronous payload
+2. **Lambda**: Compiles code with g++, runs under modified Valgrind in `/tmp`
+3. **Lambda → Backend**: Returns complete execution results (trace, stdout, stderr, compilation outputs)
+4. **Backend**: Processes trace data and returns to frontend
+5. **Optional S3**: Lambda can cache results to S3 for frequently-run code (not currently enabled)
 
 ## Security Model
 
@@ -266,17 +257,18 @@ backend/src/
 
 ## Performance Considerations
 
-### Current Bottlenecks
+### Performance Characteristics
 
-1. **Container Startup**: ECS Fargate task initialization (~30-60s)
-2. **Network Overhead**: S3 upload/download for file transfer
-3. **Resource Allocation**: Single-threaded execution model
+1. **Lambda Cold Start**: ~1-3 seconds for first invocation
+2. **Lambda Warm Execution**: <1 second for subsequent invocations
+3. **Compilation Time**: ~0.5-2 seconds depending on code complexity
+4. **Valgrind Execution**: Varies by program (typically <30 seconds)
 
 ### Optimization Strategies
 
-1. **Warm Containers**: Pre-warmed container pools
-2. **Caching**: Compiled binary caching for repeated executions
-3. **Parallel Processing**: Multiple concurrent executions
+1. **Lambda Provisioned Concurrency**: Keep functions warm for consistent performance
+2. **Caching**: S3-based caching for frequently-executed code (optional)
+3. **Parallel Processing**: Lambda handles concurrent executions automatically
 4. **Regional Deployment**: Multi-region for reduced latency
 
 ## Technology Stack Summary
@@ -286,9 +278,10 @@ backend/src/
 | Frontend (Legacy) | React 16.x, CodeMirror, Konva.js | User interface and visualization |
 | Frontend (New) | React 19.x, Monaco Editor, TypeScript | Modern user interface |
 | Backend | Node.js, TypeScript, Express | API server and orchestration |
-| Code Runner | Docker, Modified Valgrind, g++ | Isolated code execution |
-| Storage | AWS S3 | File storage and transfer |
-| Compute | AWS ECS Fargate | Scalable container execution |
+| Code Runner (Production) | AWS Lambda, Python, Modified Valgrind, g++ | Serverless code execution |
+| Code Runner (Development) | Docker, Bash, Modified Valgrind, g++ | Local code execution |
+| Storage (Optional) | AWS S3 | Trace caching |
+| Compute | AWS Lambda | Serverless execution |
 | Infrastructure | AWS Copilot | Infrastructure as code |
 | Development | Docker Compose | Local development environment |
 

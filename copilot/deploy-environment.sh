@@ -190,22 +190,10 @@ cat > /tmp/spp-backend-policy.json <<EOF
             "Resource": "arn:aws:s3:::spp-${ENV_NAME}-*/*"
         },
         {
-            "Sid": "ECSRunTask",
+            "Sid": "LambdaInvoke",
             "Effect": "Allow",
             "Action": [
-                "ecs:RunTask",
-                "ecs:DescribeTasks",
-                "iam:PassRole"
-            ],
-            "Resource": "*"
-        },
-        {
-            "Sid": "ECRImagePull",
-            "Effect": "Allow",
-            "Action": [
-                "ecr:GetAuthorizationToken",
-                "ecr:BatchGetImage",
-                "ecr:GetDownloadUrlForLayer"
+                "lambda:InvokeFunction"
             ],
             "Resource": "*"
         },
@@ -316,20 +304,62 @@ aws elbv2 modify-load-balancer-attributes \
     --no-cli-pager > /dev/null
 log_success "Load balancer timeout configured"
 
-# Setup ECR repository
-log_step "Step 6: Setting Up ECR Repository"
+# Deploy Lambda function
+log_step "Step 6: Building and Deploying Lambda Function"
 
-if aws ecr describe-repositories --repository-names spp-code-runner --region "$AWS_REGION" &> /dev/null; then
-    log_warning "ECR repository 'spp-code-runner' already exists"
+LAMBDA_FUNCTION_NAME="spp-trace-executor-$ENV_NAME"
+LAMBDA_REPO_NAME="spp-lambda-trace"
+LAMBDA_IMAGE_TAG="$ENV_NAME"
+LAMBDA_ECR_URI="$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$LAMBDA_REPO_NAME"
+
+# Build Lambda Docker image
+log_info "Building Lambda Docker image..."
+if [ ! -d "code-runner/lambda" ]; then
+    log_error "Lambda directory not found at code-runner/lambda"
+    exit 1
+fi
+
+# Check if Valgrind is built
+if [ ! -f "code-runner/SPP-Valgrind/vg-in-place" ]; then
+    log_error "Valgrind not found at code-runner/SPP-Valgrind/vg-in-place"
+    log_error "Please ensure SPP-Valgrind/ submodule is initialized and built"
+    exit 1
+fi
+
+# Check if Dockerfile exists
+if [ ! -f "code-runner/lambda/Dockerfile.prod" ]; then
+    log_error "Dockerfile.prod not found"
+    exit 1
+fi
+
+log_info "Building Docker image from Dockerfile.prod..."
+cd code-runner
+docker build \
+    --platform linux/amd64 \
+    --provenance=false \
+    --sbom=false \
+    -t spp-lambda-trace:latest \
+    -f lambda/Dockerfile.prod \
+    . > /dev/null
+cd ..
+log_success "Lambda Docker image built"
+
+# Create ECR repository if it doesn't exist
+log_info "Setting up ECR repository for Lambda..."
+if aws ecr describe-repositories --repository-names "$LAMBDA_REPO_NAME" --region "$AWS_REGION" &> /dev/null; then
+    log_info "ECR repository '$LAMBDA_REPO_NAME' already exists"
 else
-    log_info "Creating ECR repository 'spp-code-runner'..."
+    log_info "Creating ECR repository: $LAMBDA_REPO_NAME"
     aws ecr create-repository \
-        --repository-name spp-code-runner \
-        --region "$AWS_REGION"
+        --repository-name "$LAMBDA_REPO_NAME" \
+        --region "$AWS_REGION" \
+        --image-scanning-configuration scanOnPush=true \
+        --encryption-configuration encryptionType=AES256
 
     log_info "Setting lifecycle policy for ECR repository..."
     aws ecr put-lifecycle-policy \
-        --repository-name spp-code-runner \
+        --repository-name "$LAMBDA_REPO_NAME" \
+        --region "$AWS_REGION" \
         --lifecycle-policy-text '{
             "rules": [
                 {
@@ -349,150 +379,112 @@ else
     log_success "ECR repository created and configured"
 fi
 
-# # Build and push code runner
-log_step "Step 7: Building and Pushing Code Runner Image"
+# Login to ECR
+log_info "Logging into ECR..."
+aws ecr get-login-password --region "$AWS_REGION" | \
+    docker login --username AWS --password-stdin "$LAMBDA_ECR_URI"
+log_success "Logged into ECR"
 
-# log_info "This may take 10-15 minutes..."
-export AWS_REGION=$AWS_REGION
-export AWS_ACCOUNT_ID=$AWS_ACCOUNT_ID
-export ECR_REPO="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/spp-code-runner"
+# Tag and push image
+log_info "Tagging and pushing Lambda image to ECR..."
+docker tag spp-lambda-trace:latest "$LAMBDA_ECR_URI:$LAMBDA_IMAGE_TAG"
+docker tag spp-lambda-trace:latest "$LAMBDA_ECR_URI:latest"
+docker push "$LAMBDA_ECR_URI:$LAMBDA_IMAGE_TAG"
+docker push "$LAMBDA_ECR_URI:latest"
+log_success "Lambda image pushed to ECR"
 
-if [ ! -f "./localdev.sh" ]; then
-    log_error "localdev.sh script not found"
-    exit 1
-fi
+# Create IAM role for Lambda if it doesn't exist
+log_info "Setting up IAM role for Lambda..."
+LAMBDA_ROLE_NAME="spp-lambda-execution-role-$ENV_NAME"
+LAMBDA_ROLE_ARN=""
 
-./localdev.sh deploy "$ENV_NAME" code-runner
-log_success "Code runner image built and pushed"
+if aws iam get-role --role-name "$LAMBDA_ROLE_NAME" &> /dev/null; then
+    log_info "IAM role '$LAMBDA_ROLE_NAME' already exists"
+    LAMBDA_ROLE_ARN=$(aws iam get-role --role-name "$LAMBDA_ROLE_NAME" --query 'Role.Arn' --output text)
+else
+    log_info "Creating IAM role: $LAMBDA_ROLE_NAME"
 
-# Register task definition
-log_step "Step 8: Registering Code Runner Task Definition"
-
-EXEC_ROLE_ARN=$(aws iam get-role --role-name "$EXECUTION_ROLE" --query 'Role.Arn' --output text)
-TASK_ROLE_ARN=$(aws iam get-role --role-name "$TASK_ROLE" --query 'Role.Arn' --output text)
-
-log_info "Creating task definition..."
-cat > /tmp/task-def-${ENV_NAME}.json <<EOF
+    # Create trust policy
+    cat > /tmp/lambda-trust-policy.json <<EOF
 {
-    "family": "spp-code-runner-task-${ENV_NAME}",
-    "networkMode": "awsvpc",
-    "requiresCompatibilities": ["FARGATE"],
-    "cpu": "1024",
-    "memory": "2048",
-    "runtimePlatform": {
-        "operatingSystemFamily": "LINUX",
-        "cpuArchitecture": "X86_64"
-    },
-    "executionRoleArn": "${EXEC_ROLE_ARN}",
-    "taskRoleArn": "${TASK_ROLE_ARN}",
-    "containerDefinitions": [
-        {
-            "name": "spp-code-runner",
-            "image": "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/spp-code-runner:${ENV_NAME}",
-            "essential": true,
-            "logConfiguration": {
-                "logDriver": "awslogs",
-                "options": {
-                    "awslogs-group": "/ecs/spp-code-runner-${ENV_NAME}",
-                    "awslogs-region": "${AWS_REGION}",
-                    "awslogs-stream-prefix": "ecs",
-                    "awslogs-create-group": "true"
-                }
-            },
-            "environment": []
-        }
-    ]
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "Service": "lambda.amazonaws.com"
+      },
+      "Action": "sts:AssumeRole"
+    }
+  ]
 }
 EOF
 
-log_info "Registering task definition..."
-TASK_DEF_OUTPUT=$(aws ecs register-task-definition --cli-input-json file:///tmp/task-def-${ENV_NAME}.json)
-TASK_DEF_ARN=$(echo "$TASK_DEF_OUTPUT" | grep -o '"taskDefinitionArn": "[^"]*"' | cut -d'"' -f4)
+    # Create role
+    LAMBDA_ROLE_ARN=$(aws iam create-role \
+        --role-name "$LAMBDA_ROLE_NAME" \
+        --assume-role-policy-document file:///tmp/lambda-trust-policy.json \
+        --query 'Role.Arn' \
+        --output text)
 
-if [ -z "$TASK_DEF_ARN" ]; then
-    log_error "Failed to register task definition"
-    exit 1
+    # Attach basic Lambda execution policy
+    aws iam attach-role-policy \
+        --role-name "$LAMBDA_ROLE_NAME" \
+        --policy-arn arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+    log_success "IAM role created"
+    log_info "Waiting 10 seconds for IAM role to propagate..."
+    sleep 10
+
+    rm -f /tmp/lambda-trust-policy.json
 fi
 
-log_success "Task definition registered: $TASK_DEF_ARN"
-rm -f /tmp/task-def-${ENV_NAME}.json
+log_info "Lambda Role ARN: $LAMBDA_ROLE_ARN"
 
-# Gather infrastructure values for secrets
-log_step "Step 9: Gathering Infrastructure Values"
+# Create or update Lambda function
+log_info "Deploying Lambda function: $LAMBDA_FUNCTION_NAME"
+if aws lambda get-function --function-name "$LAMBDA_FUNCTION_NAME" --region "$AWS_REGION" &> /dev/null; then
+    log_info "Updating existing Lambda function..."
+    aws lambda update-function-code \
+        --function-name "$LAMBDA_FUNCTION_NAME" \
+        --image-uri "$LAMBDA_ECR_URI:$LAMBDA_IMAGE_TAG" \
+        --region "$AWS_REGION" \
+        --no-cli-pager > /dev/null
 
-log_info "Getting cluster ARN..."
-CLUSTER_ARN=$(aws ecs list-clusters --query "clusterArns[?contains(@, 'spp-${ENV_NAME}')]" --output text | head -1)
+    log_info "Waiting for function update to complete..."
+    aws lambda wait function-updated \
+        --function-name "$LAMBDA_FUNCTION_NAME" \
+        --region "$AWS_REGION"
 
-log_info "Getting security group..."
-SECURITY_GROUP=$(aws ec2 describe-security-groups \
-    --filters "Name=tag:copilot-environment,Values=${ENV_NAME}" \
-    --query "SecurityGroups[?contains(GroupName, 'EnvironmentSecurityGroup')].GroupId" \
-    --output text | head -1)
+    # Update configuration
+    aws lambda update-function-configuration \
+        --function-name "$LAMBDA_FUNCTION_NAME" \
+        --timeout 120 \
+        --memory-size 10240 \
+        --region "$AWS_REGION" \
+        --no-cli-pager > /dev/null
 
-log_info "Getting public subnets..."
-SUBNETS=$(aws ec2 describe-subnets \
-    --filters "Name=tag:copilot-environment,Values=${ENV_NAME}" \
-              "Name=tag:aws:cloudformation:logical-id,Values=PublicSubnet*" \
-    --query 'Subnets[].SubnetId' \
-    --output text | tr '\t' ',')
+    log_success "Lambda function updated"
+else
+    log_info "Creating new Lambda function..."
+    aws lambda create-function \
+        --function-name "$LAMBDA_FUNCTION_NAME" \
+        --package-type Image \
+        --code ImageUri="$LAMBDA_ECR_URI:$LAMBDA_IMAGE_TAG" \
+        --role "$LAMBDA_ROLE_ARN" \
+        --timeout 120 \
+        --memory-size 10240 \
+        --architectures x86_64 \
+        --region "$AWS_REGION" \
+        --no-cli-pager > /dev/null
 
-ECR_REPO="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/spp-code-runner"
-
-log_info "Infrastructure values gathered:"
-log_info "  CLUSTER_ARN: $CLUSTER_ARN"
-log_info "  SECURITY_GROUP: $SECURITY_GROUP"
-log_info "  SUBNETS: $SUBNETS"
-log_info "  ECR_REPO: $ECR_REPO"
-log_info "  TASK_DEF_ARN: $TASK_DEF_ARN"
-
-# Validate values
-if [ -z "$CLUSTER_ARN" ] || [ -z "$SECURITY_GROUP" ] || [ -z "$SUBNETS" ]; then
-    log_error "Failed to gather all required infrastructure values"
-    exit 1
+    log_success "Lambda function created"
 fi
 
-# Configure secrets
-log_step "Step 10: Configuring Secrets in Parameter Store"
-
-log_info "Setting CLUSTER_ARN secret..."
-aws ssm put-parameter \
-    --name "/copilot/spp/${ENV_NAME}/secrets/CLUSTER_ARN" \
-    --value "${CLUSTER_ARN}" \
-    --type "SecureString" \
-    --overwrite
-
-log_info "Setting ECR_REPO secret..."
-aws ssm put-parameter \
-    --name "/copilot/spp/${ENV_NAME}/secrets/ECR_REPO" \
-    --value "${ECR_REPO}" \
-    --type "SecureString" \
-    --overwrite
-
-log_info "Setting SECURITY_GROUP secret..."
-aws ssm put-parameter \
-    --name "/copilot/spp/${ENV_NAME}/secrets/SECURITY_GROUP" \
-    --value "${SECURITY_GROUP}" \
-    --type "SecureString" \
-    --overwrite
-
-log_info "Setting SUBNETS secret..."
-aws ssm put-parameter \
-    --name "/copilot/spp/${ENV_NAME}/secrets/SUBNETS" \
-    --value "${SUBNETS}" \
-    --type "SecureString" \
-    --overwrite
-
-log_info "Setting TASK_DEF_ARN secret..."
-aws ssm put-parameter \
-    --name "/copilot/spp/${ENV_NAME}/secrets/TASK_DEF_ARN" \
-    --value "${TASK_DEF_ARN}" \
-    --type "SecureString" \
-    --overwrite
-
-log_success "All secrets configured"
+log_success "Lambda function deployed: $LAMBDA_FUNCTION_NAME"
 
 # Configure S3 bucket lifecycle
-log_step "Step 11: Configuring S3 Bucket Lifecycle Policy"
+log_step "Step 7: Configuring S3 Bucket Lifecycle Policy"
 
 log_info "Finding trace bucket..."
 BUCKET_NAME=$(aws s3 ls | grep "spp-${ENV_NAME}.*trace" | awk '{print $3}' | head -1)
@@ -519,7 +511,7 @@ aws s3api put-bucket-lifecycle-configuration \
 log_success "S3 bucket lifecycle policy configured"
 
 # Deploy frontend services
-log_step "Step 12: Deploying Frontend Services"
+log_step "Step 8: Deploying Frontend Services"
 
 log_info "Deploying frontend-legacy service..."
 copilot svc deploy --name frontend-legacy --env "$ENV_NAME"
@@ -530,7 +522,7 @@ copilot svc deploy --name frontend --env "$ENV_NAME"
 log_success "Frontend service deployed"
 
 # Verification
-log_step "Step 13: Verification"
+log_step "Step 9: Verification"
 
 log_info "Environment Status:"
 copilot env show --name "$ENV_NAME"
@@ -549,7 +541,7 @@ echo ""
 log_info "Next steps:"
 log_info "  1. Test the frontend by visiting the URL above"
 log_info "  2. Monitor logs with: copilot svc logs --name backend --env $ENV_NAME --follow"
-log_info "  3. Check code runner logs: aws logs tail /ecs/spp-code-runner-$ENV_NAME --follow"
+log_info "  3. Check Lambda code-runner logs: aws logs tail /aws/lambda/spp-trace-executor-$ENV_NAME --follow"
 echo ""
 log_info "To test code execution, visit the frontend URL and try running this:"
 echo ""

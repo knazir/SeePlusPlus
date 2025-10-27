@@ -19,13 +19,13 @@ See++ uses a modern, containerized infrastructure deployed on AWS with the follo
 │                        AWS Account                          │
 ├─────────────────────────────────────────────────────────────┤
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐  │
-│  │   ECS       │  │    S3       │  │        IAM          │  │
-│  │ (Fargate)   │  │ (Storage)   │  │  (Roles/Policies)   │  │
+│  │   Lambda    │  │    S3       │  │        IAM          │  │
+│  │ (Serverless)│  │ (Optional)  │  │  (Roles/Policies)   │  │
 │  └─────────────┘  └─────────────┘  └─────────────────────┘  │
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐  │
-│  │    ALB      │  │    ECR      │  │       VPC           │  │
-│  │(Load Bal.)  │  │(Container   │  │   (Networking)      │  │
-│  │             │  │ Registry)   │  │                     │  │
+│  │    ALB      │  │    ECS      │  │       VPC           │  │
+│  │(Load Bal.)  │  │  (Backend)  │  │   (Networking)      │  │
+│  │             │  │             │  │                     │  │
 │  └─────────────┘  └─────────────┘  └─────────────────────┘  │
 └─────────────────────────────────────────────────────────────┘
 ```
@@ -89,15 +89,18 @@ copilot/
 - **Scaling**: 1-10 instances based on CPU (70% threshold)
 - **Load Balancer**: Handles requests to `/api`
 
-#### Code Runner Tasks
-- **Type**: Fargate tasks (on-demand)
-- **Platform**: linux/x86_64
-- **Resources**: 1024 CPU, 2048 MB memory
-- **Execution**: Triggered by backend for each code execution
+#### Code Runner (Lambda Function)
+- **Type**: AWS Lambda (serverless)
+- **Runtime**: Python 3.12 with custom container image
+- **Platform**: Amazon Linux 2023 (x86_64)
+- **Memory**: 10GB (10240 MB)
+- **Timeout**: 120 seconds (2 minutes)
+- **Execution**: Invoked synchronously by backend for each code execution
+- **Concurrency**: Auto-scales up to 1000+ concurrent executions
 
-### 3. S3 Storage (Trace Store)
+### 3. S3 Storage (Optional - Trace Cache)
 
-**Purpose**: Temporary storage for user code, execution traces, and outputs
+**Purpose**: Optional caching layer for frequently-executed code (not currently enabled)
 
 **Configuration**:
 - **Encryption**: AES256 server-side encryption
@@ -146,12 +149,10 @@ Required for ECS to pull images and write logs:
             "Resource": "arn:aws:s3:::YOUR-BUCKET-NAME/*"
         },
         {
-            "Sid": "ECSRunTask",
+            "Sid": "LambdaInvoke",
             "Effect": "Allow",
             "Action": [
-                "ecs:RunTask",
-                "ecs:DescribeTasks",
-                "iam:PassRole"
+                "lambda:InvokeFunction"
             ],
             "Resource": "*"
         },
@@ -213,12 +214,10 @@ Required for the backend service to operate:
             "Resource": "arn:aws:s3:::YOUR-BUCKET-NAME/*"
         },
         {
-            "Sid": "ECSRunTask",
+            "Sid": "LambdaInvoke",
             "Effect": "Allow",
             "Action": [
-                "ecs:RunTask",
-                "ecs:DescribeTasks",
-                "iam:PassRole"
+                "lambda:InvokeFunction"
             ],
             "Resource": "*"
         },
@@ -335,21 +334,9 @@ Applied to backend task role to prevent privilege escalation:
 
 ### AWS Systems Manager Parameter Store
 
-**Required Secrets** (per environment):
-```
-/copilot/spp/[environment]/secrets/CLUSTER_ARN
-/copilot/spp/[environment]/secrets/ECR_REPO
-/copilot/spp/[environment]/secrets/SECURITY_GROUP
-/copilot/spp/[environment]/secrets/SUBNETS
-/copilot/spp/[environment]/secrets/TASK_DEF_ARN
-```
+The backend service uses minimal secrets, relying on IAM roles for AWS service access. Lambda function configuration (function name, timeout, memory) is managed through environment variables in the Copilot manifest.
 
-**Secret Values** (replace with your actual values):
-- `CLUSTER_ARN`: ECS cluster ARN for code runner tasks
-- `ECR_REPO`: ECR repository URL for code-runner image
-- `SECURITY_GROUP`: Security group ID for code runner tasks
-- `SUBNETS`: Comma-separated subnet IDs for code runner tasks
-- `TASK_DEF_ARN`: ECS task definition ARN for code runner
+**No code-runner specific secrets are required** - the backend invokes Lambda functions directly using IAM role permissions.
 
 ## Monitoring and Logging
 
@@ -358,7 +345,7 @@ Applied to backend task role to prevent privilege escalation:
 **Log Groups**:
 - `/copilot/spp-[env]-backend`: Backend service logs
 - `/copilot/spp-[env]-frontend-legacy`: Frontend service logs
-- `/ecs/spp-code-runner`: Code runner execution logs
+- `/aws/lambda/spp-trace-executor-[env]`: Lambda code execution logs
 
 **Metrics**:
 - ECS service CPU/memory utilization
