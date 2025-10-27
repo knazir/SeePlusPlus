@@ -1,0 +1,73 @@
+# Backend service
+name: backend
+type: Load Balanced Web Service
+
+# Distribute traffic to the backend service.
+http:
+  path: "/api"
+  healthcheck: "/api"
+
+# Container configuration.
+image:
+  build:
+    context: backend
+    dockerfile: backend/Dockerfile.prod
+  port: 3000
+
+# Resources configuration.
+cpu: 256
+memory: 512
+platform: linux/x86_64
+count:
+  range:
+    min: 1
+    max: 10
+  cpu_percentage: 70
+exec: true                     # Enable running commands in container.
+network:
+  connect: true                # Enable Service Connect for intra-environment traffic between services.
+
+# Task role configuration.
+task_role:
+  policy:
+    statements:
+      # 1. Allow backend to launch your code-runner task
+      - effect: Allow
+        actions:
+          - ecs:RunTask
+          - ecs:DescribeTasks
+        resources:
+          - '*'
+
+      # 2. Allow it to pass the execution role that the TD needs
+      - effect: Allow
+        actions:
+          - iam:PassRole
+        resources:
+          - '*'
+
+      # 3. Allow backend to invoke Lambda functions
+      - effect: Allow
+        actions:
+          - lambda:InvokeFunction
+        resources:
+          - '*'
+
+# Environment variables.
+variables:
+  ALLOWED_ORIGIN_REGEX: '^https?:\/\/(?:[\w-]+\.)*?(seepluspl\.us)$'
+  AWS_REGION: us-west-2
+  EXEC_MODE: lambda
+  PORT: 3000
+
+# Environment-specific overrides.
+environments:
+  test:
+    count: 1
+    deployment:
+      rolling: "recreate"       # Stops existing tasks before new ones are started for faster deployments.
+    variables:
+      LAMBDA_FUNCTION_NAME: spp-trace-executor-test
+  prod:
+    variables:
+      LAMBDA_FUNCTION_NAME: spp-trace-executor-prod
