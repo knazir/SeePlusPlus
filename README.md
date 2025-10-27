@@ -45,7 +45,10 @@ See++ is a tool for visualizing and debugging C++ code aimed at helping students
 ### Deploy Your Own
 1. Clone the repo via `git clone https://github.com/knazir/SeePlusPlus.git`.
 2. Download and install [Docker Desktop](https://www.docker.com/products/docker-desktop/).
-3. Follow the instructions in the [docs](https://github.com/knazir/SeePlusPlus/tree/master/docs) to configure and deploy the app via the AWS CLI.
+3. Install and configure the [AWS CLI](https://aws.amazon.com/cli/).
+3. Run `./copilot/deploy-environment.sh test` to deploy to AWS.
+
+For troubleshooting on deployment, additional info can be found in the [docs](https://github.com/knazir/SeePlusPlus/tree/master/docs).
 
 
 ## Project Goals
@@ -93,7 +96,7 @@ Today, See++ aims to serve not only students and instructors, but anyone who nee
 ## Roadmap
 Ordered from highest to lowest priority.
 - [x] Speed up code execution in deployed environments (improved from ~1m to 5-10s with Lambda)
-- [ ] Add caching for code execution in deployed environments
+- [x] Add caching for code execution in deployed environments
 - [ ] Add linting for more consistent style and easier contribution
 - [ ] Create GitHub Issue/PR templates
 - [ ] Create CONTRIBUTING.md and CLA for contributions
