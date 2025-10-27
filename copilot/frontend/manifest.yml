@@ -1,0 +1,46 @@
+# Frontend service (in beta while in development)
+name: frontend
+type: Load Balanced Web Service
+
+# Distribute traffic to the frontend service.
+http:
+  path: "/"
+  healthcheck: "/"
+
+# Container configuration.
+image:
+  build:
+    context: frontend
+    dockerfile: frontend/Dockerfile.prod
+  port: 80
+
+# Resources configuration.
+cpu: 256
+memory: 512
+platform: linux/x86_64
+count:
+  range:
+    min: 1
+    max: 10
+  cpu_percentage: 70
+exec: true                     # Enable running commands in container.
+network:
+  connect: true                # Enable Service Connect for intra-environment traffic between services.
+
+# Environment-specific overrides.
+environments:
+  test:
+    count: 1
+    deployment:
+      rolling: "recreate"       # Stops existing tasks before new ones are started for faster deployments.
+    image:
+      build:
+        args:
+          SPP_API_URL: "https://backend.test.spp.seepluspl.us/api"
+  prod:
+    http:
+      alias: ["beta.seepluspl.us"]
+    image:
+      build:
+        args:
+          SPP_API_URL: "https://backend.prod.spp.seepluspl.us/api"

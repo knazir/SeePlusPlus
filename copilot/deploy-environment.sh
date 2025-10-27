@@ -529,8 +529,8 @@ copilot env show --name "$ENV_NAME"
 
 echo ""
 log_info "Service URLs:"
-copilot svc show --name frontend-legacy --env "$ENV_NAME" | grep -A 5 "Routes"
-copilot svc show --name backend --env "$ENV_NAME" | grep -A 5 "Routes"
+copilot svc show --name frontend-legacy | grep -A 5 "Routes"
+copilot svc show --name backend | grep -A 5 "Routes"
 
 # Summary
 log_step "Deployment Complete!"
