@@ -1,6 +1,6 @@
 #!/bin/bash
 # Complete AWS Lambda deployment script
-# This script handles ECR, Lambda function creation, and configuration
+# This script handles Docker build, ECR, Lambda function creation, and configuration
 
 set -e
 
@@ -32,8 +32,42 @@ IMAGE_TAG="$ENVIRONMENT"
 FUNCTION_NAME="spp-trace-executor-$ENVIRONMENT"
 ECR_URI="$ACCOUNT_ID.dkr.ecr.$REGION.amazonaws.com/$REPO_NAME"
 
-# Step 1: Create ECR repository if it doesn't exist
-echo "Step 1: Setting up ECR repository..."
+# Step 1: Build Docker image
+echo "Step 1: Building Lambda Docker image..."
+
+# Check if Valgrind is built
+if [ ! -f "../SPP-Valgrind/vg-in-place" ]; then
+    echo "ERROR: Valgrind not found at code-runner/SPP-Valgrind/vg-in-place"
+    echo "Please ensure SPP-Valgrind/ submodule is initialized and built"
+    exit 1
+fi
+
+echo "✓ Valgrind found"
+
+# Check if Dockerfile exists
+if [ ! -f "Dockerfile.prod" ]; then
+    echo "ERROR: Dockerfile.prod not found"
+    exit 1
+fi
+
+echo "Building Docker image from Dockerfile.prod..."
+
+# Build from parent directory (code-runner) so paths work
+cd ..
+docker build \
+    --platform linux/amd64 \
+    --provenance=false \
+    --sbom=false \
+    -t spp-lambda-trace:latest \
+    -f lambda/Dockerfile.prod \
+    .
+cd lambda
+
+echo "✓ Docker image built: spp-lambda-trace:latest"
+echo ""
+
+# Step 2: Create ECR repository if it doesn't exist
+echo "Step 2: Setting up ECR repository..."
 if aws ecr describe-repositories --repository-names "$REPO_NAME" --region "$REGION" &>/dev/null; then
     echo "✓ ECR repository already exists"
 else
@@ -47,19 +81,11 @@ else
 fi
 echo ""
 
-# Step 2: Login to ECR
-echo "Step 2: Logging into ECR..."
+# Step 3: Login to ECR and push image
+echo "Step 3: Logging into ECR and pushing image..."
 aws ecr get-login-password --region "$REGION" | \
     docker login --username AWS --password-stdin "$ECR_URI"
 echo "✓ Logged into ECR"
-echo ""
-
-# Step 3: Tag and push Docker image
-echo "Step 3: Pushing Docker image to ECR..."
-if ! docker image inspect spp-lambda-trace:latest &>/dev/null; then
-    echo "ERROR: Docker image not found. Run ./build-docker.sh first"
-    exit 1
-fi
 
 docker tag spp-lambda-trace:latest "$ECR_URI:$IMAGE_TAG"
 docker tag spp-lambda-trace:latest "$ECR_URI:latest"

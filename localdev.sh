@@ -58,34 +58,18 @@ function deploy_to_aws() {
     
     # If no services specified, deploy all
     if [ $# -eq 0 ]; then
-        SERVICES=("code-runner" "backend" "frontend" "frontend-legacy")
+        SERVICES=("backend" "frontend" "frontend-legacy")
         echo "No services specified. Deploying all services to AWS environment: $ENV"
+        echo "Note: Lambda code-runner is deployed separately using code-runner/lambda/deploy-to-aws.sh"
     else
         SERVICES=("$@")
         echo "Deploying services: ${SERVICES[*]} to AWS environment: $ENV"
     fi
-    
-    # Deploy code-runner if specified or if deploying all
-    if [[ " ${SERVICES[*]} " =~ " code-runner " ]]; then
-        echo "Building code-runner image..."
 
-        docker buildx build --platform linux/amd64 -f ./code-runner/Dockerfile.prod -t $ECR_REPO:$ENV code-runner/
-        
-        # Login to ECR before pushing
-        echo "Logging in to ECR..."
-        aws ecr get-login-password --region $AWS_REGION \
-          | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
-        
-        echo "Pushing code-runner image to ECR..."
-        docker push $ECR_REPO:$ENV
-    fi
-    
-    # Deploy other services using Copilot
+    # Deploy services using Copilot
     for service in "${SERVICES[@]}"; do
-        if [[ "$service" != "code-runner" ]]; then
-            echo "Deploying $service..."
-            copilot svc deploy --name $service --env $ENV
-        fi
+        echo "Deploying $service..."
+        copilot svc deploy --name $service --env $ENV
     done
     
     echo "Deployment complete!"
@@ -110,7 +94,8 @@ function help_menu() {
     echo "                                 - env: Environment name (default: test)"
     echo "                                 - services: Space-separated list of services"
     echo "                                 - If no services specified, deploys all"
-    echo "                                 - Supports: code-runner, backend, frontend, frontend-legacy"
+    echo "                                 - Supports: backend, frontend, frontend-legacy"
+    echo "                                 - Note: Lambda code-runner deployed via code-runner/lambda/deploy-to-aws.sh"
     echo "  help              Show this menu."
     echo ""
     echo "Environment Configuration:"
@@ -126,7 +111,7 @@ function help_menu() {
     echo "  ./localdev.sh deploy test           # Deploy all services to test env"
     echo "  ./localdev.sh deploy prod           # Deploy all services to prod env"
     echo "  ./localdev.sh deploy test backend   # Deploy only backend to test env"
-    echo "  ./localdev.sh deploy prod code-runner frontend  # Deploy specific services"
+    echo "  ./localdev.sh deploy prod frontend backend  # Deploy specific services"
 }
 
 # Default behavior: Start everything if no arguments are passed

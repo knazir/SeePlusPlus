@@ -9,7 +9,7 @@ const execPromise = util.promisify(exec);
 export class LocalDockerRunner implements TraceRunner {
     private readonly rootSharedDir: string = "/tmp/spp-usercode";
     private readonly userCodeFilePrefix: string = process.env.USER_CODE_FILE_PREFIX || "main";
-    private readonly userCodeImageName: string = "spp-code-runner:dev";
+    private readonly userCodeImageName: string = "spp-code-runner-local:dev";
     private readonly userCodeNetworkName: string = "spp_no-internet";
 
     constructor() {
@@ -19,50 +19,52 @@ export class LocalDockerRunner implements TraceRunner {
     }
 
     async run(code: string, uniqueId: string): Promise<RunnerResult> {
-        const files = this.createFilePaths(uniqueId);
-        
-        // Write files
-        fs.writeFileSync(files.userCode.accessible, code);
-        fs.writeFileSync(files.trace.accessible, "");
-        fs.writeFileSync(files.ccStdout.accessible, "");
-        fs.writeFileSync(files.ccStderr.accessible, "");
-        fs.writeFileSync(files.stdout.accessible, "");
-        fs.writeFileSync(files.stderr.accessible, "");
-        fs.writeFileSync(files.sppStdout.accessible, "");
+        // Create input and output directories
+        const inputDir = path.join(this.rootSharedDir, uniqueId, "input");
+        const outputDir = path.join(this.rootSharedDir, uniqueId, "output");
+
+        fs.mkdirSync(inputDir, { recursive: true });
+        fs.mkdirSync(outputDir, { recursive: true });
+
+        // Write code to input file
+        const codeFile = path.join(inputDir, "main.cpp");
+        fs.writeFileSync(codeFile, code);
+
+        // Initialize output files
+        const traceFile = path.join(outputDir, "main_vgtrace.txt");
+        const ccStdoutFile = path.join(outputDir, "main_cc_out.txt");
+        const ccStderrFile = path.join(outputDir, "main_cc_err.txt");
+        const stdoutFile = path.join(outputDir, "main_out.txt");
+        const stderrFile = path.join(outputDir, "main_err.txt");
 
         try {
-            // Run container
+            // Run container with directory mounts
             const dockerCmd = [
                 "docker run",
                 "--rm",
                 `--network ${this.userCodeNetworkName}`,
-                `-v ${files.userCode.accessible}:${files.userCode.isolated}`,
-                `-v ${files.trace.accessible}:${files.trace.isolated}`,
-                `-v ${files.ccStdout.accessible}:${files.ccStdout.isolated}`,
-                `-v ${files.ccStderr.accessible}:${files.ccStderr.isolated}`,
-                `-v ${files.stdout.accessible}:${files.stdout.isolated}`,
-                `-v ${files.stderr.accessible}:${files.stderr.isolated}`,
-                `-v ${files.sppStdout.accessible}:/spp_stdout.txt`,
+                `-v ${inputDir}:/input:ro`,      // Read-only code input
+                `-v ${outputDir}:/output:rw`,    // Read-write output
                 this.userCodeImageName
             ].join(" ");
-            
+
             await execPromise(dockerCmd);
-            
+
             // Read results
-            const ccStdout = fs.readFileSync(files.ccStdout.accessible, "utf-8");
-            const ccStderr = fs.readFileSync(files.ccStderr.accessible, "utf-8");
-            
+            const ccStdout = fs.existsSync(ccStdoutFile) ? fs.readFileSync(ccStdoutFile, "utf-8") : "";
+            const ccStderr = fs.existsSync(ccStderrFile) ? fs.readFileSync(ccStderrFile, "utf-8") : "";
+
             let stdout = "";
             let stderr = "";
             let traceContent = "";
-            
+
             const hasCompilerError = ccStderr.trim().length > 0;
             if (!hasCompilerError) {
-                traceContent = fs.readFileSync(files.trace.accessible, "utf-8");
-                stdout = fs.readFileSync(files.stdout.accessible, "utf-8");
-                stderr = fs.readFileSync(files.stderr.accessible, "utf-8");
+                traceContent = fs.existsSync(traceFile) ? fs.readFileSync(traceFile, "utf-8") : "";
+                stdout = fs.existsSync(stdoutFile) ? fs.readFileSync(stdoutFile, "utf-8") : "";
+                stderr = fs.existsSync(stderrFile) ? fs.readFileSync(stderrFile, "utf-8") : "";
             }
-            
+
             return {
                 ccStdout,
                 ccStderr,
@@ -71,33 +73,13 @@ export class LocalDockerRunner implements TraceRunner {
                 traceContent
             };
         } finally {
-            // Cleanup
-            this.cleanupFiles(files);
+            // Cleanup directories
+            try {
+                fs.rmSync(path.join(this.rootSharedDir, uniqueId), { recursive: true, force: true });
+            } catch (e) {
+                // Ignore cleanup errors
+            }
         }
     }
 
-    private createFilePaths(uniqueId: string) {
-        const makePath = (suffix: string) => ({
-            accessible: path.join(this.rootSharedDir, `${uniqueId}${suffix}`),
-            isolated: `/${this.userCodeFilePrefix}${suffix}`
-        });
-
-        return {
-            userCode: makePath(".cpp"),
-            trace: makePath("_vgtrace.txt"),
-            ccStdout: makePath("_cc_out.txt"),
-            ccStderr: makePath("_cc_err.txt"),
-            stdout: makePath("_out.txt"),
-            stderr: makePath("_err.txt"),
-            sppStdout: {
-                accessible: path.join(this.rootSharedDir, `${uniqueId}_spp_stdout.txt`),
-                isolated: "/spp_stdout.txt"
-            }
-        };
-    }
-
-    private cleanupFiles(files: any) {
-        // Optional: implement cleanup if needed
-        // Currently matching the commented-out behavior in original code
-    }
 }

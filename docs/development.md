@@ -207,7 +207,7 @@ backend/
 │   ├── runners/
 │   │   ├── runner.interface.ts # Common interface
 │   │   ├── local.ts            # Local Docker runner
-│   │   ├── fargate.ts          # AWS Fargate runner
+│   │   ├── lambda.ts           # AWS Lambda runner
 │   │   └── index.ts            # Runner factory
 │   ├── valgrind_utils.ts       # Trace processing
 │   └── parse_vg_trace.ts       # Valgrind parser
@@ -267,7 +267,7 @@ The `docker-compose.yml` defines the complete local environment:
 
 ```bash
 # Execution Configuration
-EXEC_MODE=local                    # Use local Docker runner
+EXEC_MODE=local                   # Use local Docker runner
 PORT=3000                         # Backend port
 USER_CODE_FILE_PREFIX=main        # Default filename for user code
 TRACESTORE_NAME=local-traces      # Local storage identifier
@@ -280,15 +280,11 @@ NODE_ENV=development              # Enable development features
 
 ```bash
 # AWS Configuration
-AWS_REGION=us-west-2             # AWS region
-AWS_ACCOUNT_ID=123456789012      # Your AWS account ID
-ECR_REPO=your-ecr-repo-url       # ECR repository for code runner
+AWS_REGION=us-west-2                        # AWS region
+AWS_ACCOUNT_ID=123456789012                 # Your AWS account ID
 
-# ECS Configuration (from AWS deployment)
-CLUSTER_ARN=arn:aws:ecs:...      # ECS cluster ARN
-SECURITY_GROUP=sg-xxxxx          # Security group ID
-SUBNETS=subnet-xxxx,subnet-yyyy  # Comma-separated subnet IDs
-TASK_DEF_ARN=arn:aws:ecs:...     # Task definition ARN
+# Lambda Configuration (from AWS deployment)
+LAMBDA_FUNCTION_NAME=spp-trace-executor-prod # or -test for test environment
 ```
 
 ## Development Best Practices
