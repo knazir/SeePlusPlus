@@ -13,14 +13,13 @@ services:
       - /tmp:/tmp
       - /var/run/docker.sock:/var/run/docker.sock  # For spawning containers in local mode
     environment:
-      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
       - AWS_REGION=${AWS_REGION}
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
       - EXEC_MODE=${EXEC_MODE}
       - NODE_ENV=development
       - PORT=${PORT}
       - LAMBDA_FUNCTION_NAME=${LAMBDA_FUNCTION_NAME}
-      - TRACESTORE_NAME=${TRACESTORE_NAME}
       - USER_CODE_FILE_PREFIX=${USER_CODE_FILE_PREFIX}
     depends_on:
       - code-runner-local-build
@@ -58,7 +57,7 @@ services:
   code-runner-local-build:
     build:
       context: ./code-runner
-      dockerfile: local/Dockerfile.dev
+      dockerfile: local/Dockerfile
     image: spp-code-runner-local:dev
     deploy:
       replicas: 0 # Don't spin up an instance of the code-runner image
