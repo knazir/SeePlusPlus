@@ -12,6 +12,7 @@ beforeEach(() => {
     error: null,
     stepIndex: 0,
     playing: false,
+    recognitionOn: false,
   });
   vi.useFakeTimers();
 });
