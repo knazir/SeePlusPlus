@@ -39,7 +39,16 @@ export function TopBar() {
           Save
         </TopbarBtn>
         <TopbarBtn
-          onClick={() => openModal('sign-in', 'share')}
+          onClick={async () => {
+            const url = await useAppStore.getState().share();
+            if (url && navigator.clipboard) {
+              try {
+                await navigator.clipboard.writeText(url);
+              } catch {
+                // Clipboard access denied — the toast still shows the URL.
+              }
+            }
+          }}
           data-testid="share-button"
         >
           <span aria-hidden className="text-ink-3">↗</span>
