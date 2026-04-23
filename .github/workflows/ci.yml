@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  push:
+    branches: [v2, master]
+
+jobs:
+  backend:
+    name: Backend (build + typecheck)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      - name: Build (tsc)
+        run: npm run build
+
+  # Frontend job will land at P3 when frontend/ is scaffolded.
+  # Golden-trace integration tests will land at P2 as part of the backend job.

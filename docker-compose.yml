@@ -1,72 +1,78 @@
-name: spp
+name: spp-${WORKTREE_SLUG:-main}
+
 services:
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile.dev
     image: spp-backend:dev
-    container_name: spp-backend
+    container_name: spp-${WORKTREE_SLUG:-main}-backend
     ports:
-      - "3000:3000"
+      - '${BACKEND_PORT:-3000}:3000'
     volumes:
       - ./backend:/app
       - /tmp:/tmp
-      - /var/run/docker.sock:/var/run/docker.sock  # For spawning containers in local mode
+      - /var/run/docker.sock:/var/run/docker.sock
     environment:
-      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
-      - AWS_REGION=${AWS_REGION}
-      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
-      - EXEC_MODE=${EXEC_MODE}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-}
+      - AWS_REGION=${AWS_REGION:-us-west-2}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-}
+      - EXEC_MODE=${EXEC_MODE:-local}
       - NODE_ENV=development
-      - PORT=${PORT}
-      - LAMBDA_FUNCTION_NAME=${LAMBDA_FUNCTION_NAME}
-      - USER_CODE_FILE_PREFIX=${USER_CODE_FILE_PREFIX}
+      - PORT=3000
+      - LAMBDA_FUNCTION_NAME=${LAMBDA_FUNCTION_NAME:-}
+      - USER_CODE_FILE_PREFIX=${USER_CODE_FILE_PREFIX:-main}
+      - DATABASE_URL=postgres://spp:spp@postgres:5432/${DB_NAME:-seepp_main}
     depends_on:
       - code-runner-local-build
+      - postgres
 
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile.dev
-      args:
-        SPP_API_URL: "http://localhost:3000/api"
-    image: spp-frontend:dev
-    container_name: spp-frontend
-    ports:
-      - "8080:8080"
-    volumes:
-      - ./frontend:/app
+  postgres:
+    image: postgres:16-alpine
+    container_name: spp-${WORKTREE_SLUG:-main}-postgres
     environment:
-      - NODE_ENV=development
+      POSTGRES_USER: spp
+      POSTGRES_PASSWORD: spp
+      POSTGRES_DB: ${DB_NAME:-seepp_main}
+    ports:
+      - '${DB_PORT:-5432}:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
 
-  frontend-legacy:
-    build:
-      context: ./frontend-legacy
-      dockerfile: Dockerfile.dev
-      args:
-        SPP_API_URL: "http://localhost:3000/api"
-    image: spp-frontend-legacy:dev
-    container_name: spp-frontend-legacy
-    ports:
-      - "8000:8000"
-    volumes:
-      - ./frontend-legacy:/app
-    environment:
-      - NODE_ENV=development
-  # Build code-runner image as part of compose
   code-runner-local-build:
     build:
       context: ./code-runner
       dockerfile: local/Dockerfile
     image: spp-code-runner-local:dev
     deploy:
-      replicas: 0 # Don't spin up an instance of the code-runner image
+      replicas: 0
     command: echo "code-runner-local image built"
     networks:
       - no-internet
-  
-# Isolated network for user code execution
+
+  # frontend is rebuilt from scratch at P3. Leaving this service commented
+  # until there's a real Dockerfile to build; keeping the stanza here as a
+  # reminder so future-me doesn't rewire ports.
+  #
+  # frontend:
+  #   build:
+  #     context: ./frontend
+  #     dockerfile: Dockerfile.dev
+  #     args:
+  #       SPP_API_URL: "http://localhost:${BACKEND_PORT:-3000}/api"
+  #   image: spp-frontend:dev
+  #   container_name: spp-${WORKTREE_SLUG:-main}-frontend
+  #   ports:
+  #     - "${FRONTEND_PORT:-4000}:4000"
+  #   volumes:
+  #     - ./frontend:/app
+  #   environment:
+  #     - NODE_ENV=development
+
 networks:
   no-internet:
     driver: bridge
     internal: true
+
+volumes:
+  postgres_data:

@@ -4,9 +4,10 @@
 # IDE
 .idea/
 
-# Claude Code
-.claude/
-CLAUDE.md
+# Claude Code — track shared config, ignore per-user
+.claude/settings.local.json
+.claude/.credentials.json
+.claude/commands/
 
 # Temporary Files
 tmp/
@@ -18,3 +19,17 @@ tmp/
 # AWS Copilot
 copilot/.workspace
 copilot/environments/*/secrets
+
+# Monorepo tooling artifacts
+node_modules/
+**/node_modules/
+**/dist/
+**/.turbo/
+**/coverage/
+.pnpm-store/
+*.tsbuildinfo
+
+# Playwright
+**/test-results/
+**/playwright-report/
+**/playwright/.cache/
