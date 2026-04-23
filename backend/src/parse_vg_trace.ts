@@ -318,8 +318,22 @@ function processJsonObject(
     errStr: string | null,
     stdoutStr: string
 ): ExecutionPoint {
-    if (!obj.stack || obj.stack.length < 1) {
-        console.warn(`Record has no stack frames: ${JSON.stringify(obj)}`);
+    // SPP-Valgrind's stack walker only starts emitting frames once libstdc++
+    // has run. That means the first few instructions inside main() arrive
+    // with stack: []. Rather than drop those records (the historical behavior,
+    // which leaves programs without a priming cout with trace: []), we
+    // synthesize a single main() frame from the record's top-level metadata.
+    // This is the "option 1" fix documented in backend/CLAUDE.md and is
+    // isolated to this block so it can be reverted if SPP-Valgrind is fixed
+    // upstream instead.
+    if (!Array.isArray(obj.stack) || obj.stack.length < 1) {
+        obj.stack = [{
+            func_name: obj.func_name || "main",
+            ordered_varnames: [],
+            FP: "0xsynthetic-main",
+            line: obj.line,
+            locals: {}
+        }];
     }
 
     // Reverse the stack so the "top" is at the end
