@@ -2,8 +2,10 @@
 
 **Author:** Claude Code
 **Date:** 2026-04-22
-**Status:** Draft 1 — awaiting Kashif review
+**Status:** Phasing still valid; implementation assumptions partially overridden by `docs/v2/adr/0001-no-monorepo.md` (2026-04-23).
 **Inputs:** `tmp/seepp-v2-phase-planning-handoff.md`, `tmp/design-spec/` (Claude Design handoff)
+
+> **⚠ Read this first.** The phase sequencing (P0→P9) in this doc is still the roadmap. The *implementation-level* assumptions in §3 P0, §4, §4a, and §6 #4 — specifically pnpm workspaces, Turborepo, `packages/trace-schema`, shared schema package, seeded personas — have been rejected in favor of per-directory tooling and frontend-owned schema. See `docs/v2/adr/0001-no-monorepo.md` for what changed and why.
 
 ---
 
