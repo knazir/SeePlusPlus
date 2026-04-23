@@ -73,8 +73,7 @@ environments:
       rolling: "recreate"       # Stops existing tasks before new ones are started for faster deployments.
     variables:
       LAMBDA_FUNCTION_NAME: spp-trace-executor-test
-      # Filled in once Kashif creates the Google OAuth client (see auth-runbook).
-      GOOGLE_CLIENT_ID: ""
+      GOOGLE_CLIENT_ID: "63892591155-m7k6kl38eb8lrr68ne1jgq744a07bbsm.apps.googleusercontent.com"
     secrets:
       GOOGLE_CLIENT_SECRET: /copilot/spp/test/secrets/GOOGLE_CLIENT_SECRET
       SESSION_SECRET: /copilot/spp/test/secrets/SESSION_SECRET
