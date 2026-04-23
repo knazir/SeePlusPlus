@@ -60,7 +60,8 @@ export function EditorPane() {
 
   const extensions = useMemo(() => [cpp(), sppTheme], []);
 
-  // ⌘↵ / Ctrl+↵ to run from anywhere in the editor.
+  // Global shortcut handler owns ⌘↵; kept local too so the editor can still
+  // catch it even when its own keydown handler would otherwise eat it.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {

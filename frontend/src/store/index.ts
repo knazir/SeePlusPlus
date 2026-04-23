@@ -54,6 +54,11 @@ export interface AppState {
   stepForward: () => void;
   stepBackward: () => void;
   stepTo: (n: number) => void;
+
+  // playback
+  playing: boolean;
+  setPlaying: (on: boolean) => void;
+  togglePlay: () => void;
 }
 
 function clampStep(n: number, total: number): number {
@@ -84,7 +89,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         });
         return;
       }
-      set({ trace: parsed.data, stepIndex: 0, running: false });
+      set({ trace: parsed.data, stepIndex: 0, playing: false, running: false });
     } catch (err) {
       const msg =
         err instanceof RunError
@@ -112,6 +117,18 @@ export const useAppStore = create<AppState>((set, get) => ({
     if (!trace) return;
     set({ stepIndex: clampStep(n, trace.trace.length) });
   },
+
+  playing: false,
+  setPlaying: (on) => {
+    const { trace, stepIndex } = get();
+    if (on && trace && stepIndex >= trace.trace.length - 1) {
+      // Starting from end? Rewind first so hitting play always plays.
+      set({ stepIndex: 0, playing: true });
+    } else {
+      set({ playing: on });
+    }
+  },
+  togglePlay: () => get().setPlaying(!get().playing),
 }));
 
 /** Select the ExecutionPoint at the current step, or null before any run. */

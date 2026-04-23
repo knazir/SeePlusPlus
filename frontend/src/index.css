@@ -53,6 +53,49 @@
   --ease-out-soft: cubic-bezier(0.22, 0.61, 0.36, 1);
 }
 
+/* Custom styling for the execution-bar scrubbar range input. Tailwind can't
+ * express pseudo-elements like ::-webkit-slider-thumb, so it lives here. */
+.spp-scrub {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 16px;
+  background: transparent;
+  outline: none;
+}
+.spp-scrub::-webkit-slider-runnable-track {
+  height: 2px;
+  background: var(--color-line);
+  border-radius: 1px;
+}
+.spp-scrub::-moz-range-track {
+  height: 2px;
+  background: var(--color-line);
+  border-radius: 1px;
+}
+.spp-scrub::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 12px;
+  width: 12px;
+  background: var(--color-accent);
+  border: 2px solid var(--color-bg-1);
+  border-radius: 50%;
+  margin-top: -5px;
+  cursor: pointer;
+}
+.spp-scrub::-moz-range-thumb {
+  height: 12px;
+  width: 12px;
+  background: var(--color-accent);
+  border: 2px solid var(--color-bg-1);
+  border-radius: 50%;
+  cursor: pointer;
+}
+.spp-scrub:disabled::-webkit-slider-thumb,
+.spp-scrub:disabled::-moz-range-thumb {
+  cursor: not-allowed;
+}
+
 /* Body base — mirrors the mock's reset + type scale. */
 @layer base {
   html,
