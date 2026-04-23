@@ -49,16 +49,17 @@ beforeEach(() => {
 describe('StackFrames', () => {
   it('renders the top-of-stack frame first', () => {
     render(<StackFrames />);
+    // Frame name now includes the function signature (args in parens).
     const names = screen.getAllByTestId('frame-name').map((el) => el.textContent);
-    expect(names).toEqual(['foo', 'main']);
+    expect(names).toEqual(['foo(x)', 'main(arg)']);
   });
 
-  it('marks only the active frame with data-active and shows only its locals', () => {
+  it('marks only the active frame with data-active; only the active frame is expanded by default', () => {
     render(<StackFrames />);
     const frames = screen.getAllByTestId('stack-frame');
     expect(frames[0]).toHaveAttribute('data-active');
     expect(frames[1]).not.toHaveAttribute('data-active');
-    // Only the active frame's locals are rendered.
+    // Active frame is auto-expanded; inactive is collapsed (no frame-locals).
     expect(screen.getAllByTestId('frame-locals')).toHaveLength(1);
     expect(screen.getByTestId('local-x')).toHaveTextContent('42');
     expect(screen.queryByTestId('local-arg')).toBeNull();

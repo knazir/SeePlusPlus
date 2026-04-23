@@ -6,10 +6,12 @@ interface Props {
   children: ReactNode;
   /** Optional testid on the root overlay for component tests. */
   'data-testid'?: string;
+  /** Width class. Default 'max-w-md' for sign-in-size; 'lg' for content-heavy modals. */
+  size?: 'md' | 'lg';
 }
 
 /** Simple overlay + centered card. Click-outside + Esc close. */
-export function Modal({ title, onClose, children, 'data-testid': testid }: Props) {
+export function Modal({ title, onClose, children, 'data-testid': testid, size = 'md' }: Props) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -34,7 +36,7 @@ export function Modal({ title, onClose, children, 'data-testid': testid }: Props
       aria-label={title}
     >
       <div
-        className="w-full max-w-lg overflow-hidden rounded-lg border border-line bg-bg-1 shadow-2xl"
+        className={`w-full overflow-hidden rounded-lg border border-line bg-bg-1 shadow-2xl ${size === 'lg' ? 'max-w-3xl' : 'max-w-md'}`}
         onMouseDown={(e) => e.stopPropagation()}
       >
         <header className="flex items-center justify-between border-b border-line-soft px-4 py-3">

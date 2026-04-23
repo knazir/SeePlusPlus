@@ -29,12 +29,18 @@ describe('ExecutionBar', () => {
     useAppStore.setState({ trace: null, stepIndex: 0, playing: false });
     render(<ExecutionBar />);
     expect(screen.getByTestId('exec-play')).toBeDisabled();
-    expect(screen.getByTestId('exec-scrub')).toBeDisabled();
+    // Scrubbar is a div with aria-disabled-style opacity; verify keyboard
+    // navigation is disabled via aria-valuemax being 0 or the no-op path.
+    const scrub = screen.getByTestId('exec-scrub');
+    // totalSteps=0 → aria-valuemax=0 and pointer events are off.
+    expect(scrub).toHaveAttribute('aria-valuemax', '0');
   });
 
-  it('scrubs to a specific step via the range input', () => {
+  it('scrubs via keyboard on the custom scrubbar', () => {
     render(<ExecutionBar />);
-    fireEvent.change(screen.getByTestId('exec-scrub'), { target: { value: '1' } });
+    const scrub = screen.getByTestId('exec-scrub');
+    scrub.focus();
+    fireEvent.keyDown(scrub, { key: 'ArrowRight' });
     expect(useAppStore.getState().stepIndex).toBe(1);
   });
 

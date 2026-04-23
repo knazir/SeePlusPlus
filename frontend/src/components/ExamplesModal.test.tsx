@@ -8,12 +8,15 @@ beforeEach(() => {
 });
 
 describe('ExamplesModal', () => {
-  it('renders the canned examples', () => {
+  it('renders the canned examples (post-expansion IDs)', () => {
     render(<ExamplesModal />);
     expect(screen.getByTestId('examples-list')).toBeInTheDocument();
+    expect(screen.getByTestId('example-ll-reverse')).toBeInTheDocument();
+    expect(screen.getByTestId('example-fact-rec')).toBeInTheDocument();
     expect(screen.getByTestId('example-hello')).toBeInTheDocument();
-    expect(screen.getByTestId('example-ll')).toBeInTheDocument();
-    expect(screen.getByTestId('example-fact')).toBeInTheDocument();
+    expect(screen.getByTestId('example-bst-insert')).toBeInTheDocument();
+    expect(screen.getByTestId('example-ptr-swap')).toBeInTheDocument();
+    expect(screen.getByTestId('example-arr-dyn')).toBeInTheDocument();
   });
 
   it('picking an example loads its code and closes the modal', () => {

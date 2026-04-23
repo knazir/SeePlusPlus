@@ -70,11 +70,15 @@ export interface AppState {
   toggleConsole: () => void;
 
   modal: ModalKind;
-  openModal: (m: ModalKind) => void;
+  signInReason: SignInReason;
+  openModal: (m: ModalKind, reason?: SignInReason) => void;
   closeModal: () => void;
 }
 
 export type ModalKind = 'examples' | 'sign-in' | null;
+
+/** Reason context drives sign-in modal's title/copy. */
+export type SignInReason = 'save' | 'share' | 'generic';
 
 function clampStep(n: number, total: number): number {
   if (total <= 0) return 0;
@@ -160,7 +164,9 @@ export const useAppStore = create<AppState>((set, get) => ({
   toggleConsole: () => set({ consoleOpen: !get().consoleOpen }),
 
   modal: null,
-  openModal: (modal) => set({ modal }),
+  signInReason: 'generic',
+  openModal: (modal, reason) =>
+    set({ modal, ...(reason ? { signInReason: reason } : {}) }),
   closeModal: () => set({ modal: null }),
 }));
 

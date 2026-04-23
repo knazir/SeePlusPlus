@@ -1,29 +1,23 @@
+import { useState } from 'react';
 import { displayEncoded, isCData, type StackFrame } from '../trace/schema';
 import { useCurrentStep } from '../store';
-
-// Stack-of-frames view. The active frame (isHighlighted: true, the top of the
-// stack) is expanded + accent-bordered and shows its locals; inactive frames
-// condense to just func + line so long call chains don't drown the view.
-//
-// Pin-to-keep-expanded, hover-anchor to heap edges, and stack-depth step-in/out
-// affordances are deliberately deferred — they land with the HeapGraph (backlog
-// #7) and scrubbar polish (#9) respectively.
 
 export function StackFrames() {
   const step = useCurrentStep();
 
   if (!step) {
     return (
-      <p className="font-mono text-xs text-ink-3" data-testid="stack-empty">
-        Run the program to see stack frames.
+      <p className="px-3 py-2 font-mono text-[11px] text-ink-3" data-testid="stack-empty">
+        Run to see stack frames.
       </p>
     );
   }
 
-  const frames = [...step.stackToRender].reverse(); // top of stack first
+  // Top of stack first; mock puts the active frame first in the list.
+  const frames = [...step.stackToRender].reverse();
 
   return (
-    <ol className="flex flex-col gap-2" data-testid="stack-frames">
+    <ol className="flex flex-col gap-1.5 px-3 pb-5" data-testid="stack-frames">
       {frames.map((frame) => (
         <FrameCard key={frame.uniqueHash} frame={frame} />
       ))}
@@ -32,34 +26,77 @@ export function StackFrames() {
 }
 
 function FrameCard({ frame }: { frame: StackFrame }) {
+  const [expanded, setExpanded] = useState(frame.isHighlighted);
+  const [pinned, setPinned] = useState(false);
   const active = frame.isHighlighted;
+  const isExpanded = expanded || pinned;
+
+  // Parse args from orderedVarNames for the function signature display. Names
+  // that appear in encodedLocals at this step are real incoming args; anything
+  // else is a local declared inside the body. Mock shows just the arg names
+  // inside parens e.g. `reverse(head)`.
+  const argNames = frame.orderedVarNames.filter((n) => n in frame.encodedLocals);
+
   return (
     <li
       data-testid="stack-frame"
       data-active={active || undefined}
-      className={
+      className={`overflow-hidden rounded-[3px] border transition-colors duration-med ease-out-soft ${
         active
-          ? 'rounded-md border border-accent-line bg-accent-soft px-3 py-2'
-          : 'rounded-md border border-line-soft bg-bg-1 px-3 py-1.5'
-      }
+          ? 'border-accent-line bg-bg-1 shadow-[inset_2px_0_0_var(--color-accent)]'
+          : 'border-line bg-bg-1'
+      }`}
     >
-      <div className="flex items-baseline justify-between gap-2">
-        <span className="font-mono text-sm text-ink-0" data-testid="frame-name">
-          {frame.funcName}
-        </span>
-        {typeof frame.line === 'number' && (
-          <span className="font-mono text-[11px] text-ink-3">line {frame.line}</span>
-        )}
-      </div>
-      {active && frame.orderedVarNames.length > 0 && (
-        <dl
-          className="mt-2 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1"
+      <button
+        type="button"
+        onClick={() => setExpanded((e) => !e)}
+        className="flex w-full items-center justify-between px-2.5 py-2 text-left hover:bg-bg-2"
+      >
+        <div className="flex min-w-0 items-center gap-2">
+          <span
+            aria-hidden
+            className={`inline-block w-2.5 font-mono text-[9px] text-ink-3 transition-transform duration-fast ease-out-soft ${
+              isExpanded ? 'rotate-90 text-accent' : ''
+            }`}
+          >
+            ▸
+          </span>
+          <span className="font-mono text-[12px] text-ink-0" data-testid="frame-name">
+            <span className="font-medium">{frame.funcName}</span>
+            <span className="text-ink-2">({argNames.join(', ')})</span>
+          </span>
+        </div>
+        <div className="flex items-center gap-1.5 font-mono text-[10px] text-ink-3">
+          {typeof frame.line === 'number' && (
+            <>
+              <span>ln</span>
+              <span className="text-ink-2">{frame.line}</span>
+            </>
+          )}
+          <button
+            type="button"
+            title={pinned ? 'Unpin' : 'Pin expanded'}
+            onClick={(e) => {
+              e.stopPropagation();
+              setPinned((p) => !p);
+            }}
+            className={`rounded p-0.5 hover:bg-bg-2 ${pinned ? 'text-accent' : 'text-ink-3 hover:text-accent'}`}
+            data-testid="frame-pin"
+            aria-pressed={pinned}
+          >
+            ⌯
+          </button>
+        </div>
+      </button>
+      {isExpanded && frame.orderedVarNames.length > 0 && (
+        <div
+          className="flex flex-col border-t border-line-soft px-2.5 pb-2.5 pt-1"
           data-testid="frame-locals"
         >
           {frame.orderedVarNames.map((name) => (
             <LocalRow key={name} name={name} value={frame.encodedLocals[name]} />
           ))}
-        </dl>
+        </div>
       )}
     </li>
   );
@@ -68,38 +105,43 @@ function FrameCard({ frame }: { frame: StackFrame }) {
 function LocalRow({ name, value }: { name: string; value: unknown }) {
   const ptrTarget = pointerTarget(value);
   const type = isCData(value) ? String(value[2]) : null;
+
   return (
-    <>
-      <dt className="font-mono text-[11px] text-ink-2">{name}</dt>
-      <dd
-        className="flex flex-col font-mono text-[11px] text-ink-0"
-        data-testid={`local-${name}`}
-      >
-        {ptrTarget !== undefined ? (
-          ptrTarget === null ? (
-            <span
-              data-ptr-target="null"
-              className="inline-flex w-fit items-center rounded border border-line px-1 text-ink-3 line-through decoration-ink-3/60"
-            >
-              nullptr
-            </span>
-          ) : (
-            <span data-ptr-target={ptrTarget} className="text-accent">
-              → {ptrTarget}
-            </span>
-          )
-        ) : (
-          <span>{displayEncoded(value)}</span>
-        )}
-        {type && type !== 'pointer' && type !== 'ref' && (
-          <span className="text-[10px] text-ink-3">{type}</span>
-        )}
-      </dd>
-    </>
+    <div
+      className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-1.5 border-t border-line-soft py-1 font-mono text-[11px] first:border-t-0"
+      data-testid={`local-${name}`}
+    >
+      <div className="flex min-w-0 items-baseline gap-1.5 truncate">
+        <span className="text-ink-0">{name}</span>
+        {type && <span className="text-[10px] text-ink-3">: {type}</span>}
+      </div>
+      {ptrTarget === undefined ? (
+        <span className="max-w-[110px] truncate rounded border border-line-soft bg-bg-0 px-1.5 py-[1px] text-[10.5px] text-ink-1">
+          {displayEncoded(value)}
+        </span>
+      ) : ptrTarget === null ? (
+        <span
+          data-ptr-target="null"
+          className="relative max-w-[110px] truncate rounded border border-line-soft bg-bg-0 px-1.5 py-[1px] text-[10.5px] text-ink-3"
+        >
+          nullptr
+          <span
+            aria-hidden
+            className="pointer-events-none absolute left-1 right-1 top-1/2 h-[1px] -rotate-[12deg] bg-ink-3/70"
+          />
+        </span>
+      ) : (
+        <span
+          data-ptr-target={ptrTarget}
+          className="max-w-[110px] truncate rounded border border-accent-line bg-bg-0 px-1.5 py-[1px] text-[10.5px] text-accent"
+        >
+          {ptrTarget}
+        </span>
+      )}
+    </div>
   );
 }
 
-/** Return addr string for a pointer, null for nullptr, or undefined if the value isn't a pointer. */
 function pointerTarget(v: unknown): string | null | undefined {
   if (!isCData(v)) return undefined;
   const type = v[2];
