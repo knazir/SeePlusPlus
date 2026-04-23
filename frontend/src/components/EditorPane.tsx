@@ -134,7 +134,10 @@ export function EditorPane() {
             highlightActiveLine: true,
             highlightActiveLineGutter: true,
           }}
-          theme="dark"
+          // No `theme="dark"` prop — it would apply CM's built-in dark theme
+          // ON TOP of sppTheme and hardcode gutter / scroller backgrounds for
+          // dark, defeating the light-theme override. Our sppTheme already
+          // reads everything from --color-* vars.
           height="100%"
           style={{ height: '100%' }}
         />
