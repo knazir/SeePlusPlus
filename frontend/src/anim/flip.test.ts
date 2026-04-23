@@ -83,3 +83,20 @@ describe('playEnter', () => {
     expect(opts.duration).toBe(360);
   });
 });
+
+describe('playExit', () => {
+  it('animates out with a distinct (faster, drift-up) curve from enter', async () => {
+    const { playExit, EXIT_DURATION } = await import('./flip');
+    const animate = vi.fn();
+    const el = { animate } as unknown as HTMLElement;
+    playExit(el);
+    expect(animate).toHaveBeenCalledTimes(1);
+    const [keyframes, opts] = animate.mock.calls[0]!;
+    expect(keyframes[0]).toMatchObject({ opacity: 1 });
+    expect(keyframes[1]).toMatchObject({ opacity: 0 });
+    expect(opts.duration).toBe(EXIT_DURATION);
+    // Shorter than enter — confirms they're not the same animation.
+    expect(opts.duration).toBeLessThan(360);
+    expect(opts.fill).toBe('forwards');
+  });
+});

@@ -1,11 +1,13 @@
 // CM6 chosen over Monaco for v1; revisit at multi-file (backlog #17+).
 // See docs/v2/adr/0004-editor-cm6.md.
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import CodeMirror, { EditorView } from '@uiw/react-codemirror';
 import { HighlightStyle, syntaxHighlighting } from '@codemirror/language';
 import { tags as t } from '@lezer/highlight';
 import { cpp } from '@codemirror/lang-cpp';
-import { useAppStore, useIsStale } from '../store';
+import { useAppStore, useCurrentStep, useIsStale } from '../store';
+import { setTraceLine, traceLineField } from '../editor/traceLine';
+import { gutterJump } from '../editor/gutterJump';
 
 const sppTheme = EditorView.theme(
   {
@@ -33,13 +35,21 @@ const sppTheme = EditorView.theme(
       borderRight: '1px solid var(--color-line-soft)',
       minHeight: '100%',
     },
+    // Cursor's line — subtle so it doesn't fight the trace-line highlight
+    // when both are on the same physical row.
     '.cm-activeLine': {
-      backgroundColor: 'var(--color-accent-soft)',
-      boxShadow: 'inset 0 1px 0 var(--color-accent-line), inset 0 -1px 0 var(--color-accent-line)',
+      backgroundColor: 'var(--color-bg-1)',
     },
     '.cm-activeLineGutter': {
-      backgroundColor: 'transparent',
-      color: 'var(--color-accent)',
+      backgroundColor: 'var(--color-bg-1)',
+      color: 'var(--color-ink-1)',
+    },
+    // Executing trace line — prominent accent strip + soft background.
+    // Intentionally louder than the cursor highlight; wins when both land
+    // on the same line (rendered after .cm-activeLine in the cascade).
+    '.cm-trace-line': {
+      backgroundColor: 'var(--color-accent-soft)',
+      boxShadow: 'inset 3px 0 0 var(--color-accent)',
     },
     '.cm-cursor': { borderLeftColor: 'var(--color-accent)' },
     '&.cm-focused': { outline: 'none' },
@@ -50,9 +60,6 @@ const sppTheme = EditorView.theme(
   { dark: true },
 );
 
-// Syntax palette — all hex values live as CSS tokens (see index.css @theme
-// and html[data-theme='light'] overrides), so the editor re-themes for free
-// when the user flips light/dark. No JS theme-aware logic in here.
 const sppHighlight = HighlightStyle.define([
   { tag: [t.keyword, t.modifier, t.controlKeyword], color: 'var(--color-syntax-kw)' },
   { tag: [t.typeName, t.className, t.namespace], color: 'var(--color-syntax-type)' },
@@ -70,9 +77,30 @@ export function EditorPane() {
   const code = useAppStore((s) => s.code);
   const setCode = useAppStore((s) => s.setCode);
   const run = useAppStore((s) => s.run);
+  const jumpToNextOccurrence = useAppStore((s) => s.jumpToNextOccurrence);
+  const step = useCurrentStep();
   const stale = useIsStale();
+  const viewRef = useRef<EditorView | null>(null);
 
-  const extensions = useMemo(() => [cpp(), syntaxHighlighting(sppHighlight), sppTheme], []);
+  const extensions = useMemo(
+    () => [
+      cpp(),
+      syntaxHighlighting(sppHighlight),
+      // Custom line numbers with click-to-jump-to-next-occurrence. Replaces
+      // basicSetup's lineNumbers (disabled below) to keep a single gutter.
+      gutterJump((line) => jumpToNextOccurrence(line)),
+      traceLineField,
+      sppTheme,
+    ],
+    [jumpToNextOccurrence],
+  );
+
+  // Sync the current trace step's line into the editor's StateField.
+  useEffect(() => {
+    const view = viewRef.current;
+    if (!view) return;
+    view.dispatch({ effects: setTraceLine.of(step?.line ?? null) });
+  }, [step]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -90,7 +118,6 @@ export function EditorPane() {
       className="flex min-h-0 flex-1 flex-col border-b border-line bg-bg-0 lg:border-b-0 lg:border-r"
       data-testid="editor-pane"
     >
-      {/* Tab bar */}
       <div
         className="flex h-[34px] shrink-0 items-stretch border-b border-line bg-bg-0"
         data-testid="editor-tab-bar"
@@ -127,17 +154,18 @@ export function EditorPane() {
         <CodeMirror
           value={code}
           onChange={setCode}
+          onCreateEditor={(view) => {
+            viewRef.current = view;
+          }}
           extensions={extensions}
           basicSetup={{
-            lineNumbers: true,
+            // We provide our own gutter so the click handler can wire the
+            // jump-to-next-occurrence affordance.
+            lineNumbers: false,
             foldGutter: true,
             highlightActiveLine: true,
             highlightActiveLineGutter: true,
           }}
-          // No `theme="dark"` prop — it would apply CM's built-in dark theme
-          // ON TOP of sppTheme and hardcode gutter / scroller backgrounds for
-          // dark, defeating the light-theme override. Our sppTheme already
-          // reads everything from --color-* vars.
           height="100%"
           style={{ height: '100%' }}
         />

@@ -120,6 +120,40 @@ describe('useAppStore — step navigation', () => {
     expect(useAppStore.getState().stepIndex).toBe(0);
   });
 
+  it('jumpToNextOccurrence walks forward then wraps', () => {
+    // TINY_TRACE has two steps both at line 1, so we build a bespoke trace
+    // with varied lines to exercise the search.
+    const trace = {
+      code: '',
+      trace: [
+        { ...TINY_TRACE.trace[0]!, line: 10 },
+        { ...TINY_TRACE.trace[0]!, line: 20 },
+        { ...TINY_TRACE.trace[0]!, line: 10 },
+        { ...TINY_TRACE.trace[0]!, line: 30 },
+      ],
+    };
+    useAppStore.setState({ trace, stepIndex: 0 });
+    const { jumpToNextOccurrence } = useAppStore.getState();
+
+    jumpToNextOccurrence(10); // from 0, skip self, find next 10 at idx 2
+    expect(useAppStore.getState().stepIndex).toBe(2);
+
+    jumpToNextOccurrence(10); // from 2, wrap to idx 0
+    expect(useAppStore.getState().stepIndex).toBe(0);
+
+    jumpToNextOccurrence(30); // from 0, find 30 at idx 3
+    expect(useAppStore.getState().stepIndex).toBe(3);
+
+    jumpToNextOccurrence(999); // no match — stays put
+    expect(useAppStore.getState().stepIndex).toBe(3);
+  });
+
+  it('jumpToNextOccurrence is a no-op before a trace is loaded', () => {
+    useAppStore.setState({ trace: null, stepIndex: 0 });
+    useAppStore.getState().jumpToNextOccurrence(1);
+    expect(useAppStore.getState().stepIndex).toBe(0);
+  });
+
   it('step actions are no-ops before a trace is loaded', () => {
     useAppStore.setState({ trace: null, stepIndex: 0 });
     useAppStore.getState().stepForward();

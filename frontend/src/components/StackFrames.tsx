@@ -47,10 +47,19 @@ function FrameCard({ frame }: { frame: StackFrame }) {
           : 'border-line bg-bg-1'
       }`}
     >
-      <button
-        type="button"
+      {/* Using div + role="button" so the pin button can be a sibling child
+          without triggering React's button-in-button DOM validation warning. */}
+      <div
+        role="button"
+        tabIndex={0}
         onClick={() => setExpanded((e) => !e)}
-        className="flex w-full items-center justify-between px-2.5 py-2 text-left hover:bg-bg-2"
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            setExpanded((v) => !v);
+          }
+        }}
+        className="flex w-full cursor-pointer items-center justify-between px-2.5 py-2 text-left hover:bg-bg-2 focus:outline-none focus-visible:bg-bg-2"
       >
         <div className="flex min-w-0 items-center gap-2">
           <span
@@ -87,7 +96,7 @@ function FrameCard({ frame }: { frame: StackFrame }) {
             ⌯
           </button>
         </div>
-      </button>
+      </div>
       {isExpanded && frame.orderedVarNames.length > 0 && (
         <div
           className="flex flex-col border-t border-line-soft px-2.5 pb-2.5 pt-1"

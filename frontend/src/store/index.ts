@@ -72,6 +72,8 @@ export interface AppState {
   stepForward: () => void;
   stepBackward: () => void;
   stepTo: (n: number) => void;
+  /** Jump to the next step whose trace line matches. Wraps around. */
+  jumpToNextOccurrence: (line: number) => void;
 
   // playback
   playing: boolean;
@@ -163,6 +165,22 @@ export const useAppStore = create<AppState>((set, get) => ({
     const { trace } = get();
     if (!trace) return;
     set({ stepIndex: clampStep(n, trace.trace.length) });
+  },
+
+  jumpToNextOccurrence: (line) => {
+    const { trace, stepIndex } = get();
+    if (!trace || trace.trace.length === 0) return;
+    const N = trace.trace.length;
+    // Start from the step AFTER the current one and wrap around so that
+    // repeated clicks on the same line walk through every occurrence.
+    for (let i = 1; i <= N; i++) {
+      const idx = (stepIndex + i) % N;
+      if (trace.trace[idx]!.line === line) {
+        set({ stepIndex: idx });
+        return;
+      }
+    }
+    // No occurrence of this line in the trace — silent no-op.
   },
 
   playing: false,
