@@ -27,6 +27,10 @@ services:
       - LAMBDA_FUNCTION_NAME=${LAMBDA_FUNCTION_NAME:-}
       - USER_CODE_FILE_PREFIX=${USER_CODE_FILE_PREFIX:-main}
       - DATABASE_URL=postgres://spp:spp@postgres:5432/${DB_NAME:-seepp_main}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-}
+      - SESSION_SECRET=${SESSION_SECRET:-}
+      - OAUTH_CALLBACK_BASE_URL=${OAUTH_CALLBACK_BASE_URL:-http://localhost:${FRONTEND_PORT:-4000}}
     depends_on:
       - code-runner-local-build
       - postgres

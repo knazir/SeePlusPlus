@@ -27,3 +27,20 @@ if (typeof Element !== 'undefined' && typeof Element.prototype.animate !== 'func
     } as unknown as Animation;
   };
 }
+
+// CodeMirror's layer/measurement code calls Range.getClientRects to position
+// decorations. jsdom doesn't implement it; the shim just returns empty
+// geometry, which is fine because tests only assert DOM structure, not pixel
+// positions.
+if (typeof Range !== 'undefined' && typeof Range.prototype.getClientRects !== 'function') {
+  Range.prototype.getClientRects = function () {
+    return {
+      length: 0,
+      item: () => null,
+      [Symbol.iterator]: function* () {},
+    } as unknown as DOMRectList;
+  };
+  Range.prototype.getBoundingClientRect = function () {
+    return { bottom: 0, top: 0, left: 0, right: 0, height: 0, width: 0, x: 0, y: 0, toJSON: () => ({}) } as DOMRect;
+  };
+}

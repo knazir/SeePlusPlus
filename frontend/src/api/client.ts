@@ -56,6 +56,9 @@ export async function createWorkspace(
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ code }),
+    // Send the session cookie so the backend can attribute ownership
+    // (owner_id) when the user is signed in.
+    credentials: 'include',
   });
   if (!res.ok) {
     const body = await res.text().catch(() => '');
@@ -74,4 +77,54 @@ export async function getWorkspace(
     throw new WorkspaceError(res.status, body || `GET /api/workspaces/${slug} failed (${res.status})`);
   }
   return (await res.json()) as Workspace;
+}
+
+// --- auth -----------------------------------------------------------------
+
+export interface Me {
+  id: string;
+  email: string;
+  displayName: string | null;
+  avatarUrl: string | null;
+}
+
+export interface MeResponse {
+  user: Me | null;
+  providers: string[];
+}
+
+export async function fetchMe(fetchFn: typeof fetch = fetch): Promise<MeResponse> {
+  const res = await fetchFn('/api/auth/me', { credentials: 'include' });
+  if (!res.ok) {
+    return { user: null, providers: [] };
+  }
+  return (await res.json()) as MeResponse;
+}
+
+export async function logout(fetchFn: typeof fetch = fetch): Promise<void> {
+  await fetchFn('/api/auth/logout', {
+    method: 'POST',
+    credentials: 'include',
+  });
+}
+
+export interface WorkspaceListing {
+  slug: string;
+  preview: string;
+  createdAt: string;
+}
+
+export async function listMyWorkspaces(
+  fetchFn: typeof fetch = fetch,
+): Promise<WorkspaceListing[]> {
+  const res = await fetchFn('/api/workspaces/mine', { credentials: 'include' });
+  if (!res.ok) {
+    const body = await res.text().catch(() => '');
+    throw new WorkspaceError(
+      res.status,
+      body || `GET /api/workspaces/mine failed (${res.status})`,
+    );
+  }
+  const data = (await res.json()) as { workspaces: WorkspaceListing[] };
+  return data.workspaces;
 }

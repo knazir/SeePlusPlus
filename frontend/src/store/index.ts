@@ -1,7 +1,16 @@
 // App store. Single flat shape (workspace + execution + step). Nested slices
 // would be ceremony at this size; split if it doubles.
 import { create } from 'zustand';
-import { createWorkspace, getWorkspace, runCode, RunError, WorkspaceError } from '../api/client';
+import {
+  createWorkspace,
+  fetchMe,
+  getWorkspace,
+  logout as logoutApi,
+  runCode,
+  RunError,
+  WorkspaceError,
+  type Me,
+} from '../api/client';
 import { ProgramTraceSchema, type ProgramTrace } from '../trace/schema';
 import {
   applyTheme,
@@ -114,6 +123,18 @@ export interface AppState {
   /** How edges between pointers and heap blocks are routed. Persisted. */
   pointerRouting: PointerRouting;
   setPointerRouting: (r: PointerRouting) => void;
+
+  // auth
+  /** Signed-in user, or null if anonymous / still loading. */
+  me: Me | null;
+  /** Has the initial /api/auth/me call completed? Controls skeleton UI. */
+  authChecked: boolean;
+  /** Provider names the backend has configured (e.g. ['google']). */
+  authProviders: string[];
+  /** Fetch the current session; called on app mount and after redirects. */
+  loadMe: () => Promise<void>;
+  /** POST /api/auth/logout, then clear local state. */
+  signOut: () => Promise<void>;
 }
 
 export type PointerRouting = 'curved' | 'straight' | 'orthogonal';
@@ -339,6 +360,25 @@ export const useAppStore = create<AppState>((set, get) => ({
       // Ignore — persistence is best-effort.
     }
     set({ pointerRouting: r });
+  },
+
+  me: null,
+  authChecked: false,
+  authProviders: [],
+  loadMe: async () => {
+    try {
+      const resp = await fetchMe();
+      set({ me: resp.user, authProviders: resp.providers, authChecked: true });
+    } catch {
+      set({ me: null, authChecked: true });
+    }
+  },
+  signOut: async () => {
+    try {
+      await logoutApi();
+    } finally {
+      set({ me: null });
+    }
   },
 }));
 
