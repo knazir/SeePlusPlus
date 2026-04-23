@@ -72,21 +72,26 @@ plain env variable for each environment.
 
 ## 6. Local dev setup
 
-Add to `.env.local` at the repo root (gitignored):
+If you don't already have a `.env` at the repo root:
+
+```bash
+cp .env.example .env
+```
+
+Fill in (at minimum) the auth vars:
 
 ```
 GOOGLE_CLIENT_ID=PASTE_CLIENT_ID_HERE
 GOOGLE_CLIENT_SECRET=PASTE_CLIENT_SECRET_HERE
-SESSION_SECRET=PASTE_LOCAL_SESSION_HEX_HERE
-OAUTH_CALLBACK_BASE_URL=http://localhost:4000
+SESSION_SECRET=PASTE_LOCAL_SESSION_HEX_HERE   # openssl rand -hex 32
 ```
 
-`docker-compose.yml` picks these up and forwards them to the backend
-container.
+`docker-compose.yml` reads `.env` for variable interpolation and forwards
+these values into the backend container.
 
 ### Optional: one-click local sign-in
 
-Add this to `.env.local` to enable a `DevAuthProvider` that signs you in as
+Add this to `.env` to enable a `DevAuthProvider` that signs you in as
 `dev@localhost` in one click — no Google round-trip, no network:
 
 ```
