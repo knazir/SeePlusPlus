@@ -20,11 +20,17 @@ const sppTheme = EditorView.theme(
       height: '100%',
     },
     '.cm-editor': { height: '100%' },
+    // Scroller is the internal scroll root; explicit height + overflow is
+    // what lets it actually scroll when content exceeds the pane.
+    // min-height would break that by letting content push the scroller taller
+    // than its parent.
     '.cm-scroller': {
       fontFamily: 'var(--font-mono)',
-      minHeight: '100%',
+      height: '100%',
       overflow: 'auto',
     },
+    // Content grows to its natural size but also fills when the program is
+    // short, so the editor bg extends to the bottom of the pane.
     '.cm-content': {
       padding: '12px 0',
       minHeight: '100%',
@@ -68,7 +74,7 @@ export function EditorPane() {
 
   return (
     <section
-      className="flex min-h-0 flex-1 flex-col border-r border-line-soft bg-bg-0"
+      className="flex min-h-0 flex-1 flex-col border-b border-line-soft bg-bg-0 lg:border-b-0 lg:border-r"
       data-testid="editor-pane"
     >
       <div className="flex h-8 items-center border-b border-line-soft bg-bg-1 px-3 font-mono text-[11px] uppercase tracking-wider text-ink-3">
