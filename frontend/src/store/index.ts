@@ -59,6 +59,10 @@ export interface AppState {
   playing: boolean;
   setPlaying: (on: boolean) => void;
   togglePlay: () => void;
+
+  // ui
+  recognitionOn: boolean;
+  toggleRecognition: () => void;
 }
 
 function clampStep(n: number, total: number): number {
@@ -129,6 +133,9 @@ export const useAppStore = create<AppState>((set, get) => ({
     }
   },
   togglePlay: () => get().setPlaying(!get().playing),
+
+  recognitionOn: false,
+  toggleRecognition: () => set({ recognitionOn: !get().recognitionOn }),
 }));
 
 /** Select the ExecutionPoint at the current step, or null before any run. */

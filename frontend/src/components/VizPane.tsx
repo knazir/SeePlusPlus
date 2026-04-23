@@ -1,19 +1,44 @@
-import { useRef } from 'react';
-import { useAppStore } from '../store';
+import { useMemo, useRef } from 'react';
+import { useAppStore, useCurrentStep } from '../store';
 import { StackFrames } from './StackFrames';
 import { HeapGraph } from './HeapGraph';
 import { EdgeLayer } from './EdgeLayer';
+import { recognize } from '../viz/recognize';
 
 export function VizPane() {
   const trace = useAppStore((s) => s.trace);
   const running = useAppStore((s) => s.running);
   const stepIndex = useAppStore((s) => s.stepIndex);
+  const recognitionOn = useAppStore((s) => s.recognitionOn);
+  const toggleRecognition = useAppStore((s) => s.toggleRecognition);
+  const step = useCurrentStep();
   const vizBodyRef = useRef<HTMLDivElement | null>(null);
+
+  const canRecognize = useMemo(() => (step ? recognize(step) !== null : false), [step]);
 
   return (
     <section className="flex min-h-0 flex-1 flex-col bg-bg-0" data-testid="viz-pane">
-      <header className="flex h-8 items-center border-b border-line-soft bg-bg-1 px-3 font-mono text-[11px] uppercase tracking-wider text-ink-3">
-        viz
+      <header className="flex h-8 items-center justify-between border-b border-line-soft bg-bg-1 px-3 font-mono text-[11px] uppercase tracking-wider text-ink-3">
+        <span>viz</span>
+        {trace && (
+          <button
+            type="button"
+            onClick={toggleRecognition}
+            disabled={!canRecognize && !recognitionOn}
+            data-testid="recognize-toggle"
+            data-active={recognitionOn || undefined}
+            title={
+              canRecognize
+                ? recognitionOn
+                  ? 'Show raw heap'
+                  : 'Show recognized structure'
+                : 'No recognizable structure at this step'
+            }
+            className="rounded border border-line px-2 py-0.5 normal-case tracking-normal text-ink-2 transition-colors duration-fast ease-out-soft hover:text-ink-0 disabled:cursor-not-allowed disabled:opacity-40 data-[active]:border-accent-line data-[active]:bg-accent-soft data-[active]:text-ink-0"
+          >
+            {recognitionOn ? 'recognized' : 'raw'}
+          </button>
+        )}
       </header>
       <div className="relative flex min-h-0 flex-1 flex-col" ref={vizBodyRef}>
         {running && !trace ? (

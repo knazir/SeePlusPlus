@@ -1,44 +1,48 @@
-import { useLayoutEffect, useRef } from 'react';
+import { useLayoutEffect, useMemo, useRef } from 'react';
 import { useAppStore, useCurrentStep } from '../store';
 import { HeapNode } from './HeapNode';
 import { captureRects, playEnter, playFlip } from '../anim/flip';
+import { recognize } from '../viz/recognize';
 
 export function HeapGraph() {
   const step = useCurrentStep();
   const stepIndex = useAppStore((s) => s.stepIndex);
+  const recognitionOn = useAppStore((s) => s.recognitionOn);
 
-  // Ref maps for FLIP coordination. Keyed by heap addr.
   const elsRef = useRef<Map<string, HTMLElement>>(new Map());
   const prevRectsRef = useRef<Map<string, DOMRect>>(new Map());
   const prevAddrsRef = useRef<Set<string>>(new Set());
 
+  // If recognition is on and the heap is recognizable, order nodes along
+  // the detected chain so the visual follows head → tail. Otherwise keep
+  // the backend's map order. Either way the SAME DOM keys — FLIP will
+  // interpolate the visual move for the user.
+  const recognized = step && recognitionOn ? recognize(step) : null;
+  const entries = useMemo(() => {
+    if (!step) return [] as Array<[string, unknown]>;
+    if (recognized) {
+      return recognized.chain.map(
+        (addr) => [addr, step.heap[addr]] as [string, unknown],
+      );
+    }
+    return Object.entries(step.heap);
+  }, [step, recognized]);
+
   useLayoutEffect(() => {
     if (!step) {
-      // Leaving the "has trace" state resets tracking so a subsequent run
-      // starts fresh (no spurious enter animations from a dead cache).
       prevRectsRef.current = new Map();
       prevAddrsRef.current = new Set();
       return;
     }
-
-    // Persisting addrs (present in both the previous render and now) → FLIP.
     playFlip(prevRectsRef.current, elsRef.current);
-
-    // Brand-new addrs (in now but not prev) → entrance animation.
     for (const [addr, el] of elsRef.current) {
       if (!prevAddrsRef.current.has(addr)) playEnter(el);
     }
-
-    // Store post-layout rects so the next render's effect has a "before"
-    // snapshot to compute FLIP deltas against.
     prevRectsRef.current = captureRects(elsRef.current);
     prevAddrsRef.current = new Set(elsRef.current.keys());
-    // step covers heap reference identity; stepIndex covers step-to-step
-    // transitions where the reference could theoretically be equal.
-  }, [stepIndex, step]);
+  }, [stepIndex, step, recognitionOn]);
 
   if (!step) return null;
-  const entries = Object.entries(step.heap);
   if (entries.length === 0) {
     return (
       <p className="font-mono text-xs text-ink-3" data-testid="heap-empty">
@@ -47,8 +51,12 @@ export function HeapGraph() {
     );
   }
 
+  const layoutClass = recognized
+    ? 'flex flex-row flex-wrap items-start gap-3'
+    : 'flex flex-col gap-3';
+
   return (
-    <div className="flex flex-col gap-3" data-testid="heap-graph">
+    <div className={layoutClass} data-testid="heap-graph" data-recognized={recognized?.kind}>
       {entries.map(([addr, block]) => (
         <HeapNode
           key={addr}
