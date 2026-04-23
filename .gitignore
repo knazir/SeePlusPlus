@@ -8,6 +8,8 @@
 .claude/settings.local.json
 .claude/.credentials.json
 .claude/commands/
+.claude/scheduled_tasks.lock
+.claude/scheduled_tasks.log
 
 # Temporary Files
 tmp/
