@@ -1,0 +1,25 @@
+# Development image for the v2 frontend: Vite dev server with HMR.
+#
+# Production image will be a separate multi-stage build (Vite build → nginx or
+# similar) and will land with the P20 cutover. This file intentionally targets
+# dev ergonomics: fast iterate, source mounted as a volume, node_modules kept
+# inside the container via a named volume in docker-compose.
+
+FROM node:22-alpine
+
+WORKDIR /app
+
+# Install dependencies first so this layer caches across source-only changes.
+COPY package.json package-lock.json ./
+RUN npm ci
+
+# Copy the rest. In compose this gets shadowed by the bind mount at /app,
+# except for /app/node_modules which a named volume preserves.
+COPY . .
+
+EXPOSE 4000
+
+# --host exposes the dev server on 0.0.0.0 so it's reachable from the host
+# port-forward. Polling is enabled via CHOKIDAR_USEPOLLING in compose to work
+# around unreliable FS events on docker-for-mac.
+CMD ["npm", "run", "dev", "--", "--host"]
