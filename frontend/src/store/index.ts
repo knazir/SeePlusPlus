@@ -1,7 +1,7 @@
 // App store. Single flat shape (workspace + execution + step). Nested slices
 // would be ceremony at this size; split if it doubles.
 import { create } from 'zustand';
-import { runCode, RunError } from '../api/client';
+import { createWorkspace, getWorkspace, runCode, RunError, WorkspaceError } from '../api/client';
 import { ProgramTraceSchema, type ProgramTrace } from '../trace/schema';
 import {
   applyTheme,
@@ -93,6 +93,19 @@ export interface AppState {
   signInReason: SignInReason;
   openModal: (m: ModalKind, reason?: SignInReason) => void;
   closeModal: () => void;
+
+  // sharing
+  /** Slug the current code was loaded from, if any. */
+  loadedSlug: string | null;
+  /** Most recent share URL, surfaced by the Share toast. */
+  shareUrl: string | null;
+  shareStatus: 'idle' | 'sharing' | 'shared' | 'error';
+  shareError: string | null;
+  /** POST current code, stash the returned slug, return the shareable URL. */
+  share: () => Promise<string | null>;
+  /** Fetch a workspace by slug and seed the editor. Called on app mount. */
+  loadFromSlug: (slug: string) => Promise<void>;
+  dismissShare: () => void;
 
   /** User's theme preference: what they *chose*. Resolved to dark/light by the theme hook. */
   themePreference: ThemePreference;
@@ -252,6 +265,62 @@ export const useAppStore = create<AppState>((set, get) => ({
   openModal: (modal, reason) =>
     set({ modal, ...(reason ? { signInReason: reason } : {}) }),
   closeModal: () => set({ modal: null }),
+
+  loadedSlug: null,
+  shareUrl: null,
+  shareStatus: 'idle',
+  shareError: null,
+  share: async () => {
+    if (get().shareStatus === 'sharing') return null;
+    set({ shareStatus: 'sharing', shareError: null });
+    try {
+      const { slug } = await createWorkspace(get().code);
+      const url = `${window.location.origin}/w/${slug}`;
+      set({ loadedSlug: slug, shareUrl: url, shareStatus: 'shared' });
+      // Push the permalink into the address bar so a refresh re-loads it.
+      window.history.replaceState(null, '', `/w/${slug}`);
+      return url;
+    } catch (err) {
+      const msg =
+        err instanceof WorkspaceError
+          ? err.status === 413
+            ? 'Your code is too big to share (64KB limit).'
+            : err.status === 429
+              ? 'Too many shares from this location — try again in a few minutes.'
+              : `Share failed (${err.status}).`
+          : err instanceof Error
+            ? err.message
+            : String(err);
+      set({ shareStatus: 'error', shareError: msg });
+      return null;
+    }
+  },
+  loadFromSlug: async (slug) => {
+    try {
+      const ws = await getWorkspace(slug);
+      set({
+        code: ws.code,
+        loadedSlug: slug,
+        trace: null,
+        lastRunCode: null,
+        stepIndex: 0,
+        playing: false,
+        error: null,
+      });
+    } catch (err) {
+      const msg =
+        err instanceof WorkspaceError
+          ? err.status === 404
+            ? `Workspace "${slug}" not found.`
+            : `Could not load workspace (${err.status}).`
+          : err instanceof Error
+            ? err.message
+            : String(err);
+      set({ error: msg });
+      window.history.replaceState(null, '', '/');
+    }
+  },
+  dismissShare: () => set({ shareStatus: 'idle', shareError: null }),
 
   // Seed from localStorage so the store agrees with the inline FOUC shim in
   // index.html. The shim already set data-theme; we just read and mirror.

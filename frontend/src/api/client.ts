@@ -32,3 +32,46 @@ export async function runCode(code: string, fetchFn: typeof fetch = fetch): Prom
   }
   return (await res.json()) as RunResponse;
 }
+
+export class WorkspaceError extends Error {
+  readonly status: number;
+  constructor(status: number, message: string) {
+    super(message);
+    this.name = 'WorkspaceError';
+    this.status = status;
+  }
+}
+
+export interface Workspace {
+  slug: string;
+  code: string;
+  createdAt: string;
+}
+
+export async function createWorkspace(
+  code: string,
+  fetchFn: typeof fetch = fetch,
+): Promise<{ slug: string }> {
+  const res = await fetchFn('/api/workspaces', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ code }),
+  });
+  if (!res.ok) {
+    const body = await res.text().catch(() => '');
+    throw new WorkspaceError(res.status, body || `POST /api/workspaces failed (${res.status})`);
+  }
+  return (await res.json()) as { slug: string };
+}
+
+export async function getWorkspace(
+  slug: string,
+  fetchFn: typeof fetch = fetch,
+): Promise<Workspace> {
+  const res = await fetchFn(`/api/workspaces/${encodeURIComponent(slug)}`);
+  if (!res.ok) {
+    const body = await res.text().catch(() => '');
+    throw new WorkspaceError(res.status, body || `GET /api/workspaces/${slug} failed (${res.status})`);
+  }
+  return (await res.json()) as Workspace;
+}
