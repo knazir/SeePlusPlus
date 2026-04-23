@@ -1,6 +1,6 @@
 # `.agents/` — See++ v2 agent conventions
 
-Entry point for any Claude (or human) picking up work on the v2 branch. These docs codify *how* we work; `docs/v2/plan.md` codifies *what* we're building.
+Entry point for any Claude (or human) picking up work on the v2 branch. These docs codify *how* we work; `docs/v2/README.md` codifies *what* we're building.
 
 ## Start here
 
@@ -21,10 +21,8 @@ Other docs (golden-trace runbook, visual-regression playbook, scoped personas, e
 
 ## Source of truth
 
-- Phased plan: `docs/v2/plan.md`
-- P0 kickoff: `docs/v2/p0-kickoff.md` (historical; superseded by the executed P0)
-- Spike memos (P1): `docs/v2/spikes/` (populated after P1 runs)
-- Retro notes: `docs/v2/retros/` (populated at phase close)
+- v2 README + backlog: `docs/v2/README.md`
+- Decision history: `docs/v2/adr/`
 
 ## House rules
 
