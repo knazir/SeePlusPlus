@@ -12,9 +12,17 @@ export function useGlobalShortcuts() {
   const stepBackward = useAppStore((s) => s.stepBackward);
   const togglePlay = useAppStore((s) => s.togglePlay);
   const run = useAppStore((s) => s.run);
+  const openModal = useAppStore((s) => s.openModal);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      // ⌘K opens Examples even from inside the editor — that's the point of it.
+      if ((e.metaKey || e.ctrlKey) && (e.key === 'k' || e.key === 'K')) {
+        e.preventDefault();
+        openModal('examples');
+        return;
+      }
+
       if (shouldIgnore(e.target)) return;
 
       if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
@@ -43,7 +51,7 @@ export function useGlobalShortcuts() {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [stepForward, stepBackward, togglePlay, run]);
+  }, [stepForward, stepBackward, togglePlay, run, openModal]);
 }
 
 function shouldIgnore(target: EventTarget | null): boolean {

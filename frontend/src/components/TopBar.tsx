@@ -15,6 +15,23 @@ export function TopBar() {
         <span className="font-mono text-xs text-ink-3">v2</span>
       </div>
       <div className="flex items-center gap-3">
+        <button
+          type="button"
+          onClick={() => useAppStore.getState().openModal('examples')}
+          data-testid="examples-button"
+          title="Examples (⌘K)"
+          className="rounded border border-line px-2 py-1 font-mono text-xs text-ink-1 hover:border-line-strong hover:text-ink-0"
+        >
+          Examples
+        </button>
+        <button
+          type="button"
+          onClick={() => useAppStore.getState().openModal('sign-in')}
+          data-testid="signin-button"
+          className="rounded border border-line px-2 py-1 font-mono text-xs text-ink-1 hover:border-line-strong hover:text-ink-0"
+        >
+          Sign in
+        </button>
         {stale && (
           <span
             data-testid="stale-indicator"

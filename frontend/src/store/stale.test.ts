@@ -13,6 +13,8 @@ beforeEach(() => {
     stepIndex: 0,
     playing: false,
     recognitionOn: false,
+    consoleOpen: true,
+    modal: null,
   });
 });
 
