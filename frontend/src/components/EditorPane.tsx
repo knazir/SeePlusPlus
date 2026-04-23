@@ -9,6 +9,9 @@ import { useAppStore } from '../store';
 // actually renders — and pulled from CSS vars so it tracks --color-* changes.
 const sppTheme = EditorView.theme(
   {
+    // Fill the host pane even when the program is short, so the editor
+    // surface (gutter + background) extends to the bottom instead of
+    // revealing the layout's bg below line N. `.cm-scroller` owns overflow.
     '&': {
       backgroundColor: 'var(--color-bg-0)',
       color: 'var(--color-ink-0)',
@@ -16,12 +19,22 @@ const sppTheme = EditorView.theme(
       fontSize: '13px',
       height: '100%',
     },
-    '.cm-scroller': { fontFamily: 'var(--font-mono)' },
-    '.cm-content': { padding: '12px 0' },
+    '.cm-editor': { height: '100%' },
+    '.cm-scroller': {
+      fontFamily: 'var(--font-mono)',
+      minHeight: '100%',
+      overflow: 'auto',
+    },
+    '.cm-content': {
+      padding: '12px 0',
+      minHeight: '100%',
+      backgroundColor: 'var(--color-bg-0)',
+    },
     '.cm-gutters': {
       backgroundColor: 'var(--color-bg-1)',
       color: 'var(--color-ink-3)',
       borderRight: '1px solid var(--color-line-soft)',
+      minHeight: '100%',
     },
     '.cm-activeLine': { backgroundColor: 'var(--color-bg-1)' },
     '.cm-activeLineGutter': { backgroundColor: 'var(--color-bg-2)' },
@@ -61,7 +74,7 @@ export function EditorPane() {
       <div className="flex h-8 items-center border-b border-line-soft bg-bg-1 px-3 font-mono text-[11px] uppercase tracking-wider text-ink-3">
         main.cpp
       </div>
-      <div className="min-h-0 flex-1 overflow-auto" data-testid="editor-host">
+      <div className="min-h-0 flex-1" data-testid="editor-host">
         <CodeMirror
           value={code}
           onChange={setCode}
@@ -74,6 +87,7 @@ export function EditorPane() {
           }}
           theme="dark"
           height="100%"
+          style={{ height: '100%' }}
         />
       </div>
     </section>
