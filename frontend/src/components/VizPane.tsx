@@ -1,5 +1,8 @@
+import { useRef } from 'react';
 import { useAppStore } from '../store';
 import { StackFrames } from './StackFrames';
+import { HeapGraph } from './HeapGraph';
+import { EdgeLayer } from './EdgeLayer';
 
 export function VizPane() {
   const trace = useAppStore((s) => s.trace);
@@ -7,6 +10,8 @@ export function VizPane() {
   const stepIndex = useAppStore((s) => s.stepIndex);
   const stepForward = useAppStore((s) => s.stepForward);
   const stepBackward = useAppStore((s) => s.stepBackward);
+
+  const vizBodyRef = useRef<HTMLDivElement | null>(null);
 
   const totalSteps = trace?.trace.length ?? 0;
   const atStart = stepIndex <= 0;
@@ -44,28 +49,36 @@ export function VizPane() {
           </div>
         )}
       </header>
-      <div className="min-h-0 flex-1 overflow-auto p-3">
+      <div className="relative flex min-h-0 flex-1 flex-col" ref={vizBodyRef}>
         {running && !trace ? (
-          <p className="font-mono text-xs text-ink-2" data-testid="viz-running">
+          <p className="p-3 font-mono text-xs text-ink-2" data-testid="viz-running">
             running…
           </p>
         ) : trace ? (
-          <div className="flex flex-col gap-4">
-            <StackFrames />
-            <details className="text-[11px]">
+          <>
+            <div className="flex min-h-0 flex-1 gap-4 overflow-auto p-3">
+              <div className="min-w-[14rem] flex-shrink-0">
+                <StackFrames />
+              </div>
+              <div className="flex-1">
+                <HeapGraph />
+              </div>
+            </div>
+            <details className="border-t border-line-soft px-3 py-1 text-[11px]">
               <summary className="cursor-pointer font-mono uppercase tracking-wider text-ink-3">
                 debug · raw trace
               </summary>
               <pre
-                className="mt-2 max-h-72 overflow-auto whitespace-pre-wrap break-words font-mono leading-relaxed text-ink-2"
+                className="mt-2 max-h-56 overflow-auto whitespace-pre-wrap break-words font-mono leading-relaxed text-ink-2"
                 data-testid="viz-json"
               >
                 {JSON.stringify(trace.trace[stepIndex], null, 2)}
               </pre>
             </details>
-          </div>
+            <EdgeLayer containerRef={vizBodyRef} />
+          </>
         ) : (
-          <p className="font-mono text-xs text-ink-3" data-testid="viz-empty">
+          <p className="p-3 font-mono text-xs text-ink-3" data-testid="viz-empty">
             Click <span className="text-ink-1">Run</span> to fetch a trace.
           </p>
         )}
