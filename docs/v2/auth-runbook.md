@@ -84,6 +84,34 @@ OAUTH_CALLBACK_BASE_URL=http://localhost:4000
 `docker-compose.yml` picks these up and forwards them to the backend
 container.
 
+### Optional: one-click local sign-in
+
+Add this to `.env.local` to enable a `DevAuthProvider` that signs you in as
+`dev@localhost` in one click — no Google round-trip, no network:
+
+```
+DEV_AUTH_ENABLED=true
+```
+
+The sign-in modal will show a second "Sign in as Dev User (local only)"
+button alongside Google. Clicking it runs the full session flow
+(state cookie → callback → user upsert → session cookie) — only the
+"consent" step is skipped. Ownership checks, PATCH/DELETE, `/workspaces`
+attribution all behave identically to the Google path.
+
+**Safety.** The dev provider is triple-gated server-side. All three
+conditions must hold for it to register:
+
+1. `NODE_ENV === "development"`
+2. `DEV_AUTH_ENABLED === "true"` (explicit opt-in)
+3. `AWS_EXECUTION_ENV` unset (ECS/Fargate always sets this)
+
+If any one fails the provider is invisible, `/api/auth/dev/start` returns
+404, and the sign-in modal simply doesn't render the button. Setting the
+flag in a deployed environment is a no-op — the `AWS_EXECUTION_ENV` check
+blocks it. Still, treat the flag like a secret: never commit it, never set
+it in `copilot/backend/manifest.yml`.
+
 ## Adding a second provider (e.g. GitHub)
 
 The backend's `AuthProvider` interface is provider-agnostic. To add GitHub:
