@@ -11,6 +11,7 @@ export function VizPane() {
   const stepIndex = useAppStore((s) => s.stepIndex);
   const recognitionOn = useAppStore((s) => s.recognitionOn);
   const toggleRecognition = useAppStore((s) => s.toggleRecognition);
+  const run = useAppStore((s) => s.run);
   const step = useCurrentStep();
   const stale = useIsStale();
   const vizBodyRef = useRef<HTMLDivElement | null>(null);
@@ -69,9 +70,31 @@ export function VizPane() {
         )}
       </header>
 
+      {stale && trace && (
+        <div
+          data-testid="viz-stale-banner"
+          className="flex items-center justify-between gap-3 border-b border-warn-line bg-warn-soft px-3.5 py-1.5 font-mono text-[11px] text-warn"
+        >
+          <span className="flex items-center gap-2">
+            <span aria-hidden className="inline-block h-1.5 w-1.5 rounded-full bg-warn" />
+            <span>
+              <strong className="font-semibold">Trace is stale</strong>
+              <span className="text-ink-1"> — code has been edited since the last run.</span>
+            </span>
+          </span>
+          <button
+            type="button"
+            onClick={() => void run()}
+            data-testid="viz-stale-run"
+            className="rounded-[3px] border border-warn-line bg-warn-soft px-2 py-0.5 uppercase tracking-[0.1em] text-warn transition-colors duration-fast ease-out-soft hover:brightness-110"
+          >
+            re-run
+          </button>
+        </div>
+      )}
       <div
         ref={vizBodyRef}
-        className={`relative flex min-h-0 flex-1 transition-opacity duration-fast ease-out-soft ${stale ? 'opacity-70' : ''}`}
+        className={`relative flex min-h-0 flex-1 transition-opacity duration-fast ease-out-soft ${stale ? 'opacity-60 saturate-[0.55]' : ''}`}
         data-testid="viz-body"
         data-stale={stale || undefined}
       >
