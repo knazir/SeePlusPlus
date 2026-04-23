@@ -67,15 +67,19 @@ function FrameCard({ frame }: { frame: StackFrame }) {
 
 function LocalRow({ name, value }: { name: string; value: unknown }) {
   const ptrTarget = pointerTarget(value);
+  const type = isCData(value) ? String(value[2]) : null;
   return (
     <>
       <dt className="font-mono text-[11px] text-ink-2">{name}</dt>
-      <dd className="font-mono text-[11px] text-ink-0" data-testid={`local-${name}`}>
+      <dd
+        className="flex flex-col font-mono text-[11px] text-ink-0"
+        data-testid={`local-${name}`}
+      >
         {ptrTarget !== undefined ? (
           ptrTarget === null ? (
             <span
               data-ptr-target="null"
-              className="inline-flex items-center rounded border border-line px-1 text-ink-3 line-through decoration-ink-3/60"
+              className="inline-flex w-fit items-center rounded border border-line px-1 text-ink-3 line-through decoration-ink-3/60"
             >
               nullptr
             </span>
@@ -85,7 +89,10 @@ function LocalRow({ name, value }: { name: string; value: unknown }) {
             </span>
           )
         ) : (
-          displayEncoded(value)
+          <span>{displayEncoded(value)}</span>
+        )}
+        {type && type !== 'pointer' && type !== 'ref' && (
+          <span className="text-[10px] text-ink-3">{type}</span>
         )}
       </dd>
     </>

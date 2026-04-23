@@ -20,25 +20,52 @@ export function VizPane() {
   return (
     <section className="flex min-h-0 flex-1 flex-col bg-bg-0" data-testid="viz-pane">
       <header className="flex h-8 items-center justify-between border-b border-line-soft bg-bg-1 px-3 font-mono text-[11px] uppercase tracking-wider text-ink-3">
-        <span>viz</span>
+        <div className="flex items-center gap-3">
+          <span>execution visualization</span>
+          {step && (
+            <span className="flex items-center gap-2" data-testid="viz-counts">
+              <span>
+                stack <span className="ml-0.5 text-ink-1">{step.stackToRender.length}</span>
+              </span>
+              <span className="text-ink-3">·</span>
+              <span>
+                heap <span className="ml-0.5 text-ink-1">{Object.keys(step.heap).length}</span>
+              </span>
+            </span>
+          )}
+        </div>
         {trace && (
-          <button
-            type="button"
-            onClick={toggleRecognition}
-            disabled={!canRecognize && !recognitionOn}
-            data-testid="recognize-toggle"
-            data-active={recognitionOn || undefined}
-            title={
-              canRecognize
-                ? recognitionOn
-                  ? 'Show raw heap'
-                  : 'Show recognized structure'
-                : 'No recognizable structure at this step'
-            }
-            className="rounded border border-line px-2 py-0.5 normal-case tracking-normal text-ink-2 transition-colors duration-fast ease-out-soft hover:text-ink-0 disabled:cursor-not-allowed disabled:opacity-40 data-[active]:border-accent-line data-[active]:bg-accent-soft data-[active]:text-ink-0"
+          <div
+            role="group"
+            aria-label="visualization mode"
+            className="flex overflow-hidden rounded border border-line"
+            data-testid="recognize-toggle-group"
           >
-            {recognitionOn ? 'recognized' : 'raw'}
-          </button>
+            <button
+              type="button"
+              onClick={() => recognitionOn && toggleRecognition()}
+              data-testid="recognize-raw"
+              data-active={!recognitionOn || undefined}
+              className="px-2 py-0.5 normal-case tracking-normal text-ink-3 hover:text-ink-0 data-[active]:bg-bg-2 data-[active]:text-ink-0"
+            >
+              raw
+            </button>
+            <button
+              type="button"
+              onClick={() => !recognitionOn && toggleRecognition()}
+              disabled={!canRecognize && !recognitionOn}
+              data-testid="recognize-toggle"
+              data-active={recognitionOn || undefined}
+              title={
+                canRecognize
+                  ? 'Show recognized structure'
+                  : 'No recognizable structure at this step'
+              }
+              className="border-l border-line px-2 py-0.5 normal-case tracking-normal text-ink-3 hover:text-ink-0 disabled:cursor-not-allowed disabled:opacity-40 data-[active]:bg-accent-soft data-[active]:text-ink-0"
+            >
+              recognized
+            </button>
+          </div>
         )}
       </header>
       <div
