@@ -2,8 +2,11 @@ import { TopBar } from './components/TopBar';
 import { EditorPane } from './components/EditorPane';
 import { VizPane } from './components/VizPane';
 import { ConsolePane } from './components/ConsolePane';
+import { ExecutionBar } from './components/ExecutionBar';
+import { useGlobalShortcuts } from './hooks/useGlobalShortcuts';
 
 export function App() {
+  useGlobalShortcuts();
   return (
     <div className="flex h-screen flex-col bg-bg-0 text-ink-0" data-testid="app-root">
       <TopBar />
@@ -14,6 +17,7 @@ export function App() {
           <VizPane />
         </div>
         <ConsolePane />
+        <ExecutionBar />
       </main>
     </div>
   );

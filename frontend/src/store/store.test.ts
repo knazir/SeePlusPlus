@@ -9,6 +9,7 @@ beforeEach(() => {
     trace: null,
     error: null,
     stepIndex: 0,
+    playing: false,
   });
 });
 

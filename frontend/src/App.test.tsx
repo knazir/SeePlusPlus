@@ -17,6 +17,7 @@ beforeEach(() => {
     trace: null,
     error: null,
     stepIndex: 0,
+    playing: false,
   });
   vi.stubGlobal(
     'fetch',
@@ -40,6 +41,7 @@ describe('App', () => {
     expect(screen.getByTestId('editor-pane')).toBeInTheDocument();
     expect(screen.getByTestId('viz-pane')).toBeInTheDocument();
     expect(screen.getByTestId('console-pane')).toBeInTheDocument();
+    expect(screen.getByTestId('exec-bar')).toBeInTheDocument();
   });
 
   it('Run → renders stack frames from the validated trace and steps advance', async () => {
@@ -47,10 +49,10 @@ describe('App', () => {
     fireEvent.click(screen.getByTestId('run-button'));
 
     await waitFor(() => expect(screen.queryByTestId('stack-frames')).toBeInTheDocument());
-    expect(screen.getByTestId('step-counter')).toHaveTextContent('1 / 2');
+    expect(screen.getByTestId('exec-counter')).toHaveTextContent(/01\s*\/\s*02/);
 
-    fireEvent.click(screen.getByTestId('step-forward'));
-    expect(screen.getByTestId('step-counter')).toHaveTextContent('2 / 2');
+    fireEvent.click(screen.getByTestId('exec-step-forward'));
+    expect(screen.getByTestId('exec-counter')).toHaveTextContent(/02\s*\/\s*02/);
     // Step 2 of TINY_TRACE has a local `x` = 42.
     expect(screen.getByTestId('local-x')).toHaveTextContent('42');
   });
