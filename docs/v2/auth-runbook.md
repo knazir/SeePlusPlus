@@ -59,8 +59,8 @@ openssl rand -hex 32   # local dev
 From the repo root:
 
 ```bash
-copilot secret init --name GOOGLE_CLIENT_SECRET --values test:PASTE_CLIENT_SECRET_HERE
-copilot secret init --name SESSION_SECRET       --values test:PASTE_TEST_SESSION_HEX_HERE
+copilot secret init --name GOOGLE_CLIENT_SECRET --values test=PASTE_CLIENT_SECRET_HERE
+copilot secret init --name SESSION_SECRET       --values test=PASTE_TEST_SESSION_HEX_HERE
 ```
 
 That creates SSM SecureString parameters at
