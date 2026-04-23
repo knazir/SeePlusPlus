@@ -36,7 +36,7 @@ See `code-runner/CLAUDE.md` for trace-emission flow.
 
 ## Local DB
 
-Postgres runs alongside backend via `docker-compose.yml`. Connection string is read from `DATABASE_URL`; in-container it's `postgres://spp:spp@postgres:5432/${DB_NAME}` where `DB_NAME` comes from `.env.local`.
+Postgres runs alongside backend via `docker-compose.yml`. Connection string is read from `DATABASE_URL`; in-container it's `postgres://spp:spp@postgres:5432/${DB_NAME}` where `DB_NAME` comes from `.env` (set by `scripts/worktree-ports.sh` in a worktree, or defaults to `seepp_main`).
 
 DB schema + migrations land at P6.
 

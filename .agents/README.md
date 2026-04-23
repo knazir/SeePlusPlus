@@ -27,5 +27,5 @@ Other docs (golden-trace runbook, visual-regression playbook, scoped personas, e
 ## House rules
 
 - All v2 work lands on the `v2` branch via feature branches. Cutover to `master` is P7.
-- Don't commit secrets. Worktree `.env.local` files are gitignored; confirm before adding anything env-adjacent.
+- Don't commit secrets. `.env` is gitignored; confirm before adding anything env-adjacent. Never overwrite it without checking it in first — it contains per-developer OAuth creds and session secrets.
 - When you learn a pattern worth keeping, update the relevant doc here rather than a scratch note.

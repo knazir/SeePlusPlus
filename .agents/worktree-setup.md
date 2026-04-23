@@ -23,21 +23,26 @@ From the main clone:
 git worktree add ../SeePlusPlus-<slug> -b <branch-name>
 cd ../SeePlusPlus-<slug>
 
-# Assign deterministic ports and DB name based on worktree slug
-./scripts/worktree-ports.sh <slug>   # writes .env.local
+# Copy the env template if you haven't already.
+cp .env.example .env   # edit to add Google OAuth creds + SESSION_SECRET
+
+# Assign deterministic ports and DB name based on worktree slug.
+# Safe-merge: this only updates the managed block in .env; anything
+# else you've added (auth creds, etc.) is preserved.
+./scripts/worktree-ports.sh <slug>
 
 # Bring up the stack
 ./localdev.sh up
 ```
 
-`scripts/worktree-ports.sh` hashes `<slug>` into the 3000/4000 range and writes `.env.local` with:
+`scripts/worktree-ports.sh` hashes `<slug>` into the 3000/4000 range and writes these into a managed block in `.env`:
 
 - `BACKEND_PORT`
 - `FRONTEND_PORT`
 - `DB_PORT`
 - `DB_NAME=seepp_<slug>`
 
-`.env.local` is gitignored. `docker-compose.yml` reads these vars (via `localdev.sh`'s `--env-file .env.local`), so two worktrees up at once don't collide.
+`.env` is gitignored. `docker-compose.yml` reads these vars (via `localdev.sh`'s `--env-file .env`), so two worktrees up at once don't collide.
 
 ## Tear down
 
@@ -52,10 +57,10 @@ docker volume rm seepp_<slug>_data    # name depends on compose file; check once
 ## Dos and don'ts
 
 - **Do** use a descriptive slug (`auth`, `share-links`, `spike-flip`). Short and kebab-case.
-- **Don't** edit `.env.local` by hand to pick your own ports — the script exists so two worktrees never pick the same pair.
+- **Don't** edit the managed port block in `.env` by hand — the script exists so two worktrees never pick the same pair. Editing anything outside the managed block (auth creds, etc.) is fine and preserved across re-runs.
 - **Do** run `npm install` inside `backend/` once per worktree. Frontend lands at P3 and gets its own install step.
 - **Don't** nest worktrees inside `SeePlusPlus/`. Git allows it but it confuses path-resolution in Claude's working-directory model.
 
 ## Inspecting the worktree env
 
-Run `cat .env.local` in any worktree to see its assigned ports and DB name. No session-boot hook — keep it simple.
+Run `cat .env` in any worktree to see its assigned ports, DB name, and other config. No session-boot hook — keep it simple.

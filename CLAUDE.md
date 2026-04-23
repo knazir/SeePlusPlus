@@ -16,7 +16,7 @@ Web tool for visualizing C++ execution step-by-step: stack frames, heap, pointer
   - `docs/v2/` — v2 README, backlog, and ADRs. Start at `docs/v2/README.md`.
 - `.agents/` — conventions for human + Claude collaborators (worktree setup, PR checklist, subagent patterns).
 - `.claude/` — Claude config. `settings.local.json` is user-local (gitignored).
-- `localdev.sh` — wrapper around `docker compose` that loads `.env.local` if present.
+- `localdev.sh` — wrapper around `docker compose` that loads `.env` if present.
 - `scripts/worktree-ports.sh` — deterministic port + DB-name allocator for worktree siblings.
 
 ## Trace architecture (the contract)
@@ -33,7 +33,7 @@ There is **no shared schema package**. The backend owns parsing; the frontend ow
 ./localdev.sh up
 ```
 
-Starts backend, Postgres, and the code-runner image. Frontend service wires in at P3. Loads port + DB vars from `.env.local` if present (see worktree convention); otherwise uses defaults `3000 / 4000 / 5432`. Secrets live in `.env` (copy from `.env.example`).
+Starts backend, Postgres, frontend, and the code-runner image. Loads all config from `.env` (copy from `.env.example` on first setup). If `.env` is absent, compose uses defaults `3000 / 4000 / 5432`.
 
 ## Worktree convention
 
@@ -51,11 +51,11 @@ Bootstrap:
 # From the main clone
 git worktree add ../SeePlusPlus-<slug> -b <branch-name>
 cd ../SeePlusPlus-<slug>
-./scripts/worktree-ports.sh <slug>   # writes .env.local with deterministic ports + DB name
+./scripts/worktree-ports.sh <slug>   # merges deterministic ports + DB name into .env
 ./localdev.sh up
 ```
 
-Ports: `BACKEND_PORT=3100+offset`, `FRONTEND_PORT=4100+offset`, `DB_PORT=5100+offset`, where `offset` is a hash of the slug in `[0, 899]`. Main clone (no `.env.local`) uses `3000 / 4000 / 5432`.
+Ports: `BACKEND_PORT=3100+offset`, `FRONTEND_PORT=4100+offset`, `DB_PORT=5100+offset`, where `offset` is a hash of the slug in `[0, 899]`. Main clone (no worktree block in `.env`) uses `3000 / 4000 / 5432`.
 
 See `.agents/worktree-setup.md` for the full runbook.
 
