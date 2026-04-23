@@ -1,12 +1,15 @@
-import { useAppStore } from '../store';
+import { useAppStore, useCurrentStep } from '../store';
 
 export function ConsolePane() {
-  const trace = useAppStore((s) => s.trace);
   const error = useAppStore((s) => s.error);
+  const step = useCurrentStep();
 
-  const stdout = typeof trace?.stdout === 'string' ? trace.stdout : '';
-  const stderr = typeof trace?.stderr === 'string' ? trace.stderr : '';
-  const hasContent = error || stdout || stderr;
+  // Backend emits cumulative stdout on each step (see parse_vg_trace.ts's
+  // shiftStdout pass), so showing the current step's `stdout` Just Works —
+  // no manual concatenation across steps.
+  const stdout = step?.stdout ?? '';
+  const exception = step?.exceptionMsg ?? '';
+  const hasContent = error || stdout || exception;
 
   return (
     <section
@@ -33,12 +36,12 @@ export function ConsolePane() {
             {stdout}
           </pre>
         )}
-        {stderr && (
+        {exception && (
           <pre
             className="font-mono text-[11px] leading-relaxed whitespace-pre-wrap text-warn"
-            data-testid="console-stderr"
+            data-testid="console-exception"
           >
-            {stderr}
+            {exception}
           </pre>
         )}
         {!hasContent && (

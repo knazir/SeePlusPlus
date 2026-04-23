@@ -1,8 +1,8 @@
-// App store. Two conceptual slices (workspace + execution) in one flat
-// shape — they're small enough that nested slices would add ceremony
-// without payoff. Split only if this doubles in size.
+// App store. Single flat shape (workspace + execution + step). Nested slices
+// would be ceremony at this size; split if it doubles.
 import { create } from 'zustand';
-import { runCode, RunError, type RunResponse } from '../api/client';
+import { runCode, RunError } from '../api/client';
+import { ProgramTraceSchema, type ProgramTrace } from '../trace/schema';
 
 export const DEFAULT_PROGRAM = `struct Node {
     int value;
@@ -45,9 +45,22 @@ export interface AppState {
 
   // execution
   running: boolean;
-  trace: RunResponse | null;
+  trace: ProgramTrace | null;
   error: string | null;
   run: (fetchFn?: RunFetch) => Promise<void>;
+
+  // step navigation
+  stepIndex: number;
+  stepForward: () => void;
+  stepBackward: () => void;
+  stepTo: (n: number) => void;
+}
+
+function clampStep(n: number, total: number): number {
+  if (total <= 0) return 0;
+  if (n < 0) return 0;
+  if (n >= total) return total - 1;
+  return n;
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
@@ -62,8 +75,16 @@ export const useAppStore = create<AppState>((set, get) => ({
     if (get().running) return;
     set({ running: true, error: null });
     try {
-      const trace = await runCode(get().code, fetchFn);
-      set({ trace, running: false });
+      const raw = await runCode(get().code, fetchFn);
+      const parsed = ProgramTraceSchema.safeParse(raw);
+      if (!parsed.success) {
+        set({
+          error: `Backend returned an unexpected trace shape.\n${parsed.error.message}`,
+          running: false,
+        });
+        return;
+      }
+      set({ trace: parsed.data, stepIndex: 0, running: false });
     } catch (err) {
       const msg =
         err instanceof RunError
@@ -74,4 +95,29 @@ export const useAppStore = create<AppState>((set, get) => ({
       set({ error: msg, running: false });
     }
   },
+
+  stepIndex: 0,
+  stepForward: () => {
+    const { trace, stepIndex } = get();
+    if (!trace) return;
+    set({ stepIndex: clampStep(stepIndex + 1, trace.trace.length) });
+  },
+  stepBackward: () => {
+    const { trace, stepIndex } = get();
+    if (!trace) return;
+    set({ stepIndex: clampStep(stepIndex - 1, trace.trace.length) });
+  },
+  stepTo: (n) => {
+    const { trace } = get();
+    if (!trace) return;
+    set({ stepIndex: clampStep(n, trace.trace.length) });
+  },
 }));
+
+/** Select the ExecutionPoint at the current step, or null before any run. */
+export function useCurrentStep() {
+  return useAppStore((s) => {
+    if (!s.trace) return null;
+    return s.trace.trace[s.stepIndex] ?? null;
+  });
+}
