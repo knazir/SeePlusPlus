@@ -16,14 +16,19 @@
     "@aws-sdk/client-ecs": "^3.600.0",
     "@aws-sdk/client-lambda": "^3.917.0",
     "@aws-sdk/client-s3": "^3.600.0",
+    "@aws-sdk/client-secrets-manager": "^3.1035.0",
     "@types/cors": "^2.8.19",
     "body-parser": "^1.20.3",
     "cors": "^2.8.5",
-    "express": "^4.21.2"
+    "express": "^4.21.2",
+    "express-rate-limit": "^8.4.0",
+    "nanoid": "^5.1.9",
+    "pg": "^8.20.0"
   },
   "devDependencies": {
     "@types/express": "^5.0.0",
     "@types/node": "^22.13.4",
+    "@types/pg": "^8.20.0",
     "nodemon": "^3.1.9",
     "ts-node": "^10.9.2",
     "typescript": "^5.7.3"
