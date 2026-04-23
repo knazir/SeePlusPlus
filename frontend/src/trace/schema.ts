@@ -30,7 +30,7 @@ export function isCArray(v: unknown): v is readonly ['C_ARRAY', string, ...unkno
 
 /** Compact, human-readable rendering for a local's value. Pointer→addr etc. */
 export function displayEncoded(v: unknown): string {
-  if (v === null || v === undefined) return 'uninitialized';
+  if (v === null || v === undefined) return '?';
   if (isCData(v)) {
     const type = v[2];
     const val = v[3];
@@ -38,6 +38,10 @@ export function displayEncoded(v: unknown): string {
       return val == null ? 'nullptr' : `→ ${String(val)}`;
     }
     if (val === null || val === undefined) return '?';
+    // SPP-Valgrind emits a literal '<UNINITIALIZED>' string for locals that
+    // have been declared but not yet assigned. Rendering the marker verbatim
+    // reads as noise; the legacy UI showed a '?' and it's much cleaner.
+    if (val === '<UNINITIALIZED>') return '?';
     return typeof val === 'string' ? JSON.stringify(val) : String(val);
   }
   if (isCStruct(v)) {

@@ -88,7 +88,8 @@ describe('encoded-value helpers', () => {
     expect(displayEncoded(['C_DATA', '0x1', 'int', 42])).toBe('42');
     expect(displayEncoded(['C_DATA', '0x1', 'pointer', '0xabc'])).toBe('→ 0xabc');
     expect(displayEncoded(['C_DATA', '0x1', 'pointer', null])).toBe('nullptr');
-    expect(displayEncoded(null)).toBe('uninitialized');
+    expect(displayEncoded(null)).toBe('?');
+    expect(displayEncoded(['C_DATA', '0x1', 'int', '<UNINITIALIZED>'])).toBe('?');
     expect(
       displayEncoded([
         'C_STRUCT',

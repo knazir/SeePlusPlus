@@ -11,11 +11,9 @@ import {
   type ThemePreference,
 } from '../theme/theme';
 
-// IMPORTANT: every traceable program MUST include <iostream> + a stdlib call
-// (typically `cout << … << endl;`) as the first statement of main(). Without
-// it, SPP-Valgrind's stack walker doesn't initialize on entry to main and
-// every subsequent record comes back with an empty stack, which the backend
-// filters out → empty trace. See backend/CLAUDE.md for the full quirk note.
+// SPP-Valgrind's stack walker primes late — the backend now synthesizes a
+// main() frame when a record arrives with stack: [], so priming cout calls
+// aren't required anymore. See backend/CLAUDE.md for the quirk.
 export const DEFAULT_PROGRAM = `#include <iostream>
 using namespace std;
 
@@ -74,6 +72,10 @@ export interface AppState {
   stepTo: (n: number) => void;
   /** Jump to the next step whose trace line matches. Wraps around. */
   jumpToNextOccurrence: (line: number) => void;
+  /** Advance to the next step whose stack is deeper than the current step (function entry). */
+  stepInto: () => void;
+  /** Advance to the next step whose stack is shallower than the current step (function return). */
+  stepOut: () => void;
 
   // playback
   playing: boolean;
@@ -95,6 +97,23 @@ export interface AppState {
   /** User's theme preference: what they *chose*. Resolved to dark/light by the theme hook. */
   themePreference: ThemePreference;
   setThemePreference: (p: ThemePreference) => void;
+
+  /** How edges between pointers and heap blocks are routed. Persisted. */
+  pointerRouting: PointerRouting;
+  setPointerRouting: (r: PointerRouting) => void;
+}
+
+export type PointerRouting = 'curved' | 'straight' | 'orthogonal';
+const ROUTING_KEY = 'spp.pointerRouting';
+
+function readRouting(): PointerRouting {
+  try {
+    const raw = localStorage.getItem(ROUTING_KEY);
+    if (raw === 'straight' || raw === 'orthogonal' || raw === 'curved') return raw;
+  } catch {
+    // SSR / private-mode / disabled storage — fall through.
+  }
+  return 'curved';
 }
 
 export type ModalKind = 'examples' | 'sign-in' | null;
@@ -183,6 +202,33 @@ export const useAppStore = create<AppState>((set, get) => ({
     // No occurrence of this line in the trace — silent no-op.
   },
 
+  stepInto: () => {
+    const { trace, stepIndex } = get();
+    if (!trace) return;
+    const steps = trace.trace;
+    const here = steps[stepIndex]?.stackToRender.length ?? 0;
+    for (let i = stepIndex + 1; i < steps.length; i++) {
+      if ((steps[i]!.stackToRender.length ?? 0) > here) {
+        set({ stepIndex: i });
+        return;
+      }
+    }
+    // No deeper call ahead — no-op (caller typically disables the button).
+  },
+
+  stepOut: () => {
+    const { trace, stepIndex } = get();
+    if (!trace) return;
+    const steps = trace.trace;
+    const here = steps[stepIndex]?.stackToRender.length ?? 0;
+    for (let i = stepIndex + 1; i < steps.length; i++) {
+      if ((steps[i]!.stackToRender.length ?? 0) < here) {
+        set({ stepIndex: i });
+        return;
+      }
+    }
+  },
+
   playing: false,
   setPlaying: (on) => {
     const { trace, stepIndex } = get();
@@ -214,6 +260,16 @@ export const useAppStore = create<AppState>((set, get) => ({
     persistPreference(pref);
     applyTheme(resolvePreference(pref));
     set({ themePreference: pref });
+  },
+
+  pointerRouting: readRouting(),
+  setPointerRouting: (r) => {
+    try {
+      localStorage.setItem(ROUTING_KEY, r);
+    } catch {
+      // Ignore — persistence is best-effort.
+    }
+    set({ pointerRouting: r });
   },
 }));
 
