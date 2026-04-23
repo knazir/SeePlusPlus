@@ -31,6 +31,8 @@ services:
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-}
       - SESSION_SECRET=${SESSION_SECRET:-}
       - OAUTH_CALLBACK_BASE_URL=${OAUTH_CALLBACK_BASE_URL:-http://localhost:${FRONTEND_PORT:-4000}}
+      # Local-only dev sign-in; triple-gated server-side. See auth-runbook.
+      - DEV_AUTH_ENABLED=${DEV_AUTH_ENABLED:-}
     depends_on:
       - code-runner-local-build
       - postgres

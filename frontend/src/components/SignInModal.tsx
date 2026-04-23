@@ -11,6 +11,7 @@ import { useAppStore } from '../store';
 const PROVIDER_LABEL: Record<string, string> = {
   google: 'Continue with Google',
   github: 'Continue with GitHub',
+  dev: 'Sign in as Dev User (local only)',
 };
 
 export function SignInModal() {
