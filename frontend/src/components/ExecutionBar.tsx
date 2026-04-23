@@ -12,12 +12,30 @@ export function ExecutionBar() {
   const stepForward = useAppStore((s) => s.stepForward);
   const stepBackward = useAppStore((s) => s.stepBackward);
   const stepTo = useAppStore((s) => s.stepTo);
+  const stepInto = useAppStore((s) => s.stepInto);
+  const stepOut = useAppStore((s) => s.stepOut);
   const step = useCurrentStep();
 
   const totalSteps = trace?.trace.length ?? 0;
   const disabled = !trace || totalSteps === 0;
   const atStart = disabled || stepIndex <= 0;
   const atEnd = disabled || stepIndex >= totalSteps - 1;
+
+  // Can we step-into / step-out from here? Scan forward for a depth delta.
+  // Cheap: stacks are short (a handful of frames) and traces rarely exceed
+  // a few hundred steps. Computed inline so the buttons disable correctly
+  // at the end of the trace.
+  let canStepInto = false;
+  let canStepOut = false;
+  if (trace && !atEnd) {
+    const hereDepth = trace.trace[stepIndex]?.stackToRender.length ?? 0;
+    for (let i = stepIndex + 1; i < trace.trace.length; i++) {
+      const d = trace.trace[i]!.stackToRender.length;
+      if (!canStepInto && d > hereDepth) canStepInto = true;
+      if (!canStepOut && d < hereDepth) canStepOut = true;
+      if (canStepInto && canStepOut) break;
+    }
+  }
 
   // Play loop.
   useEffect(() => {
@@ -43,12 +61,12 @@ export function ExecutionBar() {
           {playing ? '⏸' : '▶'}
         </XbButton>
         <XbButton label="Step forward" onClick={stepForward} disabled={atEnd} data-testid="exec-step-forward">▷</XbButton>
+        <XbButton label="Jump to end" onClick={() => stepTo(totalSteps - 1)} disabled={atEnd} data-testid="exec-jump-end">⇥</XbButton>
       </ButtonGroup>
 
-      {/* Step in/out — UI only at v1; schema support lands later */}
       <ButtonGroup>
-        <XbButton label="Step into" disabled title="Step-into arrives with schema metadata" data-testid="exec-step-in">↴</XbButton>
-        <XbButton label="Step out" disabled title="Step-out arrives with schema metadata" data-testid="exec-step-out">↱</XbButton>
+        <XbButton label="Step into" onClick={stepInto} disabled={!canStepInto} data-testid="exec-step-in">↴</XbButton>
+        <XbButton label="Step out" onClick={stepOut} disabled={!canStepOut} data-testid="exec-step-out">↱</XbButton>
       </ButtonGroup>
 
       <span className="font-mono text-[10px] uppercase tracking-[0.1em] text-ink-3">timeline</span>

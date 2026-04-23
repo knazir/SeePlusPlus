@@ -160,4 +160,45 @@ describe('useAppStore — step navigation', () => {
     useAppStore.getState().stepTo(42);
     expect(useAppStore.getState().stepIndex).toBe(0);
   });
+
+  it('stepInto advances to the next step with a deeper stack', () => {
+    const base = TINY_TRACE.trace[0]!;
+    const deeperFrame = { ...base.stackToRender[0]!, funcName: 'inner' };
+    const trace = {
+      code: '',
+      trace: [
+        { ...base, stackToRender: [base.stackToRender[0]!] }, // depth 1
+        { ...base, stackToRender: [base.stackToRender[0]!] }, // depth 1 (skipped)
+        { ...base, stackToRender: [base.stackToRender[0]!, deeperFrame] }, // depth 2
+        { ...base, stackToRender: [base.stackToRender[0]!] }, // depth 1
+      ],
+    };
+    useAppStore.setState({ trace, stepIndex: 0 });
+    useAppStore.getState().stepInto();
+    expect(useAppStore.getState().stepIndex).toBe(2);
+  });
+
+  it('stepOut advances to the next step with a shallower stack', () => {
+    const base = TINY_TRACE.trace[0]!;
+    const deeperFrame = { ...base.stackToRender[0]!, funcName: 'inner' };
+    const trace = {
+      code: '',
+      trace: [
+        { ...base, stackToRender: [base.stackToRender[0]!, deeperFrame] }, // depth 2
+        { ...base, stackToRender: [base.stackToRender[0]!, deeperFrame] }, // depth 2 (skipped)
+        { ...base, stackToRender: [base.stackToRender[0]!] }, // depth 1 (target)
+      ],
+    };
+    useAppStore.setState({ trace, stepIndex: 0 });
+    useAppStore.getState().stepOut();
+    expect(useAppStore.getState().stepIndex).toBe(2);
+  });
+
+  it('stepInto / stepOut are no-ops when no matching depth exists', () => {
+    useAppStore.setState({ trace: TINY_TRACE, stepIndex: 0 });
+    useAppStore.getState().stepInto();
+    expect(useAppStore.getState().stepIndex).toBe(0);
+    useAppStore.getState().stepOut();
+    expect(useAppStore.getState().stepIndex).toBe(0);
+  });
 });
