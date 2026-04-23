@@ -1,5 +1,6 @@
 import { useLayoutEffect, useRef, useState, type RefObject } from 'react';
 import { useAppStore } from '../store';
+import { FLIP_DURATION, FLIP_FOLLOW_MARGIN } from '../anim/flip';
 
 interface Edge {
   key: string;
@@ -16,17 +17,19 @@ interface Props {
 
 /**
  * Absolute SVG overlay that draws a curved arrow from every [data-ptr-target]
- * span to its matching [data-heap-addr] container. Pointer targets equal to
- * the sentinel "null" are skipped — the source renders a slashed chip and we
- * want no arrow.
+ * span to its matching [data-heap-addr] container. Targets equal to the
+ * sentinel "null" are skipped.
  *
- * Edge geometry is DOM-dependent, so this is a layout-effect side-channel,
- * not a render-time computation. Recomputes on: step change (store-observed),
- * container resize, and a MutationObserver for attribute/child changes.
+ * Geometry is DOM-dependent, so this is a layout-effect side-channel, not a
+ * render-time computation. Triggers: ResizeObserver (container), MutationObserver
+ * (descendant changes), step/trace change (via deps). For the FLIP window
+ * after a step change we run a short rAF loop so edges follow the animating
+ * nodes frame-by-frame — getBoundingClientRect reflects the animating
+ * transform, so this Just Works.
  */
 export function EdgeLayer({ containerRef }: Props) {
   const [edges, setEdges] = useState<Edge[]>([]);
-  const frameRef = useRef<number | null>(null);
+  const rafRef = useRef<number | null>(null);
   const stepIndex = useAppStore((s) => s.stepIndex);
   const trace = useAppStore((s) => s.trace);
 
@@ -34,29 +37,43 @@ export function EdgeLayer({ containerRef }: Props) {
     const container = containerRef.current;
     if (!container) return;
 
+    // Single-frame recompute — used by the ResizeObserver / MutationObserver
+    // subscriptions. Coalesces multiple signals into one rAF.
     const schedule = () => {
-      if (frameRef.current != null) cancelAnimationFrame(frameRef.current);
-      frameRef.current = requestAnimationFrame(() => {
-        frameRef.current = null;
+      if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
+      rafRef.current = requestAnimationFrame(() => {
+        rafRef.current = null;
         setEdges(computeEdges(container));
       });
     };
 
-    schedule();
+    // Continuous follow during the FLIP window. Runs for FLIP_DURATION +
+    // a small buffer so edges catch the tail end of the eased animation.
+    let following = true;
+    const followStart = performance.now();
+    const follow = () => {
+      if (!following) return;
+      setEdges(computeEdges(container));
+      if (performance.now() - followStart < FLIP_DURATION + FLIP_FOLLOW_MARGIN) {
+        rafRef.current = requestAnimationFrame(follow);
+      }
+    };
+    follow();
 
     const ro = new ResizeObserver(schedule);
     ro.observe(container);
-
     const mo = new MutationObserver(schedule);
     mo.observe(container, { childList: true, subtree: true, attributes: true });
 
     return () => {
+      following = false;
       ro.disconnect();
       mo.disconnect();
-      if (frameRef.current != null) cancelAnimationFrame(frameRef.current);
+      if (rafRef.current != null) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
     };
-    // stepIndex + trace force a recompute when the viz content changes shape
-    // even if the container itself doesn't resize.
   }, [containerRef, stepIndex, trace]);
 
   return (
@@ -105,9 +122,6 @@ function computeEdges(container: HTMLElement): Edge[] {
     if (!targetEl) continue;
     const s = p.getBoundingClientRect();
     const t = targetEl.getBoundingClientRect();
-    // Anchor source at its right-middle; anchor target at its left-middle.
-    // Works cleanly for a left-stack / right-heap layout and is still
-    // acceptable for heap-to-heap where both are in the right column.
     out.push({
       key: `${i}:${target}`,
       x1: s.right - cRect.left,
@@ -127,7 +141,6 @@ function edgePath(e: Edge): string {
 }
 
 function cssEscape(s: string): string {
-  // CSS.escape isn't in jsdom pre-Node-22; guard.
   if (typeof CSS !== 'undefined' && typeof CSS.escape === 'function') return CSS.escape(s);
   return s.replace(/([\\"'\][#.:>+~*^$|()=@?!{},/])/g, '\\$1');
 }

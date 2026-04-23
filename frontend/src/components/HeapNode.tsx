@@ -8,12 +8,15 @@ import { displayEncoded, isCArray, isCData, isCStruct } from '../trace/schema';
 interface Props {
   addr: string;
   block: unknown;
+  /** HeapGraph passes this so it can snapshot rects for FLIP. */
+  registerEl?: (el: HTMLElement | null) => void;
 }
 
-export function HeapNode({ addr, block }: Props) {
+export function HeapNode({ addr, block, registerEl }: Props) {
   if (!isCArray(block)) {
     return (
       <article
+        ref={registerEl}
         data-heap-addr={addr}
         className="rounded-md border border-line bg-bg-1 px-3 py-2 font-mono text-[11px] text-ink-1"
       >
@@ -27,6 +30,7 @@ export function HeapNode({ addr, block }: Props) {
 
   return (
     <article
+      ref={registerEl}
       data-heap-addr={addr}
       data-testid="heap-node"
       className="flex min-w-[8rem] flex-col rounded-md border border-line bg-bg-1 font-mono text-[11px]"
@@ -93,8 +97,5 @@ function EncodedInline({ value }: { value: unknown }) {
     }
     return <span className="text-ink-0">{displayEncoded(value)}</span>;
   }
-  // Structs / arrays rendered compactly via displayEncoded fallback; we don't
-  // expect nested heap blocks inside a single cell commonly enough to build
-  // richer nested rendering yet.
   return <span className="text-ink-0">{displayEncoded(value)}</span>;
 }
