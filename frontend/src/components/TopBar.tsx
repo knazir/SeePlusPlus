@@ -10,9 +10,10 @@ export function TopBar() {
       className="flex h-12 items-center justify-between border-b border-line-soft bg-bg-1 px-4"
       data-testid="topbar"
     >
-      <div className="flex items-center gap-2 font-semibold tracking-tight text-ink-0">
-        See++
-        <span className="font-mono text-xs text-ink-3">v2</span>
+      <div className="flex items-center gap-2 text-ink-0">
+        <span aria-hidden className="inline-block h-2 w-2 rounded-sm bg-accent" />
+        <span className="font-mono text-sm tracking-tight">see++</span>
+        <span className="font-mono text-[11px] uppercase tracking-wider text-ink-3">v2</span>
       </div>
       <div className="flex items-center gap-3">
         <button
