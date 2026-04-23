@@ -33,23 +33,14 @@ export function TopBar() {
           Examples
         </TopbarBtn>
         <TopbarBtn
-          onClick={() => openModal('sign-in', 'save')}
+          onClick={() => useAppStore.getState().requestSave()}
           data-testid="save-button"
         >
           <span aria-hidden className="text-ink-3">⬇</span>
           Save
         </TopbarBtn>
         <TopbarBtn
-          onClick={async () => {
-            const url = await useAppStore.getState().share();
-            if (url && navigator.clipboard) {
-              try {
-                await navigator.clipboard.writeText(url);
-              } catch {
-                // Clipboard access denied — the toast still shows the URL.
-              }
-            }
-          }}
+          onClick={() => useAppStore.getState().requestShare()}
           data-testid="share-button"
         >
           <span aria-hidden className="text-ink-3">↗</span>
@@ -230,7 +221,12 @@ function AccountMenu() {
 
 function Brand() {
   return (
-    <div className="flex min-w-[220px] items-center gap-2.5 border-r border-line px-4">
+    <a
+      href="/"
+      aria-label="See++ — home"
+      data-testid="brand-link"
+      className="flex min-w-[220px] items-center gap-2.5 border-r border-line px-4 transition-opacity duration-fast ease-out-soft hover:opacity-80"
+    >
       <BrandMark />
       <div className="flex items-baseline gap-1.5">
         <span className="font-mono text-[13px] font-medium tracking-[0.01em] text-ink-0">
@@ -239,7 +235,7 @@ function Brand() {
         </span>
         <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-ink-3">v2</span>
       </div>
-    </div>
+    </a>
   );
 }
 

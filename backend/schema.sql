@@ -52,3 +52,8 @@ CREATE INDEX IF NOT EXISTS sessions_expire_idx ON sessions (expire);
 ALTER TABLE workspaces ADD COLUMN IF NOT EXISTS owner_id UUID REFERENCES users(id) ON DELETE SET NULL;
 
 CREATE INDEX IF NOT EXISTS workspaces_owner_id_idx ON workspaces (owner_id);
+
+-- Optional display name. When null the UI falls back to the slug. Not
+-- unique — two scratch workspaces called "Untitled" is fine; users don't
+-- think in namespaces.
+ALTER TABLE workspaces ADD COLUMN IF NOT EXISTS name TEXT;

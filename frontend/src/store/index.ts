@@ -3,11 +3,14 @@
 import { create } from 'zustand';
 import {
   createWorkspace,
+  deleteWorkspace as deleteWorkspaceApi,
   fetchMe,
   getWorkspace,
   logout as logoutApi,
+  renameWorkspace as renameWorkspaceApi,
   runCode,
   RunError,
+  updateWorkspace,
   WorkspaceError,
   type Me,
 } from '../api/client';
@@ -100,21 +103,36 @@ export interface AppState {
 
   modal: ModalKind;
   signInReason: SignInReason;
+  /** Pending action the save/share modals hand off to after the user picks
+   *  a name (or skips). `null` when no modal is awaiting a name. */
+  pendingWriteIntent: WriteIntent | null;
   openModal: (m: ModalKind, reason?: SignInReason) => void;
   closeModal: () => void;
 
-  // sharing
-  /** Slug the current code was loaded from, if any. */
-  loadedSlug: string | null;
-  /** Most recent share URL, surfaced by the Share toast. */
+  // sharing & saving
+  /** Slug + name + owner_me of the workspace currently loaded in the editor,
+   *  or null if we're on a fresh page that hasn't been saved yet. */
+  loaded: LoadedWorkspace | null;
+  /** Non-null while a share modal is open with a URL to copy. */
   shareUrl: string | null;
-  shareStatus: 'idle' | 'sharing' | 'shared' | 'error';
-  shareError: string | null;
-  /** POST current code, stash the returned slug, return the shareable URL. */
-  share: () => Promise<string | null>;
+  /** Status of the most recent write (save/share/fork). Powers toasts. */
+  writeStatus: 'idle' | 'writing' | 'saved' | 'nochange' | 'error';
+  writeError: string | null;
+  /** Decide what Save should do in the current state and dispatch it.
+   *  See `WriteIntent` for the resolved actions. */
+  requestSave: () => void;
+  /** Decide what Share should do — always ends in a share-link modal. */
+  requestShare: () => void;
+  /** Called by the name-prompt modal once the user picks a name / skips. */
+  completePendingWrite: (name: string | null) => Promise<void>;
   /** Fetch a workspace by slug and seed the editor. Called on app mount. */
   loadFromSlug: (slug: string) => Promise<void>;
-  dismissShare: () => void;
+  /** Close the share modal + clear the last write status. */
+  dismissWriteFeedback: () => void;
+  /** PATCH a workspace's name (from the /workspaces list). */
+  renameWorkspace: (slug: string, name: string | null) => Promise<void>;
+  /** DELETE a workspace. */
+  deleteWorkspace: (slug: string) => Promise<void>;
 
   /** User's theme preference: what they *chose*. Resolved to dark/light by the theme hook. */
   themePreference: ThemePreference;
@@ -150,16 +168,104 @@ function readRouting(): PointerRouting {
   return 'curved';
 }
 
-export type ModalKind = 'examples' | 'sign-in' | null;
+export type ModalKind =
+  | 'examples'
+  | 'sign-in'
+  | 'name-prompt'
+  | 'share-link'
+  | null;
 
 /** Reason context drives sign-in modal's title/copy. */
 export type SignInReason = 'save' | 'share' | 'generic';
+
+/** What the name-prompt modal is meant to do once the user submits a name. */
+export type WriteIntent =
+  | { kind: 'save-new' }   // create a new owned workspace from current code
+  | { kind: 'fork' }       // create new from current /w/:slug (not yours)
+  | { kind: 'share' };     // anonymous or owned — POST + show share modal
+
+export interface LoadedWorkspace {
+  slug: string;
+  name: string | null;
+  ownerMe: boolean;
+  /** Code as loaded — used to tell "edited vs unchanged" so Save can be a
+   *  no-op with a toast when there's nothing to write. */
+  loadedCode: string;
+}
 
 function clampStep(n: number, total: number): number {
   if (total <= 0) return 0;
   if (n < 0) return 0;
   if (n >= total) return total - 1;
   return n;
+}
+
+function writeErrorMessage(err: unknown): string {
+  if (err instanceof WorkspaceError) {
+    if (err.status === 413) return 'Your code is too big (64KB limit).';
+    if (err.status === 429) return 'Too many saves — try again in a few minutes.';
+    if (err.status === 401) return 'Please sign in to save.';
+    if (err.status === 403) return 'You do not own this workspace.';
+    if (err.status === 404) return 'Workspace not found.';
+    return `Save failed (${err.status}).`;
+  }
+  return err instanceof Error ? err.message : String(err);
+}
+
+/** PUT the current code to the loaded workspace (owner-edited path). Kept
+ *  out of the store declaration to keep the `set`-using bodies terse. */
+async function updateOwnedWorkspace(): Promise<void> {
+  const { loaded, code } = useAppStore.getState();
+  if (!loaded) return;
+  useAppStore.setState({ writeStatus: 'writing', writeError: null });
+  try {
+    await updateWorkspace(loaded.slug, code);
+    useAppStore.setState({
+      loaded: { ...loaded, loadedCode: code },
+      writeStatus: 'saved',
+      writeError: null,
+    });
+  } catch (err) {
+    useAppStore.setState({
+      writeStatus: 'error',
+      writeError: writeErrorMessage(err),
+    });
+  }
+}
+
+/** One-shot flow for the Share button: create (or reuse loaded) + open the
+ *  share modal with a copyable URL. */
+async function createAndOpenShareModal(): Promise<void> {
+  const { loaded, code } = useAppStore.getState();
+  // Already loaded from a slug → reuse it rather than creating a duplicate.
+  if (loaded && loaded.loadedCode === code) {
+    useAppStore.setState({
+      shareUrl: `${window.location.origin}/w/${loaded.slug}`,
+      modal: 'share-link',
+    });
+    return;
+  }
+  useAppStore.setState({ writeStatus: 'writing', writeError: null });
+  try {
+    const { slug } = await createWorkspace(code, loaded?.name ?? null);
+    window.history.replaceState(null, '', `/w/${slug}`);
+    useAppStore.setState({
+      loaded: {
+        slug,
+        name: loaded?.name ?? null,
+        ownerMe: Boolean(useAppStore.getState().me),
+        loadedCode: code,
+      },
+      shareUrl: `${window.location.origin}/w/${slug}`,
+      modal: 'share-link',
+      writeStatus: 'idle',
+    });
+  } catch (err) {
+    useAppStore.setState({
+      writeStatus: 'error',
+      writeError: writeErrorMessage(err),
+    });
+  }
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
@@ -283,45 +389,96 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   modal: null,
   signInReason: 'generic',
+  pendingWriteIntent: null,
   openModal: (modal, reason) =>
     set({ modal, ...(reason ? { signInReason: reason } : {}) }),
-  closeModal: () => set({ modal: null }),
+  closeModal: () => set({ modal: null, pendingWriteIntent: null }),
 
-  loadedSlug: null,
+  loaded: null,
   shareUrl: null,
-  shareStatus: 'idle',
-  shareError: null,
-  share: async () => {
-    if (get().shareStatus === 'sharing') return null;
-    set({ shareStatus: 'sharing', shareError: null });
+  writeStatus: 'idle',
+  writeError: null,
+
+  requestSave: () => {
+    const { me, loaded, code, writeStatus } = get();
+    if (writeStatus === 'writing') return;
+
+    // Signed out → sign-in prompt.
+    if (!me) {
+      set({ modal: 'sign-in', signInReason: 'save' });
+      return;
+    }
+
+    // Fresh page (no workspace loaded) → create a new one, prompt for name.
+    if (!loaded) {
+      set({ modal: 'name-prompt', pendingWriteIntent: { kind: 'save-new' } });
+      return;
+    }
+
+    // Loaded an owned workspace.
+    if (loaded.ownerMe) {
+      if (code === loaded.loadedCode) {
+        // No edits — short-circuit with a toast.
+        set({ writeStatus: 'nochange', writeError: null });
+        return;
+      }
+      // Update in place.
+      void updateOwnedWorkspace();
+      return;
+    }
+
+    // Loaded someone else's (or an anonymous) workspace → fork.
+    set({ modal: 'name-prompt', pendingWriteIntent: { kind: 'fork' } });
+  },
+
+  requestShare: () => {
+    if (get().writeStatus === 'writing') return;
+    // Share is always a quick flow — no name prompt; it creates a new
+    // workspace (anonymous or attributed depending on auth) and opens the
+    // share-link modal with the URL.
+    void createAndOpenShareModal();
+  },
+
+  completePendingWrite: async (name: string | null) => {
+    const intent = get().pendingWriteIntent;
+    if (!intent) return;
+    set({ pendingWriteIntent: null, modal: null, writeStatus: 'writing', writeError: null });
     try {
-      const { slug } = await createWorkspace(get().code);
-      const url = `${window.location.origin}/w/${slug}`;
-      set({ loadedSlug: slug, shareUrl: url, shareStatus: 'shared' });
-      // Push the permalink into the address bar so a refresh re-loads it.
-      window.history.replaceState(null, '', `/w/${slug}`);
-      return url;
+      if (intent.kind === 'save-new' || intent.kind === 'fork') {
+        const { code } = get();
+        const { slug } = await createWorkspace(code, name);
+        window.history.replaceState(null, '', `/w/${slug}`);
+        set({
+          loaded: { slug, name, ownerMe: true, loadedCode: code },
+          writeStatus: 'saved',
+        });
+      } else if (intent.kind === 'share') {
+        const { code } = get();
+        const { slug } = await createWorkspace(code, name);
+        window.history.replaceState(null, '', `/w/${slug}`);
+        set({
+          loaded: {
+            slug,
+            name,
+            ownerMe: Boolean(get().me),
+            loadedCode: code,
+          },
+          shareUrl: `${window.location.origin}/w/${slug}`,
+          writeStatus: 'idle',
+          modal: 'share-link',
+        });
+      }
     } catch (err) {
-      const msg =
-        err instanceof WorkspaceError
-          ? err.status === 413
-            ? 'Your code is too big to share (64KB limit).'
-            : err.status === 429
-              ? 'Too many shares from this location — try again in a few minutes.'
-              : `Share failed (${err.status}).`
-          : err instanceof Error
-            ? err.message
-            : String(err);
-      set({ shareStatus: 'error', shareError: msg });
-      return null;
+      set({ writeStatus: 'error', writeError: writeErrorMessage(err) });
     }
   },
+
   loadFromSlug: async (slug) => {
     try {
       const ws = await getWorkspace(slug);
       set({
         code: ws.code,
-        loadedSlug: slug,
+        loaded: { slug, name: ws.name, ownerMe: ws.ownerMe, loadedCode: ws.code },
         trace: null,
         lastRunCode: null,
         stepIndex: 0,
@@ -341,7 +498,28 @@ export const useAppStore = create<AppState>((set, get) => ({
       window.history.replaceState(null, '', '/');
     }
   },
-  dismissShare: () => set({ shareStatus: 'idle', shareError: null }),
+
+  dismissWriteFeedback: () =>
+    set({ writeStatus: 'idle', writeError: null, shareUrl: null, modal: null }),
+
+  renameWorkspace: async (slug, name) => {
+    await renameWorkspaceApi(slug, name);
+    // If the currently-loaded workspace is the one being renamed, mirror
+    // the new name in the editor state too.
+    const { loaded } = get();
+    if (loaded?.slug === slug) set({ loaded: { ...loaded, name } });
+  },
+
+  deleteWorkspace: async (slug) => {
+    await deleteWorkspaceApi(slug);
+    // If the user deleted the workspace they're currently viewing, drop
+    // them back to the fresh-page state.
+    const { loaded } = get();
+    if (loaded?.slug === slug) {
+      set({ loaded: null });
+      window.history.replaceState(null, '', '/');
+    }
+  },
 
   // Seed from localStorage so the store agrees with the inline FOUC shim in
   // index.html. The shim already set data-theme; we just read and mirror.

@@ -7,7 +7,9 @@ import { ExecutionBar } from './components/ExecutionBar';
 import { TutorBreadcrumb } from './components/TutorBreadcrumb';
 import { ExamplesModal } from './components/ExamplesModal';
 import { SignInModal } from './components/SignInModal';
-import { ShareToast } from './components/ShareToast';
+import { NamePromptModal } from './components/NamePromptModal';
+import { ShareLinkModal } from './components/ShareLinkModal';
+import { SaveFeedbackToast } from './components/SaveFeedbackToast';
 import { MyWorkspaces } from './components/MyWorkspaces';
 import { useGlobalShortcuts } from './hooks/useGlobalShortcuts';
 import { useTheme } from './theme/useTheme';
@@ -64,7 +66,9 @@ export function App() {
           <MyWorkspaces />
           {modal === 'examples' && <ExamplesModal />}
           {modal === 'sign-in' && <SignInModal />}
-          <ShareToast />
+          {modal === 'name-prompt' && <NamePromptModal />}
+          {modal === 'share-link' && <ShareLinkModal />}
+          <SaveFeedbackToast />
         </div>
       </HoverProvider>
     );
@@ -85,7 +89,9 @@ export function App() {
         </main>
         {modal === 'examples' && <ExamplesModal />}
         {modal === 'sign-in' && <SignInModal />}
-        <ShareToast />
+        {modal === 'name-prompt' && <NamePromptModal />}
+        {modal === 'share-link' && <ShareLinkModal />}
+        <SaveFeedbackToast />
       </div>
     </HoverProvider>
   );

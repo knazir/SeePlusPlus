@@ -45,17 +45,22 @@ export class WorkspaceError extends Error {
 export interface Workspace {
   slug: string;
   code: string;
+  name: string | null;
+  ownerMe: boolean;
+  hasOwner: boolean;
   createdAt: string;
+  updatedAt: string;
 }
 
 export async function createWorkspace(
   code: string,
+  name: string | null = null,
   fetchFn: typeof fetch = fetch,
 ): Promise<{ slug: string }> {
   const res = await fetchFn('/api/workspaces', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ code }),
+    body: JSON.stringify({ code, name }),
     // Send the session cookie so the backend can attribute ownership
     // (owner_id) when the user is signed in.
     credentials: 'include',
@@ -71,12 +76,62 @@ export async function getWorkspace(
   slug: string,
   fetchFn: typeof fetch = fetch,
 ): Promise<Workspace> {
-  const res = await fetchFn(`/api/workspaces/${encodeURIComponent(slug)}`);
+  const res = await fetchFn(`/api/workspaces/${encodeURIComponent(slug)}`, {
+    credentials: 'include',
+  });
   if (!res.ok) {
     const body = await res.text().catch(() => '');
     throw new WorkspaceError(res.status, body || `GET /api/workspaces/${slug} failed (${res.status})`);
   }
   return (await res.json()) as Workspace;
+}
+
+export async function updateWorkspace(
+  slug: string,
+  code: string,
+  fetchFn: typeof fetch = fetch,
+): Promise<void> {
+  const res = await fetchFn(`/api/workspaces/${encodeURIComponent(slug)}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ code }),
+    credentials: 'include',
+  });
+  if (!res.ok) {
+    const body = await res.text().catch(() => '');
+    throw new WorkspaceError(res.status, body || `PUT /api/workspaces/${slug} failed (${res.status})`);
+  }
+}
+
+export async function renameWorkspace(
+  slug: string,
+  name: string | null,
+  fetchFn: typeof fetch = fetch,
+): Promise<void> {
+  const res = await fetchFn(`/api/workspaces/${encodeURIComponent(slug)}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name }),
+    credentials: 'include',
+  });
+  if (!res.ok) {
+    const body = await res.text().catch(() => '');
+    throw new WorkspaceError(res.status, body || `PATCH /api/workspaces/${slug} failed (${res.status})`);
+  }
+}
+
+export async function deleteWorkspace(
+  slug: string,
+  fetchFn: typeof fetch = fetch,
+): Promise<void> {
+  const res = await fetchFn(`/api/workspaces/${encodeURIComponent(slug)}`, {
+    method: 'DELETE',
+    credentials: 'include',
+  });
+  if (!res.ok) {
+    const body = await res.text().catch(() => '');
+    throw new WorkspaceError(res.status, body || `DELETE /api/workspaces/${slug} failed (${res.status})`);
+  }
 }
 
 // --- auth -----------------------------------------------------------------
@@ -110,8 +165,10 @@ export async function logout(fetchFn: typeof fetch = fetch): Promise<void> {
 
 export interface WorkspaceListing {
   slug: string;
+  name: string | null;
   preview: string;
   createdAt: string;
+  updatedAt: string;
 }
 
 export async function listMyWorkspaces(
