@@ -2,10 +2,15 @@
 
 **Author:** Claude Code
 **Date:** 2026-04-22
-**Status:** Phasing still valid; implementation assumptions partially overridden by `docs/v2/adr/0001-no-monorepo.md` (2026-04-23).
+**Status:** Phasing partially overridden. Implementation assumptions: `docs/v2/adr/0001-no-monorepo.md`. P1 skipped: `docs/v2/adr/0002-skip-p1-spikes.md` (both 2026-04-23).
 **Inputs:** `tmp/seepp-v2-phase-planning-handoff.md`, `tmp/design-spec/` (Claude Design handoff)
 
-> **⚠ Read this first.** The phase sequencing (P0→P9) in this doc is still the roadmap. The *implementation-level* assumptions in §3 P0, §4, §4a, and §6 #4 — specifically pnpm workspaces, Turborepo, `packages/trace-schema`, shared schema package, seeded personas — have been rejected in favor of per-directory tooling and frontend-owned schema. See `docs/v2/adr/0001-no-monorepo.md` for what changed and why.
+> **⚠ Read this first.** Two phase-shaping ADRs have been accepted against this plan:
+>
+> - `docs/v2/adr/0001-no-monorepo.md` — rejects the pnpm / Turborepo / `packages/*` / shared-schema architecture in §3 P0, §4, §4a, and §6 #4. Per-directory tooling; frontend owns the Zod validator.
+> - `docs/v2/adr/0002-skip-p1-spikes.md` — skips the entire P1 phase (FLIP / recognition / scrub spikes). The mock already implements all three; their characterization questions fold into P4.
+>
+> Phase sequencing is now: **P0 → P2 → P3 → P4 → P5 → P6 → P7 → P8 → P9**.
 
 ---
 
