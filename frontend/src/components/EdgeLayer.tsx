@@ -1,9 +1,14 @@
 import { useLayoutEffect, useRef, useState, type RefObject } from 'react';
-import { useAppStore } from '../store';
+import { useAppStore, type PointerRouting } from '../store';
 import { FLIP_DURATION, FLIP_FOLLOW_MARGIN } from '../anim/flip';
+import { useHover } from '../viz/hoverContext';
+
+type EdgeKind = 'pointer' | 'ref';
 
 interface Edge {
   key: string;
+  kind: EdgeKind;
+  target: string;
   x1: number;
   y1: number;
   x2: number;
@@ -32,6 +37,8 @@ export function EdgeLayer({ containerRef }: Props) {
   const rafRef = useRef<number | null>(null);
   const stepIndex = useAppStore((s) => s.stepIndex);
   const trace = useAppStore((s) => s.trace);
+  const routing = useAppStore((s) => s.pointerRouting);
+  const { hoveredAddr, setHoveredAddr } = useHover();
 
   useLayoutEffect(() => {
     const container = containerRef.current;
@@ -79,7 +86,8 @@ export function EdgeLayer({ containerRef }: Props) {
   return (
     <svg
       aria-hidden
-      className="pointer-events-none absolute inset-0 h-full w-full"
+      className="absolute inset-0 h-full w-full"
+      style={{ pointerEvents: 'none' }}
       data-testid="edge-layer"
     >
       <defs>
@@ -95,16 +103,33 @@ export function EdgeLayer({ containerRef }: Props) {
           <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--color-accent)" />
         </marker>
       </defs>
-      {edges.map((e) => (
-        <path
-          key={e.key}
-          d={edgePath(e)}
-          fill="none"
-          stroke="var(--color-accent)"
-          strokeWidth={1.25}
-          markerEnd="url(#spp-arrow)"
-        />
-      ))}
+      {edges.map((e) => {
+        const hot = hoveredAddr === e.target;
+        return (
+          <g key={e.key} style={{ pointerEvents: 'auto' }}>
+            {/* Wide invisible hit-region so hovering the edge is forgiving */}
+            <path
+              d={edgePath(e, routing)}
+              fill="none"
+              stroke="transparent"
+              strokeWidth={10}
+              onMouseEnter={() => setHoveredAddr(e.target)}
+              onMouseLeave={() => setHoveredAddr(null)}
+            />
+            <path
+              d={edgePath(e, routing)}
+              data-ptr-kind={e.kind}
+              data-highlighted={hot || undefined}
+              fill="none"
+              stroke="var(--color-accent)"
+              strokeWidth={hot ? 2 : 1.25}
+              strokeDasharray={e.kind === 'ref' ? '4 3' : undefined}
+              markerEnd="url(#spp-arrow)"
+              style={{ pointerEvents: 'none' }}
+            />
+          </g>
+        );
+      })}
     </svg>
   );
 }
@@ -120,10 +145,13 @@ function computeEdges(container: HTMLElement): Edge[] {
     const selector = `[data-heap-addr="${cssEscape(target)}"]`;
     const targetEl = container.querySelector<HTMLElement>(selector);
     if (!targetEl) continue;
+    const kind = p.getAttribute('data-ptr-kind') === 'ref' ? 'ref' : 'pointer';
     const s = p.getBoundingClientRect();
     const t = targetEl.getBoundingClientRect();
     out.push({
       key: `${i}:${target}`,
+      kind,
+      target,
       x1: s.right - cRect.left,
       y1: s.top + s.height / 2 - cRect.top,
       x2: t.left - cRect.left,
@@ -133,7 +161,16 @@ function computeEdges(container: HTMLElement): Edge[] {
   return out;
 }
 
-function edgePath(e: Edge): string {
+function edgePath(e: Edge, routing: PointerRouting): string {
+  if (routing === 'straight') {
+    return `M ${e.x1},${e.y1} L ${e.x2},${e.y2}`;
+  }
+  if (routing === 'orthogonal') {
+    // Two right-angle bends through a midpoint. If the endpoints are close in
+    // y we bias the bend horizontally to keep the path readable.
+    const midX = e.x1 + (e.x2 - e.x1) / 2;
+    return `M ${e.x1},${e.y1} L ${midX},${e.y1} L ${midX},${e.y2} L ${e.x2},${e.y2}`;
+  }
   const dx = Math.max(24, Math.abs(e.x2 - e.x1) * 0.5);
   const c1x = e.x1 + dx;
   const c2x = e.x2 - dx;

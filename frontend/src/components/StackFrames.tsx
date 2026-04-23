@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { displayEncoded, isCData, type StackFrame } from '../trace/schema';
 import { useCurrentStep } from '../store';
+import { useHover } from '../viz/hoverContext';
 
 export function StackFrames() {
   const step = useCurrentStep();
@@ -112,8 +113,10 @@ function FrameCard({ frame }: { frame: StackFrame }) {
 }
 
 function LocalRow({ name, value }: { name: string; value: unknown }) {
-  const ptrTarget = pointerTarget(value);
+  const ptr = pointerTarget(value);
   const type = isCData(value) ? String(value[2]) : null;
+  const { hoveredAddr, setHoveredAddr } = useHover();
+  const chipHot = ptr?.target !== null && ptr?.target !== undefined && hoveredAddr === ptr.target;
 
   return (
     <div
@@ -124,13 +127,14 @@ function LocalRow({ name, value }: { name: string; value: unknown }) {
         <span className="text-ink-0">{name}</span>
         {type && <span className="text-[10px] text-ink-3">: {type}</span>}
       </div>
-      {ptrTarget === undefined ? (
+      {ptr === undefined ? (
         <span className="max-w-[110px] truncate rounded border border-line-soft bg-bg-0 px-1.5 py-[1px] text-[10.5px] text-ink-1">
           {displayEncoded(value)}
         </span>
-      ) : ptrTarget === null ? (
+      ) : ptr.target === null ? (
         <span
           data-ptr-target="null"
+          data-ptr-kind={ptr.kind}
           className="relative max-w-[110px] truncate rounded border border-line-soft bg-bg-0 px-1.5 py-[1px] text-[10.5px] text-ink-3"
         >
           nullptr
@@ -141,21 +145,31 @@ function LocalRow({ name, value }: { name: string; value: unknown }) {
         </span>
       ) : (
         <span
-          data-ptr-target={ptrTarget}
-          className="max-w-[110px] truncate rounded border border-accent-line bg-bg-0 px-1.5 py-[1px] text-[10.5px] text-accent"
+          data-ptr-target={ptr.target}
+          data-ptr-kind={ptr.kind}
+          data-highlighted={chipHot || undefined}
+          onMouseEnter={() => ptr.target && setHoveredAddr(ptr.target)}
+          onMouseLeave={() => setHoveredAddr(null)}
+          className={`max-w-[110px] truncate rounded border px-1.5 py-[1px] text-[10.5px] transition-colors duration-fast ease-out-soft ${
+            chipHot
+              ? 'border-accent bg-accent-soft text-accent'
+              : 'border-accent-line bg-bg-0 text-accent'
+          }`}
         >
-          {ptrTarget}
+          {ptr.target}
         </span>
       )}
     </div>
   );
 }
 
-function pointerTarget(v: unknown): string | null | undefined {
+type PtrKind = 'pointer' | 'ref';
+type PtrTarget = { kind: PtrKind; target: string | null };
+
+function pointerTarget(v: unknown): PtrTarget | undefined {
   if (!isCData(v)) return undefined;
   const type = v[2];
   if (type !== 'pointer' && type !== 'ref') return undefined;
   const val = v[3];
-  if (val === null || val === undefined) return null;
-  return String(val);
+  return { kind: type, target: val == null ? null : String(val) };
 }

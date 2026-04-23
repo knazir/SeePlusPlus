@@ -1,5 +1,6 @@
 import { useAppStore, useIsStale } from '../store';
 import { nextPreference, type ThemePreference } from '../theme/theme';
+import { SettingsMenu } from './SettingsMenu';
 
 export function TopBar() {
   const running = useAppStore((s) => s.running);
@@ -70,6 +71,7 @@ export function TopBar() {
         >
           <span aria-hidden>{themeIcon(themePreference)}</span>
         </IconBtn>
+        <SettingsMenu />
         <IconBtn
           label="Account"
           onClick={() => openModal('sign-in')}

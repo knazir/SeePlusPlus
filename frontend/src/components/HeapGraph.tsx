@@ -9,6 +9,7 @@ import {
   playFlip,
 } from '../anim/flip';
 import { recognize } from '../viz/recognize';
+import { orphanAddrs } from '../viz/reachability';
 
 export function HeapGraph() {
   const step = useCurrentStep();
@@ -28,6 +29,7 @@ export function HeapGraph() {
   const exitTimerRef = useRef<number | null>(null);
 
   const recognized = step && recognitionOn ? recognize(step) : null;
+  const orphans = useMemo(() => (step ? orphanAddrs(step) : new Set<string>()), [step]);
 
   // Render list = live entries from this step + still-animating exiting entries.
   const entries = useMemo(() => {
@@ -132,6 +134,7 @@ export function HeapGraph() {
           key={addr}
           addr={addr}
           block={block}
+          orphan={orphans.has(addr)}
           registerEl={(el) => {
             if (el) elsRef.current.set(addr, el);
             else elsRef.current.delete(addr);
