@@ -157,5 +157,14 @@ function pointerTarget(v: unknown): PtrTarget | undefined {
   const type = v[2];
   if (type !== 'pointer' && type !== 'ref') return undefined;
   const val = v[3];
-  return { kind: type, target: val == null ? null : String(val) };
+  // Uninitialized pointer: fall through so the caller renders `?` via
+  // displayEncoded instead of a chip pointing at the literal string.
+  if (val === '<UNINITIALIZED>') return undefined;
+  // `0x0` is the wire representation of a null pointer (distinct from `null`
+  // which SPP-Valgrind uses for "no known value"); collapse to nullptr so
+  // the UI reads as a C++ programmer would expect.
+  if (val === null || val === undefined || val === '0x0') {
+    return { kind: type, target: null };
+  }
+  return { kind: type, target: String(val) };
 }

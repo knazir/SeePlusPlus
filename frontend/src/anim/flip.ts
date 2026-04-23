@@ -16,6 +16,10 @@ export const EXIT_DURATION = 280;
 export const FLIP_EASING = 'cubic-bezier(0.22, 0.61, 0.36, 1)';
 /** Slight buffer added to the rAF-follow window so edges catch the tail end of the animation. */
 export const FLIP_FOLLOW_MARGIN = 60;
+/** Sub-pixel deltas from getBoundingClientRect caused a visible "twitch" on
+ *  nodes that were visually stationary between steps. Treat anything under
+ *  half a pixel as zero so we skip the animate() call entirely. */
+export const FLIP_DELTA_EPSILON = 0.5;
 
 /** Snapshot every element's layout rect. Caller keys by whatever identity is stable across renders (we use heap addr). */
 export function captureRects(els: Map<string, HTMLElement>): Map<string, DOMRect> {
@@ -47,7 +51,7 @@ export function playFlip(
     const prev = prevRects.get(key);
     if (!prev) continue;
     const { dx, dy } = computeDelta(prev, el.getBoundingClientRect());
-    if (dx === 0 && dy === 0) continue;
+    if (Math.abs(dx) < FLIP_DELTA_EPSILON && Math.abs(dy) < FLIP_DELTA_EPSILON) continue;
     el.animate(
       [
         { transform: `translate(${dx}px, ${dy}px)` },
