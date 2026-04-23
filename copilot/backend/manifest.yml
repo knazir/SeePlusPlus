@@ -61,6 +61,11 @@ variables:
   PORT: 3000
 
 # Environment-specific overrides.
+#
+# The workspacesDbSecret from copilot/backend/addons/workspaces-db.yml is
+# exported per env; inject it as DB_SECRET_JSON so the backend gets the
+# full credentials JSON (username/password/host/port/dbname) without having
+# to call the Secrets Manager SDK at boot.
 environments:
   test:
     count: 1
@@ -68,6 +73,12 @@ environments:
       rolling: "recreate"       # Stops existing tasks before new ones are started for faster deployments.
     variables:
       LAMBDA_FUNCTION_NAME: spp-trace-executor-test
+    secrets:
+      DB_SECRET_JSON:
+        from_cfn: spp-test-backend-WorkspacesDbSecret
   prod:
     variables:
       LAMBDA_FUNCTION_NAME: spp-trace-executor-prod
+    secrets:
+      DB_SECRET_JSON:
+        from_cfn: spp-prod-backend-WorkspacesDbSecret

@@ -127,9 +127,11 @@ Resources:
             Resource: !Ref workspacesDbSecret
 
 Outputs:
-  workspacesDbSecretArn:
+  workspacesDbSecret:
     Description: "ARN of the Secrets Manager secret holding the DB credentials JSON"
     Value: !Ref workspacesDbSecret
+    Export:
+      Name: !Sub '${App}-${Env}-${Name}-WorkspacesDbSecret'
   workspacesDbAccessPolicy:
     Description: "The IAM::ManagedPolicy to attach to the task role"
     Value: !Ref workspacesDbAccessPolicy

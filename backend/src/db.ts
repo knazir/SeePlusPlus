@@ -1,10 +1,9 @@
 // Thin Postgres layer. Single pool, applies schema.sql on init, exposes a
 // query helper. Two credential paths:
 //   - Local: DATABASE_URL env var (set by docker-compose).
-//   - Deployed: workspacesDbSecretArn is set by the Copilot addon; at boot
-//     we fetch the JSON secret (username/password/host/port/dbname) and
-//     assemble the URL. Task role has secretsmanager:GetSecretValue via the
-//     addon's ManagedPolicy.
+//   - Deployed: DB_SECRET_JSON env var, which Copilot's `secrets:` block
+//     resolves from the workspacesDbSecret CFN export and injects as the
+//     full credentials JSON (username/password/host/port/dbname).
 //
 // If neither is present the pool is null and the persistence routes degrade
 // gracefully (503). That keeps the backend bootable in any local setup that
@@ -12,7 +11,6 @@
 import fs from "node:fs";
 import path from "node:path";
 import { Pool } from "pg";
-import { GetSecretValueCommand, SecretsManagerClient } from "@aws-sdk/client-secrets-manager";
 
 let pool: Pool | null = null;
 
@@ -32,28 +30,23 @@ interface DbSecret {
     dbname: string;
 }
 
-async function fetchUrlFromSecret(arn: string): Promise<string> {
-    const client = new SecretsManagerClient({ region: process.env.AWS_REGION });
-    const resp = await client.send(new GetSecretValueCommand({ SecretId: arn }));
-    if (!resp.SecretString) {
-        throw new Error(`secret ${arn} has no SecretString`);
-    }
-    const s = JSON.parse(resp.SecretString) as DbSecret;
+function urlFromSecretJson(json: string): string {
+    const s = JSON.parse(json) as DbSecret;
     const password = encodeURIComponent(s.password);
     return `postgres://${s.username}:${password}@${s.host}:${s.port}/${s.dbname}`;
 }
 
-async function resolveDatabaseUrl(): Promise<string | null> {
+function resolveDatabaseUrl(): string | null {
     if (process.env.DATABASE_URL) return process.env.DATABASE_URL;
-    const arn = process.env.workspacesDbSecretArn;
-    if (arn) return fetchUrlFromSecret(arn);
+    const json = process.env.DB_SECRET_JSON;
+    if (json) return urlFromSecretJson(json);
     return null;
 }
 
 export async function initDb(): Promise<void> {
-    const url = await resolveDatabaseUrl();
+    const url = resolveDatabaseUrl();
     if (!url) {
-        console.warn("[db] no DATABASE_URL or workspacesDbSecretArn — workspace persistence disabled");
+        console.warn("[db] no DATABASE_URL or DB_SECRET_JSON — workspace persistence disabled");
         return;
     }
 

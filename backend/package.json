@@ -16,7 +16,6 @@
     "@aws-sdk/client-ecs": "^3.600.0",
     "@aws-sdk/client-lambda": "^3.917.0",
     "@aws-sdk/client-s3": "^3.600.0",
-    "@aws-sdk/client-secrets-manager": "^3.1035.0",
     "@types/cors": "^2.8.19",
     "body-parser": "^1.20.3",
     "cors": "^2.8.5",
