@@ -2,16 +2,13 @@
 // See docs/v2/adr/0004-editor-cm6.md.
 import { useEffect, useMemo } from 'react';
 import CodeMirror, { EditorView } from '@uiw/react-codemirror';
+import { HighlightStyle, syntaxHighlighting } from '@codemirror/language';
+import { tags as t } from '@lezer/highlight';
 import { cpp } from '@codemirror/lang-cpp';
 import { useAppStore, useIsStale } from '../store';
 
-// Theme derived from our design tokens. Kept small — just the bits the editor
-// actually renders — and pulled from CSS vars so it tracks --color-* changes.
 const sppTheme = EditorView.theme(
   {
-    // Fill the host pane even when the program is short, so the editor
-    // surface (gutter + background) extends to the bottom instead of
-    // revealing the layout's bg below line N. `.cm-scroller` owns overflow.
     '&': {
       backgroundColor: 'var(--color-bg-0)',
       color: 'var(--color-ink-0)',
@@ -20,30 +17,30 @@ const sppTheme = EditorView.theme(
       height: '100%',
     },
     '.cm-editor': { height: '100%' },
-    // Scroller is the internal scroll root; explicit height + overflow is
-    // what lets it actually scroll when content exceeds the pane.
-    // min-height would break that by letting content push the scroller taller
-    // than its parent.
     '.cm-scroller': {
       fontFamily: 'var(--font-mono)',
       height: '100%',
       overflow: 'auto',
     },
-    // Content grows to its natural size but also fills when the program is
-    // short, so the editor bg extends to the bottom of the pane.
     '.cm-content': {
-      padding: '12px 0',
+      padding: '10px 0',
       minHeight: '100%',
       backgroundColor: 'var(--color-bg-0)',
     },
     '.cm-gutters': {
-      backgroundColor: 'var(--color-bg-1)',
+      backgroundColor: 'var(--color-bg-0)',
       color: 'var(--color-ink-3)',
       borderRight: '1px solid var(--color-line-soft)',
       minHeight: '100%',
     },
-    '.cm-activeLine': { backgroundColor: 'var(--color-bg-1)' },
-    '.cm-activeLineGutter': { backgroundColor: 'var(--color-bg-2)' },
+    '.cm-activeLine': {
+      backgroundColor: 'var(--color-accent-soft)',
+      boxShadow: 'inset 0 1px 0 var(--color-accent-line), inset 0 -1px 0 var(--color-accent-line)',
+    },
+    '.cm-activeLineGutter': {
+      backgroundColor: 'transparent',
+      color: 'var(--color-accent)',
+    },
     '.cm-cursor': { borderLeftColor: 'var(--color-accent)' },
     '&.cm-focused': { outline: 'none' },
     '&.cm-focused .cm-selectionBackground, ::selection': {
@@ -53,16 +50,28 @@ const sppTheme = EditorView.theme(
   { dark: true },
 );
 
+// Syntax palette mirrors tmp/design-spec/project/src/styles.css (.tok-*).
+const sppHighlight = HighlightStyle.define([
+  { tag: [t.keyword, t.modifier, t.controlKeyword], color: '#c7a9e0' },
+  { tag: [t.typeName, t.className, t.namespace], color: '#d4a147' },
+  { tag: [t.function(t.variableName), t.function(t.propertyName)], color: '#7fc1d4' },
+  { tag: [t.string, t.character, t.special(t.string)], color: '#9dc492' },
+  { tag: [t.number, t.bool, t.null], color: '#d4a147' },
+  { tag: [t.comment, t.lineComment, t.blockComment, t.docComment], color: 'var(--color-ink-3)', fontStyle: 'italic' },
+  { tag: [t.punctuation, t.bracket, t.derefOperator], color: 'var(--color-ink-1)' },
+  { tag: [t.operator, t.logicOperator, t.arithmeticOperator], color: 'var(--color-ink-1)' },
+  { tag: [t.processingInstruction, t.meta], color: '#ac8f85' },
+  { tag: [t.variableName, t.propertyName], color: 'var(--color-ink-0)' },
+]);
+
 export function EditorPane() {
   const code = useAppStore((s) => s.code);
   const setCode = useAppStore((s) => s.setCode);
   const run = useAppStore((s) => s.run);
   const stale = useIsStale();
 
-  const extensions = useMemo(() => [cpp(), sppTheme], []);
+  const extensions = useMemo(() => [cpp(), syntaxHighlighting(sppHighlight), sppTheme], []);
 
-  // Global shortcut handler owns ⌘↵; kept local too so the editor can still
-  // catch it even when its own keydown handler would otherwise eat it.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
@@ -76,22 +85,42 @@ export function EditorPane() {
 
   return (
     <section
-      className="flex min-h-0 flex-1 flex-col border-b border-line-soft bg-bg-0 lg:border-b-0 lg:border-r"
+      className="flex min-h-0 flex-1 flex-col border-b border-line bg-bg-0 lg:border-b-0 lg:border-r"
       data-testid="editor-pane"
     >
+      {/* Tab bar */}
       <div
-        className="flex h-8 items-center gap-2 border-b border-line-soft bg-bg-1 px-3 font-mono text-[11px] uppercase tracking-wider text-ink-3"
-        data-testid="editor-tab"
+        className="flex h-[34px] shrink-0 items-stretch border-b border-line bg-bg-0"
+        data-testid="editor-tab-bar"
       >
-        <span>main.cpp</span>
-        {stale && (
+        <div
+          data-testid="editor-tab"
+          data-active
+          className="relative flex items-center gap-2 border-r border-line-soft bg-bg-1 px-3.5 font-mono text-[12px] text-ink-0"
+        >
+          <span aria-hidden className="text-ink-3">▸</span>
+          <span>main.cpp</span>
+          {stale && (
+            <span
+              data-testid="editor-stale-dot"
+              title="Edited since the last run"
+              className="inline-block h-1.5 w-1.5 rounded-full bg-warn"
+            />
+          )}
           <span
-            data-testid="editor-stale-dot"
-            title="Edited since the last run"
-            className="inline-block h-1.5 w-1.5 rounded-full bg-warn"
+            className="ml-1.5 flex h-3.5 w-3.5 items-center justify-center rounded-[2px] text-[11px] text-ink-3 hover:bg-bg-3 hover:text-ink-1"
+            aria-label="close (disabled in single-file mode)"
+          >
+            ×
+          </span>
+          <span
+            aria-hidden
+            className="absolute bottom-[-1px] left-0 right-0 h-[1px] bg-accent"
           />
-        )}
+        </div>
+        <div className="flex-1 border-b border-line" />
       </div>
+
       <div className="min-h-0 flex-1" data-testid="editor-host">
         <CodeMirror
           value={code}

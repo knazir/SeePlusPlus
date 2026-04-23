@@ -1,32 +1,25 @@
 import { Modal } from './Modal';
 import { useAppStore } from '../store';
 
-// Canned examples for the Examples modal. Kept small; add more when users
-// ask or when we have real content to demo.
 interface Example {
   id: string;
+  category: string;
   title: string;
-  summary: string;
+  description: string;
+  difficulty: 1 | 2 | 3;
+  stepsEstimate: string;
   code: string;
 }
 
 const EXAMPLES: Example[] = [
   {
-    id: 'hello',
-    title: 'Hello, world',
-    summary: 'Simplest possible program.',
-    code: `#include <iostream>
-
-int main() {
-    std::cout << "Hello, world!" << std::endl;
-    return 0;
-}
-`,
-  },
-  {
-    id: 'll',
-    title: 'Linked list build + reverse',
-    summary: 'Push three nodes, reverse in place.',
+    id: 'll-reverse',
+    category: 'Pointers & dynamic memory',
+    title: 'Linked list · build & reverse',
+    description:
+      'Classic CS106B: allocate nodes, chain them, reverse in place. See heap relayout shine.',
+    difficulty: 2,
+    stepsEstimate: '~22 steps',
     code: `struct Node {
     int value;
     Node* next;
@@ -60,9 +53,13 @@ int main() {
 `,
   },
   {
-    id: 'fact',
+    id: 'fact-rec',
+    category: 'Stack & recursion',
     title: 'Recursive factorial',
-    summary: 'Classic recursion to observe the growing stack.',
+    description:
+      'Deep stack growth and collapse — the classic recursion visualization.',
+    difficulty: 1,
+    stepsEstimate: '~14 steps',
     code: `int factorial(int n) {
     if (n <= 1) return 1;
     return n * factorial(n - 1);
@@ -74,11 +71,98 @@ int main() {
 }
 `,
   },
+  {
+    id: 'hello',
+    category: 'Basics',
+    title: 'Hello, world',
+    description: 'Simplest possible program. Good first trace to get oriented.',
+    difficulty: 1,
+    stepsEstimate: '~3 steps',
+    code: `#include <iostream>
+
+int main() {
+    std::cout << "Hello, world!" << std::endl;
+    return 0;
+}
+`,
+  },
+  {
+    id: 'ptr-swap',
+    category: 'Pointers',
+    title: 'Pointer swap & aliasing',
+    description: 'Two pointers to one int; aliasing makes both values appear to change.',
+    difficulty: 1,
+    stepsEstimate: '~8 steps',
+    code: `void swap(int* a, int* b) {
+    int tmp = *a;
+    *a = *b;
+    *b = tmp;
+}
+
+int main() {
+    int x = 7;
+    int y = 13;
+    swap(&x, &y);
+    return 0;
+}
+`,
+  },
+  {
+    id: 'bst-insert',
+    category: 'Recursion & trees',
+    title: 'Binary search tree insertion',
+    description:
+      'Recursively insert 5 values into an empty BST; watch the tree grow by height.',
+    difficulty: 3,
+    stepsEstimate: '~35 steps',
+    code: `struct Node {
+    int v;
+    Node* l;
+    Node* r;
+};
+
+Node* insert(Node* root, int v) {
+    if (!root) return new Node{v, nullptr, nullptr};
+    if (v < root->v) root->l = insert(root->l, v);
+    else root->r = insert(root->r, v);
+    return root;
+}
+
+int main() {
+    Node* root = nullptr;
+    root = insert(root, 4);
+    root = insert(root, 2);
+    root = insert(root, 6);
+    root = insert(root, 1);
+    root = insert(root, 3);
+    return 0;
+}
+`,
+  },
+  {
+    id: 'arr-dyn',
+    category: 'Heap arrays',
+    title: 'Dynamic array (new int[])',
+    description: 'Heap allocations with indexed cells; allocated once, freed at end.',
+    difficulty: 2,
+    stepsEstimate: '~12 steps',
+    code: `int main() {
+    int n = 4;
+    int* a = new int[n];
+    for (int i = 0; i < n; i++) a[i] = i * i;
+    int sum = 0;
+    for (int i = 0; i < n; i++) sum += a[i];
+    delete[] a;
+    return sum;
+}
+`,
+  },
 ];
 
 export function ExamplesModal() {
   const close = useAppStore((s) => s.closeModal);
   const setCode = useAppStore((s) => s.setCode);
+  const currentCode = useAppStore((s) => s.code);
 
   const pick = (ex: Example) => {
     setCode(ex.code);
@@ -86,18 +170,34 @@ export function ExamplesModal() {
   };
 
   return (
-    <Modal title="Examples" onClose={close} data-testid="examples-modal">
-      <ul className="flex flex-col gap-2" data-testid="examples-list">
+    <Modal title="Examples" onClose={close} data-testid="examples-modal" size="lg">
+      <p className="mb-4 font-mono text-[11px] text-ink-3">
+        Browse · load · fork. Picking an example replaces the current editor contents.
+      </p>
+      <ul
+        className="grid grid-cols-1 gap-2.5 md:grid-cols-2"
+        data-testid="examples-list"
+      >
         {EXAMPLES.map((ex) => (
           <li key={ex.id}>
             <button
               type="button"
               onClick={() => pick(ex)}
+              data-featured={currentCode === ex.code || undefined}
               data-testid={`example-${ex.id}`}
-              className="flex w-full flex-col items-start gap-0.5 rounded border border-line-soft bg-bg-0 px-3 py-2 text-left transition-colors duration-fast ease-out-soft hover:border-accent-line hover:bg-accent-soft"
+              className="flex h-full w-full flex-col gap-1.5 rounded-[4px] border border-line-soft bg-bg-0 p-3 text-left transition-all duration-fast ease-out-soft hover:border-accent-line hover:bg-accent-soft data-[featured]:border-accent data-[featured]:bg-accent-soft"
             >
-              <span className="font-mono text-sm text-ink-0">{ex.title}</span>
-              <span className="font-mono text-[11px] text-ink-2">{ex.summary}</span>
+              <span className="font-mono text-[9.5px] uppercase tracking-[0.12em] text-ink-3">
+                {ex.category}
+              </span>
+              <span className="font-mono text-[13px] text-ink-0">{ex.title}</span>
+              <span className="font-mono text-[11px] leading-snug text-ink-2">
+                {ex.description}
+              </span>
+              <span className="mt-auto flex items-center justify-between pt-1 font-mono text-[10px] text-ink-3">
+                <DifficultyDots level={ex.difficulty} />
+                <span>{ex.stepsEstimate}</span>
+              </span>
             </button>
           </li>
         ))}
@@ -106,5 +206,15 @@ export function ExamplesModal() {
         Tip: <span className="text-ink-1">⌘K</span> opens this modal from anywhere.
       </p>
     </Modal>
+  );
+}
+
+function DifficultyDots({ level }: { level: 1 | 2 | 3 }) {
+  return (
+    <span className="tracking-[0.2em]" aria-label={`difficulty ${level} of 3`}>
+      <span className="text-accent">●</span>
+      <span className={level >= 2 ? 'text-accent' : 'text-line'}>●</span>
+      <span className={level >= 3 ? 'text-accent' : 'text-line'}>●</span>
+    </span>
   );
 }
