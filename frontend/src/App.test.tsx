@@ -9,5 +9,6 @@ describe('test harness', () => {
   it('renders the app root so the harness is confirmed working', () => {
     render(<App />);
     expect(screen.getByTestId('app-title')).toHaveTextContent('See++');
+    expect(screen.getByTestId('app-subtitle')).toBeInTheDocument();
   });
 });
