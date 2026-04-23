@@ -35,6 +35,11 @@ const sppTheme = EditorView.theme(
       borderRight: '1px solid var(--color-line-soft)',
       minHeight: '100%',
     },
+    // Gutter line numbers are clickable — gutterJump jumps the trace to the
+    // next step executing that line. Pointer cursor signals that clickability.
+    '.cm-lineNumbers .cm-gutterElement': {
+      cursor: 'pointer',
+    },
     // Cursor's line — subtle so it doesn't fight the trace-line highlight
     // when both are on the same physical row.
     '.cm-activeLine': {

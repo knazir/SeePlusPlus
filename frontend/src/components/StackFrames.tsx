@@ -171,5 +171,9 @@ function pointerTarget(v: unknown): PtrTarget | undefined {
   const type = v[2];
   if (type !== 'pointer' && type !== 'ref') return undefined;
   const val = v[3];
-  return { kind: type, target: val == null ? null : String(val) };
+  if (val === '<UNINITIALIZED>') return undefined;
+  if (val === null || val === undefined || val === '0x0') {
+    return { kind: type, target: null };
+  }
+  return { kind: type, target: String(val) };
 }
