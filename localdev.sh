@@ -19,4 +19,6 @@ else
   echo "      for a worktree, run: ./scripts/worktree-ports.sh <slug>" >&2
 fi
 
-exec docker compose "${compose_args[@]}" "$@"
+# ${arr[@]+"${arr[@]}"} — safe expansion that stays empty under `set -u`
+# when the array has zero elements (the `+` substitution skips if unset).
+exec docker compose ${compose_args[@]+"${compose_args[@]}"} "$@"

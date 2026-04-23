@@ -50,24 +50,30 @@ services:
     networks:
       - no-internet
 
-  # frontend is rebuilt from scratch at P3. Leaving this service commented
-  # until there's a real Dockerfile to build; keeping the stanza here as a
-  # reminder so future-me doesn't rewire ports.
-  #
-  # frontend:
-  #   build:
-  #     context: ./frontend
-  #     dockerfile: Dockerfile.dev
-  #     args:
-  #       SPP_API_URL: "http://localhost:${BACKEND_PORT:-3000}/api"
-  #   image: spp-frontend:dev
-  #   container_name: spp-${WORKTREE_SLUG:-main}-frontend
-  #   ports:
-  #     - "${FRONTEND_PORT:-4000}:4000"
-  #   volumes:
-  #     - ./frontend:/app
-  #   environment:
-  #     - NODE_ENV=development
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    image: spp-frontend:dev
+    container_name: spp-${WORKTREE_SLUG:-main}-frontend
+    ports:
+      # Host-side port is worktree-assigned; container always listens on 4000.
+      - "${FRONTEND_PORT:-4000}:4000"
+    volumes:
+      - ./frontend:/app
+      # Named volume preserves the container's node_modules (linux-alpine
+      # compiled) against the ./frontend:/app bind mount that would otherwise
+      # shadow it with the host's node_modules (often macOS-compiled or empty).
+      - spp_frontend_node_modules:/app/node_modules
+    environment:
+      - NODE_ENV=development
+      # Force chokidar polling; FS events don't propagate reliably through
+      # docker-for-mac bind mounts, so HMR stalls without this.
+      - CHOKIDAR_USEPOLLING=true
+      # Proxy target for /api — compose service-name DNS, not localhost.
+      - VITE_BACKEND_URL=http://backend:3000
+    depends_on:
+      - backend
 
 networks:
   no-internet:
@@ -76,3 +82,4 @@ networks:
 
 volumes:
   postgres_data:
+  spp_frontend_node_modules:
