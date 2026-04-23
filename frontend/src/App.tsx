@@ -8,7 +8,8 @@ export function App() {
     <div className="flex h-screen flex-col bg-bg-0 text-ink-0" data-testid="app-root">
       <TopBar />
       <main className="flex min-h-0 flex-1 flex-col">
-        <div className="flex min-h-0 flex-1">
+        {/* Editor + viz stack vertically on narrow widths, side-by-side at lg+. */}
+        <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
           <EditorPane />
           <VizPane />
         </div>

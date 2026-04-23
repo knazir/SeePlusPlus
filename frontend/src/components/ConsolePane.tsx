@@ -13,7 +13,7 @@ export function ConsolePane() {
 
   return (
     <section
-      className="flex h-36 min-h-0 flex-col border-t border-line-soft bg-bg-1"
+      className="flex h-24 min-h-0 shrink-0 flex-col border-t border-line-soft bg-bg-1 lg:h-32"
       data-testid="console-pane"
     >
       <div className="flex h-8 items-center border-b border-line-soft px-3 font-mono text-[11px] uppercase tracking-wider text-ink-3">
