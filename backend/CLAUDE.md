@@ -47,33 +47,23 @@ DB schema + migrations land at P6.
 3. Coordinate with the frontend's Zod validator if you change a response shape.
 4. Update this file's API table.
 
-## Known quirk — SPP-Valgrind stack walker priming
+## Known quirk — SPP-Valgrind stack walker priming (worked around)
 
 Empirically, SPP-Valgrind only starts walking the user-code stack after a
-libstdc++ entry point runs. If `main()` contains no stdlib calls, every
-subsequent trace record comes back with `stack: []`, every resulting
-`ExecutionPoint` gets `funcName: "???"`, and the "skip everything before
-main" pass in `parse_vg_trace.ts` drops them all — so the response is
-`{ code, trace: [] }` even though the program compiled and ran.
+libstdc++ entry point runs. If `main()` contains no stdlib calls, early trace
+records arrive with `stack: []`.
 
-**Practical consequence:** every user-facing example program MUST include
-`<iostream>` + one priming call (typically `cout << … << endl;`) as the first
-statement of `main()`. See `frontend/src/store/index.ts` (DEFAULT_PROGRAM) and
-`frontend/src/components/ExamplesModal.tsx` (EXAMPLES) — both files carry
-comments pointing back here.
+**Workaround:** `processJsonObject` in `parse_vg_trace.ts` synthesizes a
+single `main()` frame when the incoming record's `stack` is empty. This keeps
+those records in the final trace instead of dropping them during the "skip
+everything before main" pass. The fallback is deliberately narrow and
+contained to one block; revert that block if SPP-Valgrind is patched upstream
+to emit stack records from the first instruction of `main`.
 
-Proper upstream fix options (not currently scoped):
-
-1. Teach `parse_vg_trace.ts` to construct a synthetic single-frame
-   `stackToRender` from the record's own top-level `func_name` + `line` when
-   `obj.stack` is empty, instead of discarding.
-2. Patch SPP-Valgrind to emit stack records from the first instruction of
-   `main`, not the first post-priming instruction.
-
-Option 1 is the smaller lift and lives in this package.
+Examples no longer need a priming `cout` — keep them because they're useful,
+not because the parser will break without them.
 
 ## Don't
 
 - Don't invent a new trace type. Extend `ProgramTrace` in `parse_vg_trace.ts` and mirror the change in the frontend's validator.
 - Don't commit Lambda deployment artifacts. They're built by CI.
-- Don't ship an example program without a stdlib priming call at the top of `main` — see the stack-walker quirk above.
