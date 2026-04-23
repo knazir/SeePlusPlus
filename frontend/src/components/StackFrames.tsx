@@ -38,10 +38,21 @@ function FrameCard({ frame }: { frame: StackFrame }) {
   // inside parens e.g. `reverse(head)`.
   const argNames = frame.orderedVarNames.filter((n) => n in frame.encodedLocals);
 
+  // Collect every local's storage address so EdgeLayer can resolve a
+  // pointer→stack-local when the frame is collapsed (the specific local
+  // row isn't in the DOM then). CSS [attr~=val] matches on this list.
+  const containedAddrs = Object.values(frame.encodedLocals)
+    .map((v) => (isCData(v) ? String(v[1] ?? '') : ''))
+    .filter((a) => a && a !== '0x0')
+    .join(' ');
+
   return (
     <li
       data-testid="stack-frame"
       data-active={active || undefined}
+      data-stack-frame-id={frame.frameId}
+      data-stack-contains={containedAddrs || undefined}
+      data-stack-expanded={isExpanded || undefined}
       className={`overflow-hidden rounded-[3px] border transition-colors duration-med ease-out-soft ${
         active
           ? 'border-accent-line bg-bg-1 shadow-[inset_2px_0_0_var(--color-accent)]'
@@ -115,6 +126,7 @@ function FrameCard({ frame }: { frame: StackFrame }) {
 function LocalRow({ name, value }: { name: string; value: unknown }) {
   const ptr = pointerTarget(value);
   const type = isCData(value) ? String(value[2]) : null;
+  const addr = isCData(value) ? String(value[1] ?? '') : '';
   const { hoveredAddr, setHoveredAddr } = useHover();
   const chipHot = ptr?.target !== null && ptr?.target !== undefined && hoveredAddr === ptr.target;
 
@@ -122,6 +134,7 @@ function LocalRow({ name, value }: { name: string; value: unknown }) {
     <div
       className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-1.5 border-t border-line-soft py-1 font-mono text-[11px] first:border-t-0"
       data-testid={`local-${name}`}
+      data-stack-addr={addr && addr !== '0x0' ? addr : undefined}
     >
       <div className="flex min-w-0 items-baseline gap-1.5 truncate">
         <span className="text-ink-0">{name}</span>

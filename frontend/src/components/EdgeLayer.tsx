@@ -134,6 +134,28 @@ export function EdgeLayer({ containerRef }: Props) {
   );
 }
 
+/**
+ * Resolve a pointer-target address to a DOM element, in priority order:
+ *   1. A heap block with [data-heap-addr="<target>"]
+ *   2. A visible stack local with [data-stack-addr="<target>"]
+ *      (only rendered when its frame is expanded)
+ *   3. A stack frame that contains the target address in its
+ *      [data-stack-contains] list (frame collapsed — we draw to the frame)
+ * Null when none match (e.g. pointer into data/text segment, or target
+ * is outside the currently-rendered step).
+ */
+function resolveTarget(
+  container: HTMLElement,
+  target: string,
+): HTMLElement | null {
+  const escaped = cssEscape(target);
+  return (
+    container.querySelector<HTMLElement>(`[data-heap-addr="${escaped}"]`) ||
+    container.querySelector<HTMLElement>(`[data-stack-addr="${escaped}"]`) ||
+    container.querySelector<HTMLElement>(`[data-stack-contains~="${escaped}"]`)
+  );
+}
+
 function computeEdges(container: HTMLElement): Edge[] {
   const cRect = container.getBoundingClientRect();
   const ptrs = Array.from(container.querySelectorAll<HTMLElement>('[data-ptr-target]'));
@@ -142,19 +164,27 @@ function computeEdges(container: HTMLElement): Edge[] {
     const p = ptrs[i]!;
     const target = p.getAttribute('data-ptr-target');
     if (!target || target === 'null') continue;
-    const selector = `[data-heap-addr="${cssEscape(target)}"]`;
-    const targetEl = container.querySelector<HTMLElement>(selector);
+    const targetEl = resolveTarget(container, target);
     if (!targetEl) continue;
     const kind = p.getAttribute('data-ptr-kind') === 'ref' ? 'ref' : 'pointer';
     const s = p.getBoundingClientRect();
     const t = targetEl.getBoundingClientRect();
+    // Source → its right edge horizontally; target → the nearer vertical
+    // edge. For stack targets (which sit to the left of the heap) this
+    // means arrows point left-to-right when the source is a heap field
+    // and right-to-left when the source is also on the stack. The math
+    // works out identically using the visually-nearer target x.
+    const srcCenterX = s.left + s.width / 2;
+    const tgtCenterX = t.left + t.width / 2;
+    const targetX = srcCenterX < tgtCenterX ? t.left : t.right;
+    const sourceX = srcCenterX < tgtCenterX ? s.right : s.left;
     out.push({
       key: `${i}:${target}`,
       kind,
       target,
-      x1: s.right - cRect.left,
+      x1: sourceX - cRect.left,
       y1: s.top + s.height / 2 - cRect.top,
-      x2: t.left - cRect.left,
+      x2: targetX - cRect.left,
       y2: t.top + t.height / 2 - cRect.top,
     });
   }
