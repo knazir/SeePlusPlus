@@ -10,6 +10,9 @@
 
 export const FLIP_DURATION = 520;
 export const ENTER_DURATION = 360;
+/** Exit is faster than enter — a heap block being freed is a "clean up" beat,
+ *  not an entrance, and the user's attention is usually ahead of it. */
+export const EXIT_DURATION = 280;
 export const FLIP_EASING = 'cubic-bezier(0.22, 0.61, 0.36, 1)';
 /** Slight buffer added to the rAF-follow window so edges catch the tail end of the animation. */
 export const FLIP_FOLLOW_MARGIN = 60;
@@ -63,5 +66,19 @@ export function playEnter(el: HTMLElement): void {
       { opacity: 1, transform: 'translate(0, 0) scale(1)' },
     ],
     { duration: ENTER_DURATION, easing: FLIP_EASING, fill: 'both' },
+  );
+}
+
+/** Exit animation for a heap node leaving on the next step (e.g. delete / free).
+ *  Different curve than enter: shrinks and drifts *up* to signal "released"
+ *  rather than "arriving." Caller is responsible for actually unmounting the
+ *  node after EXIT_DURATION has elapsed. */
+export function playExit(el: HTMLElement): void {
+  el.animate(
+    [
+      { opacity: 1, transform: 'translate(0, 0) scale(1)' },
+      { opacity: 0, transform: 'translate(0, -6px) scale(0.92)' },
+    ],
+    { duration: EXIT_DURATION, easing: FLIP_EASING, fill: 'forwards' },
   );
 }
