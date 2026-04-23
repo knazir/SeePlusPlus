@@ -85,7 +85,7 @@ Resources:
       DBInstanceIdentifier: !Sub '${App}-${Env}-workspaces'
       DBName: workspaces
       Engine: postgres
-      EngineVersion: '16.4'
+      EngineVersion: '16.13'
       DBInstanceClass: !FindInMap [EnvConfig, !Ref Env, DBInstanceClass]
       AllocatedStorage: !FindInMap [EnvConfig, !Ref Env, AllocatedStorage]
       StorageType: gp3
