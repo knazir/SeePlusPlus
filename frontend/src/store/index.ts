@@ -65,7 +65,16 @@ export interface AppState {
   // ui
   recognitionOn: boolean;
   toggleRecognition: () => void;
+
+  consoleOpen: boolean;
+  toggleConsole: () => void;
+
+  modal: ModalKind;
+  openModal: (m: ModalKind) => void;
+  closeModal: () => void;
 }
+
+export type ModalKind = 'examples' | 'sign-in' | null;
 
 function clampStep(n: number, total: number): number {
   if (total <= 0) return 0;
@@ -146,6 +155,13 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   recognitionOn: false,
   toggleRecognition: () => set({ recognitionOn: !get().recognitionOn }),
+
+  consoleOpen: true,
+  toggleConsole: () => set({ consoleOpen: !get().consoleOpen }),
+
+  modal: null,
+  openModal: (modal) => set({ modal }),
+  closeModal: () => set({ modal: null }),
 }));
 
 /** Select the ExecutionPoint at the current step, or null before any run. */
