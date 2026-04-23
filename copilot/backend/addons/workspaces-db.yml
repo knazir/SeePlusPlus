@@ -127,7 +127,7 @@ Resources:
             Resource: !Ref workspacesDbSecret
 
 Outputs:
-  WORKSPACES_DB_SECRET_ARN:
+  workspacesDbSecretArn:
     Description: "ARN of the Secrets Manager secret holding the DB credentials JSON"
     Value: !Ref workspacesDbSecret
   workspacesDbAccessPolicy:

@@ -1,7 +1,7 @@
 // Thin Postgres layer. Single pool, applies schema.sql on init, exposes a
 // query helper. Two credential paths:
 //   - Local: DATABASE_URL env var (set by docker-compose).
-//   - Deployed: WORKSPACES_DB_SECRET_ARN is set by the Copilot addon; at boot
+//   - Deployed: workspacesDbSecretArn is set by the Copilot addon; at boot
 //     we fetch the JSON secret (username/password/host/port/dbname) and
 //     assemble the URL. Task role has secretsmanager:GetSecretValue via the
 //     addon's ManagedPolicy.
@@ -45,7 +45,7 @@ async function fetchUrlFromSecret(arn: string): Promise<string> {
 
 async function resolveDatabaseUrl(): Promise<string | null> {
     if (process.env.DATABASE_URL) return process.env.DATABASE_URL;
-    const arn = process.env.WORKSPACES_DB_SECRET_ARN;
+    const arn = process.env.workspacesDbSecretArn;
     if (arn) return fetchUrlFromSecret(arn);
     return null;
 }
@@ -53,7 +53,7 @@ async function resolveDatabaseUrl(): Promise<string | null> {
 export async function initDb(): Promise<void> {
     const url = await resolveDatabaseUrl();
     if (!url) {
-        console.warn("[db] no DATABASE_URL or WORKSPACES_DB_SECRET_ARN — workspace persistence disabled");
+        console.warn("[db] no DATABASE_URL or workspacesDbSecretArn — workspace persistence disabled");
         return;
     }
 
