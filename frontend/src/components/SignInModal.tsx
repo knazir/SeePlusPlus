@@ -1,10 +1,22 @@
-import { useState } from 'react';
+// Provider-agnostic sign-in modal. The store exposes `authProviders` (from
+// /api/auth/me) so each available provider renders a button. Clicking one
+// hard-redirects to /api/auth/<provider>/start?redirect=<current path>,
+// which hands the user off to Google, then back to us.
+//
+// The legacy email/password UI was design-mock only and never wired; dropped
+// now that we have a real auth path.
 import { Modal } from './Modal';
 import { useAppStore } from '../store';
+
+const PROVIDER_LABEL: Record<string, string> = {
+  google: 'Continue with Google',
+  github: 'Continue with GitHub',
+};
 
 export function SignInModal() {
   const close = useAppStore((s) => s.closeModal);
   const reason = useAppStore((s) => s.signInReason);
+  const providers = useAppStore((s) => s.authProviders);
 
   const title =
     reason === 'save'
@@ -15,13 +27,15 @@ export function SignInModal() {
 
   const subtitle =
     reason === 'save'
-      ? 'Sign in to keep your code and its execution trace. You can share or fork later.'
+      ? 'Sign in to keep your workspaces in one place. Anonymous share links keep working.'
       : reason === 'share'
-        ? 'Sign in to share your workspace and its execution state as a permalink.'
-        : 'Sign in to save workspaces and create shareable links. Anonymous use stays fully functional.';
+        ? 'Sign in so the share link stays attributed to your account.'
+        : 'Sign in to save workspaces and see them on your My Workspaces page.';
 
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const startAuth = (provider: string) => {
+    const redirect = encodeURIComponent(window.location.pathname);
+    window.location.assign(`/api/auth/${provider}/start?redirect=${redirect}`);
+  };
 
   return (
     <Modal title="Sign in" onClose={close} data-testid="signin-modal">
@@ -39,41 +53,30 @@ export function SignInModal() {
           </p>
         </div>
 
-        <OAuthButton provider="GitHub" />
-        <OAuthButton provider="Google" />
-
-        <div className="flex items-center gap-3 py-2 font-mono text-[10px] uppercase tracking-[0.12em] text-ink-3">
-          <span className="h-px flex-1 bg-line-soft" />
-          or
-          <span className="h-px flex-1 bg-line-soft" />
-        </div>
-
-        <input
-          type="email"
-          placeholder="Email address"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          data-testid="signin-email"
-          className="rounded border border-line bg-bg-0 px-3 py-2 font-mono text-sm text-ink-0 placeholder:text-ink-3 focus:border-accent-line focus:outline-none"
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          data-testid="signin-password"
-          className="rounded border border-line bg-bg-0 px-3 py-2 font-mono text-sm text-ink-0 placeholder:text-ink-3 focus:border-accent-line focus:outline-none"
-        />
-
-        <button
-          type="button"
-          disabled
-          data-testid="signin-submit"
-          title="Wired to real OAuth at backlog #16"
-          className="rounded border border-accent-line bg-accent px-3 py-2 font-mono text-sm text-accent-ink transition-opacity duration-fast ease-out-soft disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          Sign in
-        </button>
+        {providers.length === 0 ? (
+          <p
+            data-testid="signin-no-providers"
+            className="rounded border border-line bg-bg-0 px-3 py-2 text-center font-mono text-[11px] text-ink-2"
+          >
+            Sign-in is not configured in this environment.
+          </p>
+        ) : (
+          providers.map((p) => (
+            <button
+              key={p}
+              type="button"
+              onClick={() => startAuth(p)}
+              data-testid={`signin-${p}`}
+              className="flex items-center justify-center gap-2 rounded border border-line bg-bg-0 px-3 py-2 font-mono text-sm text-ink-1 transition-colors duration-fast ease-out-soft hover:border-line-strong hover:text-ink-0"
+            >
+              <span
+                aria-hidden
+                className={`h-2 w-2 rounded-full ${p === 'github' ? 'bg-ink-0' : 'bg-accent'}`}
+              />
+              {PROVIDER_LABEL[p] ?? `Continue with ${p}`}
+            </button>
+          ))
+        )}
 
         <button
           type="button"
@@ -83,30 +86,7 @@ export function SignInModal() {
         >
           Continue without signing in
         </button>
-
-        <p className="pt-2 text-center font-mono text-[10px] text-ink-3">
-          Sign-in wires to real OAuth (Google first) at backlog #16. No backend call yet.
-        </p>
       </div>
     </Modal>
-  );
-}
-
-function OAuthButton({ provider }: { provider: 'GitHub' | 'Google' }) {
-  const dotColor = provider === 'GitHub' ? 'bg-ink-0' : 'bg-accent';
-  return (
-    <button
-      type="button"
-      disabled
-      data-testid={`signin-${provider.toLowerCase()}`}
-      title={`Wired at backlog #16 (${provider})`}
-      className="flex items-center justify-center gap-2 rounded border border-line bg-bg-0 px-3 py-2 font-mono text-sm text-ink-1 transition-colors duration-fast ease-out-soft hover:border-line-strong hover:text-ink-0 disabled:cursor-not-allowed disabled:opacity-70"
-    >
-      <span aria-hidden className={`h-2 w-2 rounded-full ${dotColor}`} />
-      Continue with {provider}
-      <span className="ml-auto font-mono text-[10px] uppercase tracking-[0.1em] text-ink-3">
-        soon
-      </span>
-    </button>
   );
 }

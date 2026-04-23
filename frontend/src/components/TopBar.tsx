@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react';
 import { useAppStore, useIsStale } from '../store';
 import { nextPreference, type ThemePreference } from '../theme/theme';
 import { SettingsMenu } from './SettingsMenu';
@@ -81,13 +82,7 @@ export function TopBar() {
           <span aria-hidden>{themeIcon(themePreference)}</span>
         </IconBtn>
         <SettingsMenu />
-        <IconBtn
-          label="Account"
-          onClick={() => openModal('sign-in')}
-          data-testid="account-button"
-        >
-          <span aria-hidden>◉</span>
-        </IconBtn>
+        <AccountMenu />
       </Section>
 
       <div className="flex items-center gap-2.5 border-l border-line px-3.5 font-mono text-[11px] text-ink-2" data-testid="status-pill">
@@ -131,6 +126,105 @@ export function TopBar() {
         </button>
       </div>
     </header>
+  );
+}
+
+function AccountMenu() {
+  const me = useAppStore((s) => s.me);
+  const openModal = useAppStore((s) => s.openModal);
+  const signOut = useAppStore((s) => s.signOut);
+  const [open, setOpen] = useState(false);
+  const anchorRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (e: MouseEvent) => {
+      if (!anchorRef.current?.contains(e.target as Node)) setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false);
+    document.addEventListener('mousedown', onDoc);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDoc);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [open]);
+
+  if (!me) {
+    return (
+      <button
+        type="button"
+        aria-label="Sign in"
+        title="Sign in"
+        onClick={() => openModal('sign-in')}
+        data-testid="account-button"
+        className="flex h-7 w-7 items-center justify-center rounded-[4px] text-ink-2 transition-colors duration-fast ease-out-soft hover:bg-bg-2 hover:text-ink-0"
+      >
+        <span aria-hidden>◉</span>
+      </button>
+    );
+  }
+
+  const initials = (me.displayName ?? me.email).slice(0, 2).toUpperCase();
+
+  return (
+    <div ref={anchorRef} className="relative">
+      <button
+        type="button"
+        aria-label={`Account — ${me.email}`}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        onClick={() => setOpen((v) => !v)}
+        data-testid="account-button"
+        className="flex h-7 items-center gap-1.5 rounded-[4px] border border-line bg-bg-1 pl-1 pr-2 font-mono text-[11px] text-ink-1 transition-colors duration-fast ease-out-soft hover:border-line-strong hover:text-ink-0"
+      >
+        {me.avatarUrl ? (
+          <img src={me.avatarUrl} alt="" className="h-5 w-5 rounded-full" />
+        ) : (
+          <span
+            aria-hidden
+            className="flex h-5 w-5 items-center justify-center rounded-full bg-accent-soft text-[9px] font-semibold text-accent"
+          >
+            {initials}
+          </span>
+        )}
+        <span className="max-w-[120px] truncate">{me.displayName ?? me.email}</span>
+      </button>
+      {open && (
+        <div
+          role="menu"
+          data-testid="account-menu"
+          className="absolute right-0 top-[calc(100%+4px)] z-20 w-56 rounded-[4px] border border-line bg-bg-1 p-1.5 shadow-[0_8px_24px_rgba(0,0,0,0.35)]"
+        >
+          <div className="mb-1 px-2 pt-1 font-mono text-[10px] uppercase tracking-[0.12em] text-ink-3">
+            Signed in as
+          </div>
+          <div className="mb-2 px-2 pb-1 font-mono text-[11px] text-ink-2">
+            <span className="block truncate">{me.email}</span>
+          </div>
+          <a
+            href="/workspaces"
+            role="menuitem"
+            data-testid="account-workspaces"
+            className="block rounded px-2 py-1.5 font-mono text-[11px] text-ink-1 hover:bg-bg-2 hover:text-ink-0"
+          >
+            My workspaces
+          </a>
+          <button
+            type="button"
+            role="menuitem"
+            onClick={async () => {
+              await signOut();
+              setOpen(false);
+            }}
+            data-testid="account-signout"
+            className="w-full rounded px-2 py-1.5 text-left font-mono text-[11px] text-ink-1 hover:bg-bg-2 hover:text-ink-0"
+          >
+            Sign out
+          </button>
+        </div>
+      )}
+    </div>
   );
 }
 

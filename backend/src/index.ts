@@ -3,7 +3,10 @@ import cors from "cors";
 import crypto from "crypto";
 import express, { Express, Request, Response } from "express";
 
-import { closeDb, initDb } from "./db";
+import { closeDb, getPool, initDb } from "./db";
+import { registerProviders } from "./auth/providers";
+import { buildSessionMiddleware } from "./auth/session";
+import { authRouter } from "./routes/auth";
 import {
     createRunner,
     TraceRunner
@@ -25,6 +28,10 @@ const USER_CODE_FILE_PREFIX = process.env.USER_CODE_FILE_PREFIX || "main";
 
 // Middleware
 //------------------------------------------------------------------------------
+// The backend sits behind nginx (frontend container) and an ALB in deployed
+// envs; trusting the proxy lets express-session's `secure` cookie decision
+// honor X-Forwarded-Proto.
+app.set("trust proxy", 1);
 app.use(express.json());
 
 const ALLOWED_ORIGIN_REGEX = new RegExp(process.env.ALLOWED_ORIGIN_REGEX || "");
@@ -44,6 +51,9 @@ app.use(cors({
     allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true
 }));
+
+// Sessions + OAuth providers are registered after initDb() in start() below
+// so the pool exists before connect-pg-simple tries to use it.
 
 // Route: /
 // Returns a healthcheck to confirm the server is running
@@ -100,8 +110,6 @@ app.post("/api/run", async (req: Request, res: Response) => {
     }
 });
 
-app.use("/api/workspaces", workspacesRouter);
-
 // Start server
 //------------------------------------------------------------------------------
 async function start(): Promise<void> {
@@ -112,6 +120,15 @@ async function start(): Promise<void> {
         // and /api/workspaces returns 503 until DATABASE_URL is healthy.
         console.error("[Server]: failed to initialize database:", err);
     }
+
+    registerProviders();
+
+    const pool = getPool();
+    const sessionMw = pool ? buildSessionMiddleware(pool) : null;
+    if (sessionMw) app.use(sessionMw);
+
+    app.use("/api/auth", authRouter);
+    app.use("/api/workspaces", workspacesRouter);
 
     const server = app.listen(PORT, () => {
         console.log(`[Server]: See++ backend is running at http://localhost:${PORT}`);

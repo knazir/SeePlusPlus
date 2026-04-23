@@ -23,15 +23,32 @@ beforeEach(() => {
     consoleOpen: true,
     modal: null,
     themePreference: 'dark',
+    me: null,
+    authChecked: false,
+    authProviders: [],
   });
+  // Route-aware mock: /api/auth/me returns a no-user response; everything
+  // else returns TINY_TRACE. Fresh Response per call so body streams aren't
+  // reused across fetches (loadMe on mount + Run click = two fetches).
   vi.stubGlobal(
     'fetch',
-    vi.fn<typeof fetch>().mockResolvedValue(
-      new Response(JSON.stringify(TINY_TRACE), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' },
-      }),
-    ),
+    vi.fn<typeof fetch>().mockImplementation((input) => {
+      const url = typeof input === 'string' ? input : (input as Request).url ?? '';
+      if (url.includes('/api/auth/me')) {
+        return Promise.resolve(
+          new Response(JSON.stringify({ user: null, providers: [] }), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          }),
+        );
+      }
+      return Promise.resolve(
+        new Response(JSON.stringify(TINY_TRACE), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        }),
+      );
+    }),
   );
 });
 

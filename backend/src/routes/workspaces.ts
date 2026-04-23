@@ -11,6 +11,7 @@ import rateLimit from "express-rate-limit";
 import { customAlphabet } from "nanoid";
 
 import { dbEnabled, getPool } from "../db";
+import { requireAuth } from "./auth";
 
 const MAX_CODE_BYTES = 64 * 1024;
 
@@ -48,14 +49,18 @@ workspacesRouter.post("/", writeLimiter, async (req: Request, res: Response) => 
     }
 
     const pool = getPool()!;
+    // Attribute to the signed-in user if there is one; anonymous shares
+    // continue to work with owner_id = NULL.
+    const ownerId: string | null = req.session?.userId ?? null;
+
     // Collision retry: nanoid is astronomically unlikely to collide, but a
     // bounded retry loop is cheap insurance.
     for (let attempt = 0; attempt < 5; attempt++) {
         const slug = newSlug();
         try {
             await pool.query(
-                "INSERT INTO workspaces (slug, code) VALUES ($1, $2)",
-                [slug, code],
+                "INSERT INTO workspaces (slug, code, owner_id) VALUES ($1, $2, $3)",
+                [slug, code, ownerId],
             );
             res.status(201).json({ slug });
             return;
@@ -68,6 +73,35 @@ workspacesRouter.post("/", writeLimiter, async (req: Request, res: Response) => 
         }
     }
     res.status(500).json({ error: "could not allocate slug" });
+});
+
+workspacesRouter.get("/mine", requireAuth, async (req: Request, res: Response) => {
+    const pool = getPool()!;
+    const userId = req.session!.userId!;
+    try {
+        // Hard-cap the list. We'll add cursor pagination when a user actually
+        // has a hundred workspaces — not speculatively today.
+        const result = await pool.query<{ slug: string; code: string; created_at: Date }>(
+            `SELECT slug, code, created_at
+             FROM workspaces
+             WHERE owner_id = $1
+             ORDER BY created_at DESC
+             LIMIT 100`,
+            [userId],
+        );
+        res.json({
+            workspaces: result.rows.map((r) => ({
+                slug: r.slug,
+                // Send just a preview — the full code is fetched on demand
+                // via /api/workspaces/:slug when the user opens one.
+                preview: r.code.slice(0, 160),
+                createdAt: r.created_at.toISOString(),
+            })),
+        });
+    } catch (err) {
+        console.error("[workspaces] /mine failed:", err);
+        res.status(500).json({ error: "failed to load workspaces" });
+    }
 });
 
 workspacesRouter.get("/:slug", async (req: Request, res: Response) => {

@@ -61,6 +61,11 @@ variables:
   PORT: 3000
 
 # Environment-specific overrides.
+#
+# GOOGLE_CLIENT_ID is public and lives here; GOOGLE_CLIENT_SECRET + SESSION_SECRET
+# are SSM SecureString parameters created via `copilot secret init` (see
+# docs/v2/auth-runbook.md). If a secret is absent, the backend's auth routes
+# return 503 gracefully — the rest of the service still works.
 environments:
   test:
     count: 1
@@ -68,6 +73,15 @@ environments:
       rolling: "recreate"       # Stops existing tasks before new ones are started for faster deployments.
     variables:
       LAMBDA_FUNCTION_NAME: spp-trace-executor-test
+      # Filled in once Kashif creates the Google OAuth client (see auth-runbook).
+      GOOGLE_CLIENT_ID: ""
+    secrets:
+      GOOGLE_CLIENT_SECRET: /copilot/spp/test/secrets/GOOGLE_CLIENT_SECRET
+      SESSION_SECRET: /copilot/spp/test/secrets/SESSION_SECRET
   prod:
     variables:
       LAMBDA_FUNCTION_NAME: spp-trace-executor-prod
+      GOOGLE_CLIENT_ID: ""
+    secrets:
+      GOOGLE_CLIENT_SECRET: /copilot/spp/prod/secrets/GOOGLE_CLIENT_SECRET
+      SESSION_SECRET: /copilot/spp/prod/secrets/SESSION_SECRET
