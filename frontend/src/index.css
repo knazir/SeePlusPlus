@@ -71,4 +71,7 @@
     -webkit-font-smoothing: antialiased;
     overflow: hidden;
   }
+  #root {
+    height: 100%;
+  }
 }

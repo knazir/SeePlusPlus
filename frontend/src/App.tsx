@@ -1,12 +1,19 @@
+import { TopBar } from './components/TopBar';
+import { EditorPane } from './components/EditorPane';
+import { VizPane } from './components/VizPane';
+import { ConsolePane } from './components/ConsolePane';
+
 export function App() {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center gap-2 bg-bg-0 text-ink-0">
-      <h1 className="text-2xl font-semibold tracking-tight" data-testid="app-title">
-        See++
-      </h1>
-      <p className="font-mono text-xs text-ink-2" data-testid="app-subtitle">
-        v2 scaffold
-      </p>
-    </main>
+    <div className="flex h-screen flex-col bg-bg-0 text-ink-0" data-testid="app-root">
+      <TopBar />
+      <main className="flex min-h-0 flex-1 flex-col">
+        <div className="flex min-h-0 flex-1">
+          <EditorPane />
+          <VizPane />
+        </div>
+        <ConsolePane />
+      </main>
+    </div>
   );
 }
