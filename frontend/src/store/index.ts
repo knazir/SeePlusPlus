@@ -11,7 +11,15 @@ import {
   type ThemePreference,
 } from '../theme/theme';
 
-export const DEFAULT_PROGRAM = `struct Node {
+// IMPORTANT: every traceable program MUST include <iostream> + a stdlib call
+// (typically `cout << … << endl;`) as the first statement of main(). Without
+// it, SPP-Valgrind's stack walker doesn't initialize on entry to main and
+// every subsequent record comes back with an empty stack, which the backend
+// filters out → empty trace. See backend/CLAUDE.md for the full quirk note.
+export const DEFAULT_PROGRAM = `#include <iostream>
+using namespace std;
+
+struct Node {
     int value;
     Node* next;
 };
@@ -34,6 +42,7 @@ Node* reverse(Node* head) {
 }
 
 int main() {
+    cout << "linked list demo" << endl;
     Node* list = nullptr;
     list = push_front(list, 1);
     list = push_front(list, 2);

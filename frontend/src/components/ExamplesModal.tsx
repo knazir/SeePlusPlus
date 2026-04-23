@@ -11,16 +11,23 @@ interface Example {
   code: string;
 }
 
+// Every program below MUST include <iostream> + a cout statement as the first
+// line of main(). Without this priming call, SPP-Valgrind's stack walker
+// doesn't initialize and the backend returns an empty trace. See
+// backend/CLAUDE.md for the full quirk note.
 const EXAMPLES: Example[] = [
   {
     id: 'll-reverse',
     category: 'Pointers & dynamic memory',
     title: 'Linked list · build & reverse',
     description:
-      'Classic CS106B: allocate nodes, chain them, reverse in place. See heap relayout shine.',
+      'Allocate nodes, chain them, reverse in place. See heap relayout shine.',
     difficulty: 2,
     stepsEstimate: '~22 steps',
-    code: `struct Node {
+    code: `#include <iostream>
+using namespace std;
+
+struct Node {
     int value;
     Node* next;
 };
@@ -43,6 +50,7 @@ Node* reverse(Node* head) {
 }
 
 int main() {
+    cout << "linked list demo" << endl;
     Node* list = nullptr;
     list = push_front(list, 1);
     list = push_front(list, 2);
@@ -60,12 +68,16 @@ int main() {
       'Deep stack growth and collapse — the classic recursion visualization.',
     difficulty: 1,
     stepsEstimate: '~14 steps',
-    code: `int factorial(int n) {
+    code: `#include <iostream>
+using namespace std;
+
+int factorial(int n) {
     if (n <= 1) return 1;
     return n * factorial(n - 1);
 }
 
 int main() {
+    cout << "factorial" << endl;
     int result = factorial(5);
     return result == 120 ? 0 : 1;
 }
@@ -79,9 +91,10 @@ int main() {
     difficulty: 1,
     stepsEstimate: '~3 steps',
     code: `#include <iostream>
+using namespace std;
 
 int main() {
-    std::cout << "Hello, world!" << std::endl;
+    cout << "Hello, world!" << endl;
     return 0;
 }
 `,
@@ -93,13 +106,17 @@ int main() {
     description: 'Two pointers to one int; aliasing makes both values appear to change.',
     difficulty: 1,
     stepsEstimate: '~8 steps',
-    code: `void swap(int* a, int* b) {
+    code: `#include <iostream>
+using namespace std;
+
+void swap(int* a, int* b) {
     int tmp = *a;
     *a = *b;
     *b = tmp;
 }
 
 int main() {
+    cout << "pointer swap" << endl;
     int x = 7;
     int y = 13;
     swap(&x, &y);
@@ -115,7 +132,10 @@ int main() {
       'Recursively insert 5 values into an empty BST; watch the tree grow by height.',
     difficulty: 3,
     stepsEstimate: '~35 steps',
-    code: `struct Node {
+    code: `#include <iostream>
+using namespace std;
+
+struct Node {
     int v;
     Node* l;
     Node* r;
@@ -129,6 +149,7 @@ Node* insert(Node* root, int v) {
 }
 
 int main() {
+    cout << "bst insert" << endl;
     Node* root = nullptr;
     root = insert(root, 4);
     root = insert(root, 2);
@@ -146,7 +167,11 @@ int main() {
     description: 'Heap allocations with indexed cells; allocated once, freed at end.',
     difficulty: 2,
     stepsEstimate: '~12 steps',
-    code: `int main() {
+    code: `#include <iostream>
+using namespace std;
+
+int main() {
+    cout << "dynamic array" << endl;
     int n = 4;
     int* a = new int[n];
     for (int i = 0; i < n; i++) a[i] = i * i;
