@@ -2,18 +2,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { App } from './App';
 import { useAppStore, DEFAULT_PROGRAM } from './store';
+import { TINY_TRACE } from './trace/fixtures';
 
-// Integration test: renders the real App (all four panes + store) and
-// exercises a Run click end-to-end with a stubbed global fetch. This covers
-// the wiring we care about:
-//   - default program is seeded in the editor
-//   - clicking Run fires POST /api/run
-//   - the returned trace appears in the viz pane
-//   - stdout/stderr appear in the console
-// Store-level branch coverage (errors, reentrancy) lives in store.test.ts;
-// no need to re-run those assertions through the DOM.
-
-const fakeTrace = { steps: [{ line: 1 }], stdout: 'hi\n' };
+// Integration test: real App (all panes + store) wired up, with fetch stubbed.
+// Covers the end-to-end: seeded editor → click Run → validated trace reaches
+// the viz pane → step controls move the frame view. Branch coverage (errors,
+// reentrancy, shape drift, step clamping) lives in the store + schema tests;
+// this test just verifies DOM wiring.
 
 beforeEach(() => {
   useAppStore.setState({
@@ -21,11 +16,12 @@ beforeEach(() => {
     running: false,
     trace: null,
     error: null,
+    stepIndex: 0,
   });
   vi.stubGlobal(
     'fetch',
     vi.fn<typeof fetch>().mockResolvedValue(
-      new Response(JSON.stringify(fakeTrace), {
+      new Response(JSON.stringify(TINY_TRACE), {
         status: 200,
         headers: { 'Content-Type': 'application/json' },
       }),
@@ -46,12 +42,16 @@ describe('App', () => {
     expect(screen.getByTestId('console-pane')).toBeInTheDocument();
   });
 
-  it('clicking Run posts the code and renders the returned trace + stdout', async () => {
+  it('Run → renders stack frames from the validated trace and steps advance', async () => {
     render(<App />);
     fireEvent.click(screen.getByTestId('run-button'));
 
-    await waitFor(() => expect(screen.queryByTestId('viz-json')).toBeInTheDocument());
-    expect(screen.getByTestId('viz-json').textContent).toContain('"line": 1');
-    expect(screen.getByTestId('console-stdout').textContent).toContain('hi');
+    await waitFor(() => expect(screen.queryByTestId('stack-frames')).toBeInTheDocument());
+    expect(screen.getByTestId('step-counter')).toHaveTextContent('1 / 2');
+
+    fireEvent.click(screen.getByTestId('step-forward'));
+    expect(screen.getByTestId('step-counter')).toHaveTextContent('2 / 2');
+    // Step 2 of TINY_TRACE has a local `x` = 42.
+    expect(screen.getByTestId('local-x')).toHaveTextContent('42');
   });
 });

@@ -1,24 +1,31 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAppStore, DEFAULT_PROGRAM } from './index';
+import { TINY_TRACE } from '../trace/fixtures';
 
-// Reset the store between tests. Zustand's create() gives us setState at hand
-// via the hook itself for the reset path.
 beforeEach(() => {
   useAppStore.setState({
     code: DEFAULT_PROGRAM,
     running: false,
     trace: null,
     error: null,
+    stepIndex: 0,
   });
 });
 
-describe('useAppStore', () => {
+function okResponse(body: unknown): Response {
+  return new Response(JSON.stringify(body), {
+    status: 200,
+    headers: { 'Content-Type': 'application/json' },
+  });
+}
+
+describe('useAppStore — workspace + execution', () => {
   it('starts with the default program and no trace', () => {
     const s = useAppStore.getState();
     expect(s.code).toBe(DEFAULT_PROGRAM);
     expect(s.trace).toBeNull();
-    expect(s.error).toBeNull();
     expect(s.running).toBe(false);
+    expect(s.stepIndex).toBe(0);
   });
 
   it('setCode updates the code', () => {
@@ -26,14 +33,8 @@ describe('useAppStore', () => {
     expect(useAppStore.getState().code).toBe('int main() { return 0; }');
   });
 
-  it('run() posts the current code and stores the returned trace on success', async () => {
-    const fakeTrace = { steps: [{ line: 1 }], stdout: 'hi\n' };
-    const fetchFn = vi.fn<typeof fetch>().mockResolvedValue(
-      new Response(JSON.stringify(fakeTrace), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' },
-      }),
-    );
+  it('run() posts the current code and stores the validated trace on success', async () => {
+    const fetchFn = vi.fn<typeof fetch>().mockResolvedValue(okResponse(TINY_TRACE));
     useAppStore.getState().setCode('int main(){}');
 
     await useAppStore.getState().run(fetchFn);
@@ -46,19 +47,25 @@ describe('useAppStore', () => {
 
     const s = useAppStore.getState();
     expect(s.running).toBe(false);
-    expect(s.trace).toEqual(fakeTrace);
+    expect(s.trace?.trace).toHaveLength(2);
     expect(s.error).toBeNull();
+    expect(s.stepIndex).toBe(0);
   });
 
-  it('run() captures a backend error message when the response is not OK', async () => {
+  it('run() surfaces a shape-drift error when the body does not match the schema', async () => {
+    const fetchFn = vi.fn<typeof fetch>().mockResolvedValue(okResponse({ oops: true }));
+    await useAppStore.getState().run(fetchFn);
+    const s = useAppStore.getState();
+    expect(s.trace).toBeNull();
+    expect(s.error).toMatch(/unexpected trace shape/i);
+  });
+
+  it('run() captures a backend HTTP error with status + body', async () => {
     const fetchFn = vi
       .fn<typeof fetch>()
       .mockResolvedValue(new Response('compile barfed', { status: 500 }));
-
     await useAppStore.getState().run(fetchFn);
-
     const s = useAppStore.getState();
-    expect(s.running).toBe(false);
     expect(s.trace).toBeNull();
     expect(s.error).toMatch(/500/);
     expect(s.error).toContain('compile barfed');
@@ -74,17 +81,43 @@ describe('useAppStore', () => {
     const first = useAppStore.getState().run(fetchFn);
     expect(useAppStore.getState().running).toBe(true);
 
-    // Second run() should not trigger a second fetch.
     await useAppStore.getState().run(fetchFn);
     expect(fetchFn).toHaveBeenCalledTimes(1);
 
-    release(
-      new Response('{"ok":true}', {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' },
-      }),
-    );
+    release(okResponse(TINY_TRACE));
     await first;
     expect(useAppStore.getState().running).toBe(false);
+  });
+});
+
+describe('useAppStore — step navigation', () => {
+  beforeEach(() => {
+    // Seed a trace so the step actions have something to operate on.
+    useAppStore.setState({ trace: TINY_TRACE, stepIndex: 0 });
+  });
+
+  it('stepForward / stepBackward clamp at the trace bounds', () => {
+    const { stepForward, stepBackward } = useAppStore.getState();
+    stepBackward();
+    expect(useAppStore.getState().stepIndex).toBe(0); // already at start
+    stepForward();
+    expect(useAppStore.getState().stepIndex).toBe(1);
+    stepForward();
+    expect(useAppStore.getState().stepIndex).toBe(1); // clamped at last
+  });
+
+  it('stepTo clamps out-of-bounds values', () => {
+    const { stepTo } = useAppStore.getState();
+    stepTo(99);
+    expect(useAppStore.getState().stepIndex).toBe(1);
+    stepTo(-5);
+    expect(useAppStore.getState().stepIndex).toBe(0);
+  });
+
+  it('step actions are no-ops before a trace is loaded', () => {
+    useAppStore.setState({ trace: null, stepIndex: 0 });
+    useAppStore.getState().stepForward();
+    useAppStore.getState().stepTo(42);
+    expect(useAppStore.getState().stepIndex).toBe(0);
   });
 });
