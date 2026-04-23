@@ -1,4 +1,5 @@
 import { useAppStore, useIsStale } from '../store';
+import { nextPreference, type ThemePreference } from '../theme/theme';
 
 export function TopBar() {
   const running = useAppStore((s) => s.running);
@@ -6,6 +7,8 @@ export function TopBar() {
   const openModal = useAppStore((s) => s.openModal);
   const trace = useAppStore((s) => s.trace);
   const error = useAppStore((s) => s.error);
+  const themePreference = useAppStore((s) => s.themePreference);
+  const setThemePreference = useAppStore((s) => s.setThemePreference);
   const stale = useIsStale();
 
   const stepsCount = trace?.trace.length ?? 0;
@@ -59,8 +62,13 @@ export function TopBar() {
       </Section>
 
       <Section>
-        <IconBtn label="Toggle theme" disabled title="Light theme post-v1">
-          <span aria-hidden>☾</span>
+        <IconBtn
+          label={themeLabel(themePreference)}
+          title={themeTooltip(themePreference)}
+          onClick={() => setThemePreference(nextPreference(themePreference))}
+          data-testid="theme-toggle"
+        >
+          <span aria-hidden>{themeIcon(themePreference)}</span>
         </IconBtn>
         <IconBtn
           label="Account"
@@ -95,16 +103,16 @@ export function TopBar() {
           className={`inline-flex items-center gap-2 rounded-[4px] px-3.5 py-1.5 font-mono text-[12px] font-medium transition-all duration-fast ease-out-soft ${
             running
               ? 'cursor-wait border border-line bg-bg-2 text-ink-2'
-              : 'bg-accent text-[#1b1209] shadow-[0_2px_0_rgba(217,119,87,0.2)] hover:-translate-y-[1px] hover:brightness-110 hover:shadow-[0_4px_0_rgba(217,119,87,0.2)]'
+              : 'bg-accent text-accent-ink shadow-[0_2px_0_var(--color-accent-shadow)] hover:-translate-y-[1px] hover:brightness-110 hover:shadow-[0_4px_0_var(--color-accent-shadow)]'
           }`}
         >
-          <span aria-hidden className={running ? 'text-ink-3' : 'text-[#59331e]'}>
+          <span aria-hidden className={running ? 'text-ink-3' : 'text-accent-dim'}>
             {running ? '◷' : '⚡'}
           </span>
           {running ? 'Running…' : 'Run'}
           <span
             className={`rounded-[2px] px-1.5 py-[1px] text-[10px] ${
-              running ? 'bg-bg-3 text-ink-3' : 'bg-[rgba(27,18,9,0.12)] text-[#59331e]'
+              running ? 'bg-bg-3 text-ink-3' : 'bg-accent-ink-soft text-accent-dim'
             }`}
           >
             ⌘↵
@@ -280,6 +288,21 @@ function statusLabel({
   if (stale) return 'stale';
   if (trace) return 'traced';
   return 'ready';
+}
+
+function themeIcon(p: ThemePreference): string {
+  if (p === 'dark') return '☾';
+  if (p === 'light') return '☀';
+  return '◐';
+}
+function themeLabel(p: ThemePreference): string {
+  if (p === 'dark') return 'Theme: dark';
+  if (p === 'light') return 'Theme: light';
+  return 'Theme: system';
+}
+function themeTooltip(p: ThemePreference): string {
+  const next = nextPreference(p);
+  return `Theme: ${p} (click for ${next})`;
 }
 
 /** Cheap heap-byte estimate by JSON-stringifying the heap blob. Not exact, but it's only a topbar badge. */

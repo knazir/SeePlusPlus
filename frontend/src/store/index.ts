@@ -3,6 +3,13 @@
 import { create } from 'zustand';
 import { runCode, RunError } from '../api/client';
 import { ProgramTraceSchema, type ProgramTrace } from '../trace/schema';
+import {
+  applyTheme,
+  persistPreference,
+  readStoredPreference,
+  resolvePreference,
+  type ThemePreference,
+} from '../theme/theme';
 
 export const DEFAULT_PROGRAM = `struct Node {
     int value;
@@ -73,6 +80,10 @@ export interface AppState {
   signInReason: SignInReason;
   openModal: (m: ModalKind, reason?: SignInReason) => void;
   closeModal: () => void;
+
+  /** User's theme preference: what they *chose*. Resolved to dark/light by the theme hook. */
+  themePreference: ThemePreference;
+  setThemePreference: (p: ThemePreference) => void;
 }
 
 export type ModalKind = 'examples' | 'sign-in' | null;
@@ -168,6 +179,15 @@ export const useAppStore = create<AppState>((set, get) => ({
   openModal: (modal, reason) =>
     set({ modal, ...(reason ? { signInReason: reason } : {}) }),
   closeModal: () => set({ modal: null }),
+
+  // Seed from localStorage so the store agrees with the inline FOUC shim in
+  // index.html. The shim already set data-theme; we just read and mirror.
+  themePreference: readStoredPreference(),
+  setThemePreference: (pref) => {
+    persistPreference(pref);
+    applyTheme(resolvePreference(pref));
+    set({ themePreference: pref });
+  },
 }));
 
 /** Select the ExecutionPoint at the current step, or null before any run. */

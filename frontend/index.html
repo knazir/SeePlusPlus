@@ -1,10 +1,34 @@
 <!doctype html>
-<html lang="en" class="dark">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light dark" />
     <link rel="icon" href="data:," />
     <title>See++</title>
+    <!--
+      FOUC prevention: resolve the user's theme preference BEFORE the first
+      paint, so the body background matches what the React tree is about to
+      render. Mirrors the logic in src/theme/theme.ts; kept tiny and untyped
+      here so it runs synchronously as early as possible.
+    -->
+    <script>
+      (function () {
+        try {
+          var stored = localStorage.getItem('spp.theme');
+          var pref = stored === 'dark' || stored === 'light' ? stored : 'system';
+          var resolved =
+            pref === 'system'
+              ? window.matchMedia('(prefers-color-scheme: light)').matches
+                ? 'light'
+                : 'dark'
+              : pref;
+          document.documentElement.setAttribute('data-theme', resolved);
+        } catch (e) {
+          document.documentElement.setAttribute('data-theme', 'dark');
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
