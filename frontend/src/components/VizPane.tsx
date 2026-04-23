@@ -1,5 +1,5 @@
 import { useMemo, useRef } from 'react';
-import { useAppStore, useCurrentStep } from '../store';
+import { useAppStore, useCurrentStep, useIsStale } from '../store';
 import { StackFrames } from './StackFrames';
 import { HeapGraph } from './HeapGraph';
 import { EdgeLayer } from './EdgeLayer';
@@ -12,6 +12,7 @@ export function VizPane() {
   const recognitionOn = useAppStore((s) => s.recognitionOn);
   const toggleRecognition = useAppStore((s) => s.toggleRecognition);
   const step = useCurrentStep();
+  const stale = useIsStale();
   const vizBodyRef = useRef<HTMLDivElement | null>(null);
 
   const canRecognize = useMemo(() => (step ? recognize(step) !== null : false), [step]);
@@ -40,7 +41,12 @@ export function VizPane() {
           </button>
         )}
       </header>
-      <div className="relative flex min-h-0 flex-1 flex-col" ref={vizBodyRef}>
+      <div
+        className={`relative flex min-h-0 flex-1 flex-col transition-opacity duration-fast ease-out-soft ${stale ? 'opacity-70' : ''}`}
+        data-testid="viz-body"
+        data-stale={stale || undefined}
+        ref={vizBodyRef}
+      >
         {running && !trace ? (
           <p className="p-3 font-mono text-xs text-ink-2" data-testid="viz-running">
             running…

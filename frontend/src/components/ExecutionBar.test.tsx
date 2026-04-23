@@ -9,6 +9,7 @@ beforeEach(() => {
     code: DEFAULT_PROGRAM,
     running: false,
     trace: TINY_TRACE,
+    lastRunCode: DEFAULT_PROGRAM,
     error: null,
     stepIndex: 0,
     playing: false,

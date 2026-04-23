@@ -15,6 +15,7 @@ beforeEach(() => {
     code: DEFAULT_PROGRAM,
     running: false,
     trace: null,
+    lastRunCode: null,
     error: null,
     stepIndex: 0,
     playing: false,

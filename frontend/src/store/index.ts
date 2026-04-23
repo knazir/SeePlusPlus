@@ -46,6 +46,8 @@ export interface AppState {
   // execution
   running: boolean;
   trace: ProgramTrace | null;
+  /** The code that produced the current trace. Derived-`stale` = code !== lastRunCode. */
+  lastRunCode: string | null;
   error: string | null;
   run: (fetchFn?: RunFetch) => Promise<void>;
 
@@ -78,13 +80,15 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   running: false,
   trace: null,
+  lastRunCode: null,
   error: null,
 
   run: async (fetchFn) => {
     if (get().running) return;
+    const sentCode = get().code;
     set({ running: true, error: null });
     try {
-      const raw = await runCode(get().code, fetchFn);
+      const raw = await runCode(sentCode, fetchFn);
       const parsed = ProgramTraceSchema.safeParse(raw);
       if (!parsed.success) {
         set({
@@ -93,7 +97,13 @@ export const useAppStore = create<AppState>((set, get) => ({
         });
         return;
       }
-      set({ trace: parsed.data, stepIndex: 0, playing: false, running: false });
+      set({
+        trace: parsed.data,
+        lastRunCode: sentCode,
+        stepIndex: 0,
+        playing: false,
+        running: false,
+      });
     } catch (err) {
       const msg =
         err instanceof RunError
@@ -144,4 +154,9 @@ export function useCurrentStep() {
     if (!s.trace) return null;
     return s.trace.trace[s.stepIndex] ?? null;
   });
+}
+
+/** True when a trace exists but its source has been edited since the run. */
+export function useIsStale(): boolean {
+  return useAppStore((s) => s.trace !== null && s.code !== s.lastRunCode);
 }

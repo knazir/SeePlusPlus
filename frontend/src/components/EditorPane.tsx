@@ -3,7 +3,7 @@
 import { useEffect, useMemo } from 'react';
 import CodeMirror, { EditorView } from '@uiw/react-codemirror';
 import { cpp } from '@codemirror/lang-cpp';
-import { useAppStore } from '../store';
+import { useAppStore, useIsStale } from '../store';
 
 // Theme derived from our design tokens. Kept small — just the bits the editor
 // actually renders — and pulled from CSS vars so it tracks --color-* changes.
@@ -57,6 +57,7 @@ export function EditorPane() {
   const code = useAppStore((s) => s.code);
   const setCode = useAppStore((s) => s.setCode);
   const run = useAppStore((s) => s.run);
+  const stale = useIsStale();
 
   const extensions = useMemo(() => [cpp(), sppTheme], []);
 
@@ -78,8 +79,18 @@ export function EditorPane() {
       className="flex min-h-0 flex-1 flex-col border-b border-line-soft bg-bg-0 lg:border-b-0 lg:border-r"
       data-testid="editor-pane"
     >
-      <div className="flex h-8 items-center border-b border-line-soft bg-bg-1 px-3 font-mono text-[11px] uppercase tracking-wider text-ink-3">
-        main.cpp
+      <div
+        className="flex h-8 items-center gap-2 border-b border-line-soft bg-bg-1 px-3 font-mono text-[11px] uppercase tracking-wider text-ink-3"
+        data-testid="editor-tab"
+      >
+        <span>main.cpp</span>
+        {stale && (
+          <span
+            data-testid="editor-stale-dot"
+            title="Edited since the last run"
+            className="inline-block h-1.5 w-1.5 rounded-full bg-warn"
+          />
+        )}
       </div>
       <div className="min-h-0 flex-1" data-testid="editor-host">
         <CodeMirror
