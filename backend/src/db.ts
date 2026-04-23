@@ -1,7 +1,7 @@
 // Thin Postgres layer. Single pool, applies schema.sql on init, exposes a
 // query helper. Two credential paths:
 //   - Local: DATABASE_URL env var (set by docker-compose).
-//   - Deployed: DB_SECRET_JSON env var, which Copilot's `secrets:` block
+//   - Deployed: WORKSPACES_DB_SECRET env var, which Copilot's `secrets:` block
 //     resolves from the workspacesDbSecret CFN export and injects as the
 //     full credentials JSON (username/password/host/port/dbname).
 //
@@ -38,7 +38,7 @@ function urlFromSecretJson(json: string): string {
 
 function resolveDatabaseUrl(): string | null {
     if (process.env.DATABASE_URL) return process.env.DATABASE_URL;
-    const json = process.env.DB_SECRET_JSON;
+    const json = process.env.WORKSPACES_DB_SECRET;
     if (json) return urlFromSecretJson(json);
     return null;
 }
@@ -46,7 +46,7 @@ function resolveDatabaseUrl(): string | null {
 export async function initDb(): Promise<void> {
     const url = resolveDatabaseUrl();
     if (!url) {
-        console.warn("[db] no DATABASE_URL or DB_SECRET_JSON — workspace persistence disabled");
+        console.warn("[db] no DATABASE_URL or WORKSPACES_DB_SECRET — workspace persistence disabled");
         return;
     }
 
