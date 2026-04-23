@@ -1,4 +1,4 @@
-import { displayEncoded, type StackFrame } from '../trace/schema';
+import { displayEncoded, isCData, type StackFrame } from '../trace/schema';
 import { useCurrentStep } from '../store';
 
 // Stack-of-frames view. The active frame (isHighlighted: true, the top of the
@@ -66,12 +66,38 @@ function FrameCard({ frame }: { frame: StackFrame }) {
 }
 
 function LocalRow({ name, value }: { name: string; value: unknown }) {
+  const ptrTarget = pointerTarget(value);
   return (
     <>
       <dt className="font-mono text-[11px] text-ink-2">{name}</dt>
       <dd className="font-mono text-[11px] text-ink-0" data-testid={`local-${name}`}>
-        {displayEncoded(value)}
+        {ptrTarget !== undefined ? (
+          ptrTarget === null ? (
+            <span
+              data-ptr-target="null"
+              className="inline-flex items-center rounded border border-line px-1 text-ink-3 line-through decoration-ink-3/60"
+            >
+              nullptr
+            </span>
+          ) : (
+            <span data-ptr-target={ptrTarget} className="text-accent">
+              → {ptrTarget}
+            </span>
+          )
+        ) : (
+          displayEncoded(value)
+        )}
       </dd>
     </>
   );
+}
+
+/** Return addr string for a pointer, null for nullptr, or undefined if the value isn't a pointer. */
+function pointerTarget(v: unknown): string | null | undefined {
+  if (!isCData(v)) return undefined;
+  const type = v[2];
+  if (type !== 'pointer' && type !== 'ref') return undefined;
+  const val = v[3];
+  if (val === null || val === undefined) return null;
+  return String(val);
 }
