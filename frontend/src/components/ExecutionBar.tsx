@@ -115,7 +115,7 @@ function XbButton({
       data-testid={testid}
       className={`flex h-7 w-[30px] items-center justify-center rounded-[3px] font-mono text-[11px] transition-colors duration-fast ease-out-soft disabled:cursor-not-allowed disabled:opacity-35 ${
         primary
-          ? 'bg-accent text-[#1b1209] hover:brightness-110'
+          ? 'bg-accent text-accent-ink hover:brightness-110'
           : 'text-ink-1 hover:bg-bg-3 hover:text-ink-0'
       }`}
     >
@@ -211,12 +211,12 @@ function Scrubbar({ stepIndex, totalSteps, disabled, onSeek }: ScrubbarProps) {
       )}
       {/* Thumb */}
       <div
-        className="absolute top-1/2 h-[18px] w-3 -translate-x-1/2 -translate-y-1/2 rounded-[2px] border border-[#1b1209] bg-accent"
+        className="absolute top-1/2 h-[18px] w-3 -translate-x-1/2 -translate-y-1/2 rounded-[2px] border border-accent-dim bg-accent"
         style={{ left: `${pct}%` }}
       >
         <span
           aria-hidden
-          className="absolute left-1/2 top-0.5 bottom-0.5 w-[1px] bg-[rgba(27,18,9,0.35)]"
+          className="absolute left-1/2 top-0.5 bottom-0.5 w-[1px] bg-accent-ink-soft"
         />
       </div>
     </div>

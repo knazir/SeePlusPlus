@@ -50,17 +50,19 @@ const sppTheme = EditorView.theme(
   { dark: true },
 );
 
-// Syntax palette mirrors tmp/design-spec/project/src/styles.css (.tok-*).
+// Syntax palette — all hex values live as CSS tokens (see index.css @theme
+// and html[data-theme='light'] overrides), so the editor re-themes for free
+// when the user flips light/dark. No JS theme-aware logic in here.
 const sppHighlight = HighlightStyle.define([
-  { tag: [t.keyword, t.modifier, t.controlKeyword], color: '#c7a9e0' },
-  { tag: [t.typeName, t.className, t.namespace], color: '#d4a147' },
-  { tag: [t.function(t.variableName), t.function(t.propertyName)], color: '#7fc1d4' },
-  { tag: [t.string, t.character, t.special(t.string)], color: '#9dc492' },
-  { tag: [t.number, t.bool, t.null], color: '#d4a147' },
+  { tag: [t.keyword, t.modifier, t.controlKeyword], color: 'var(--color-syntax-kw)' },
+  { tag: [t.typeName, t.className, t.namespace], color: 'var(--color-syntax-type)' },
+  { tag: [t.function(t.variableName), t.function(t.propertyName)], color: 'var(--color-syntax-fn)' },
+  { tag: [t.string, t.character, t.special(t.string)], color: 'var(--color-syntax-str)' },
+  { tag: [t.number, t.bool, t.null], color: 'var(--color-syntax-num)' },
   { tag: [t.comment, t.lineComment, t.blockComment, t.docComment], color: 'var(--color-ink-3)', fontStyle: 'italic' },
   { tag: [t.punctuation, t.bracket, t.derefOperator], color: 'var(--color-ink-1)' },
   { tag: [t.operator, t.logicOperator, t.arithmeticOperator], color: 'var(--color-ink-1)' },
-  { tag: [t.processingInstruction, t.meta], color: '#ac8f85' },
+  { tag: [t.processingInstruction, t.meta], color: 'var(--color-syntax-preproc)' },
   { tag: [t.variableName, t.propertyName], color: 'var(--color-ink-0)' },
 ]);
 

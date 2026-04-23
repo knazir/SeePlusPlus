@@ -7,10 +7,12 @@ import { TutorBreadcrumb } from './components/TutorBreadcrumb';
 import { ExamplesModal } from './components/ExamplesModal';
 import { SignInModal } from './components/SignInModal';
 import { useGlobalShortcuts } from './hooks/useGlobalShortcuts';
+import { useTheme } from './theme/useTheme';
 import { useAppStore } from './store';
 
 export function App() {
   useGlobalShortcuts();
+  useTheme();
   const modal = useAppStore((s) => s.modal);
   return (
     <div className="flex h-screen flex-col bg-bg-0 text-ink-0" data-testid="app-root">

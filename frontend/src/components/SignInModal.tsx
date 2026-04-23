@@ -70,7 +70,7 @@ export function SignInModal() {
           disabled
           data-testid="signin-submit"
           title="Wired to real OAuth at backlog #16"
-          className="rounded border border-accent-line bg-accent px-3 py-2 font-mono text-sm text-[#1b1209] transition-opacity duration-fast ease-out-soft disabled:cursor-not-allowed disabled:opacity-60"
+          className="rounded border border-accent-line bg-accent px-3 py-2 font-mono text-sm text-accent-ink transition-opacity duration-fast ease-out-soft disabled:cursor-not-allowed disabled:opacity-60"
         >
           Sign in
         </button>

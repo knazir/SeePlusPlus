@@ -22,6 +22,7 @@ beforeEach(() => {
     recognitionOn: false,
     consoleOpen: true,
     modal: null,
+    themePreference: 'dark',
   });
   vi.stubGlobal(
     'fetch',
