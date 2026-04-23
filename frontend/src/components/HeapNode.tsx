@@ -1,18 +1,35 @@
 import { displayEncoded, isCArray, isCData, isCStruct } from '../trace/schema';
+import { useHover } from '../viz/hoverContext';
 
 interface Props {
   addr: string;
   block: unknown;
+  orphan?: boolean;
   registerEl?: (el: HTMLElement | null) => void;
 }
 
-export function HeapNode({ addr, block, registerEl }: Props) {
+export function HeapNode({ addr, block, orphan, registerEl }: Props) {
+  const { hoveredAddr, setHoveredAddr } = useHover();
+  const highlighted = hoveredAddr === addr;
+  const enter = () => setHoveredAddr(addr);
+  const leave = () => setHoveredAddr(null);
+
   if (!isCArray(block)) {
     return (
       <article
         ref={registerEl}
         data-heap-addr={addr}
-        className="rounded-[3px] border border-line bg-bg-1 px-2 py-1 font-mono text-[11px] text-ink-1"
+        data-orphan={orphan || undefined}
+        data-highlighted={highlighted || undefined}
+        onMouseEnter={enter}
+        onMouseLeave={leave}
+        className={`rounded-[3px] border px-2 py-1 font-mono text-[11px] transition-colors duration-fast ease-out-soft ${
+          orphan
+            ? 'border-dashed border-warn-line bg-warn-soft text-ink-1'
+            : highlighted
+              ? 'border-accent-line bg-accent-soft text-ink-0'
+              : 'border-line bg-bg-1 text-ink-1'
+        }`}
       >
         {addr}: {displayEncoded(block)}
       </article>
@@ -27,11 +44,35 @@ export function HeapNode({ addr, block, registerEl }: Props) {
     <article
       ref={registerEl}
       data-heap-addr={addr}
+      data-orphan={orphan || undefined}
+      data-highlighted={highlighted || undefined}
       data-testid="heap-node"
-      className="flex min-w-[140px] flex-col overflow-hidden rounded-[3px] border border-line bg-bg-1 font-mono text-[11px]"
+      onMouseEnter={enter}
+      onMouseLeave={leave}
+      className={`flex min-w-[140px] flex-col overflow-hidden rounded-[3px] border font-mono text-[11px] transition-colors duration-fast ease-out-soft ${
+        orphan
+          ? 'border-dashed border-warn-line bg-warn-soft'
+          : highlighted
+            ? 'border-accent-line bg-accent-soft shadow-[0_0_0_1px_var(--color-accent-line)]'
+            : 'border-line bg-bg-1'
+      }`}
     >
-      <header className="flex items-center justify-between border-b border-line-soft bg-bg-2 px-2 py-1">
-        <span className="text-[10px] tracking-[0.04em] text-accent">{typeName}</span>
+      <header
+        className={`flex items-center justify-between border-b px-2 py-1 ${
+          orphan ? 'border-warn-line bg-warn-soft' : 'border-line-soft bg-bg-2'
+        }`}
+      >
+        <span className={`flex items-center gap-1.5 text-[10px] tracking-[0.04em] ${orphan ? 'text-warn' : 'text-accent'}`}>
+          {typeName}
+          {orphan && (
+            <span
+              title="No pointer from stack/globals reaches this block (potential leak)"
+              className="rounded-[2px] border border-warn-line bg-bg-0 px-1 py-[0.5px] text-[9px] uppercase tracking-[0.08em]"
+            >
+              orphan
+            </span>
+          )}
+        </span>
         <span className="text-[10px] text-ink-3">{addr}</span>
       </header>
       <div className="flex flex-col">
@@ -59,7 +100,10 @@ function StructFields({ fields }: { fields: ReadonlyArray<readonly [string, unkn
 
 function FieldRow({ name, value }: { name: string; value: unknown }) {
   const type = isCData(value) ? String(value[2]) : null;
-  const ptrTarget = pointerTarget(value);
+  const ptr = pointerTarget(value);
+  const { hoveredAddr, setHoveredAddr } = useHover();
+  const tgt = ptr?.target ?? null;
+  const chipHot = tgt !== null && hoveredAddr === tgt;
 
   return (
     <div className="grid grid-cols-[1fr_auto] items-center gap-2 border-t border-line-soft px-2 py-1 first:border-t-0">
@@ -67,13 +111,14 @@ function FieldRow({ name, value }: { name: string; value: unknown }) {
         <span className="text-ink-0">{name}</span>
         {type && <span className="text-[10px] text-ink-3">: {type}</span>}
       </div>
-      {ptrTarget === undefined ? (
+      {ptr === undefined ? (
         <span className="rounded border border-line-soft bg-bg-0 px-1.5 py-[1px] text-[10px] text-ink-1">
           {displayEncoded(value)}
         </span>
-      ) : ptrTarget === null ? (
+      ) : ptr.target === null ? (
         <span
           data-ptr-target="null"
+          data-ptr-kind={ptr.kind}
           data-testid="nullptr-chip"
           className="relative rounded border border-line-soft bg-bg-0 px-1.5 py-[1px] text-[10px] text-ink-3"
         >
@@ -85,22 +130,32 @@ function FieldRow({ name, value }: { name: string; value: unknown }) {
         </span>
       ) : (
         <span
-          data-ptr-target={ptrTarget}
+          data-ptr-target={ptr.target}
+          data-ptr-kind={ptr.kind}
           data-testid="ptr-value"
-          className="rounded border border-accent-line bg-bg-0 px-1.5 py-[1px] text-[10px] text-accent"
+          data-highlighted={chipHot || undefined}
+          onMouseEnter={() => ptr.target && setHoveredAddr(ptr.target)}
+          onMouseLeave={() => setHoveredAddr(null)}
+          className={`rounded border px-1.5 py-[1px] text-[10px] transition-colors duration-fast ease-out-soft ${
+            chipHot
+              ? 'border-accent bg-accent-soft text-accent'
+              : 'border-accent-line bg-bg-0 text-accent'
+          }`}
         >
-          {ptrTarget}
+          {ptr.target}
         </span>
       )}
     </div>
   );
 }
 
-function pointerTarget(v: unknown): string | null | undefined {
+type PtrKind = 'pointer' | 'ref';
+type PtrTarget = { kind: PtrKind; target: string | null };
+
+function pointerTarget(v: unknown): PtrTarget | undefined {
   if (!isCData(v)) return undefined;
   const type = v[2];
   if (type !== 'pointer' && type !== 'ref') return undefined;
   const val = v[3];
-  if (val === null || val === undefined) return null;
-  return String(val);
+  return { kind: type, target: val == null ? null : String(val) };
 }
