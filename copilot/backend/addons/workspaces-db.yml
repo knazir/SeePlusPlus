@@ -55,7 +55,7 @@ Resources:
   workspacesDbIngress:
     Type: AWS::EC2::SecurityGroupIngress
     Properties:
-      Description: Allow Postgres from the environment's service SG
+      Description: Allow Postgres from the environment service SG
       GroupId: !Ref workspacesDbSecurityGroup
       IpProtocol: tcp
       FromPort: 5432
