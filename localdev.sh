@@ -19,6 +19,11 @@ else
   echo "      for a worktree, run: ./scripts/worktree-ports.sh <slug>" >&2
 fi
 
+# Silence "WORKTREE_SLUG not set" interpolation warnings on the main clone.
+# The compose file uses ${WORKTREE_SLUG:+-$WORKTREE_SLUG} which handles the
+# empty case correctly; the export just stops compose from nagging.
+export WORKTREE_SLUG="${WORKTREE_SLUG:-}"
+
 # ${arr[@]+"${arr[@]}"} — safe expansion that stays empty under `set -u`
 # when the array has zero elements (the `+` substitution skips if unset).
 exec docker compose ${compose_args[@]+"${compose_args[@]}"} "$@"

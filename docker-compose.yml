@@ -1,4 +1,8 @@
-name: spp-${WORKTREE_SLUG:-main}
+# Project name: just `spp` on the main clone, `spp-<slug>` on a worktree
+# sibling. The ${VAR:+text} substitution pattern expands to the text only
+# when VAR is set and non-empty, so the hyphen + slug suffix is opt-in per
+# worktree. Same idiom applied to container_name below.
+name: spp${WORKTREE_SLUG:+-${WORKTREE_SLUG}}
 
 services:
   backend:
@@ -6,7 +10,7 @@ services:
       context: ./backend
       dockerfile: Dockerfile.dev
     image: spp-backend:dev
-    container_name: spp-${WORKTREE_SLUG:-main}-backend
+    container_name: spp-backend${WORKTREE_SLUG:+-${WORKTREE_SLUG}}
     ports:
       - '${BACKEND_PORT:-3000}:3000'
     volumes:
@@ -29,7 +33,7 @@ services:
 
   postgres:
     image: postgres:16-alpine
-    container_name: spp-${WORKTREE_SLUG:-main}-postgres
+    container_name: spp-postgres${WORKTREE_SLUG:+-${WORKTREE_SLUG}}
     environment:
       POSTGRES_USER: spp
       POSTGRES_PASSWORD: spp
@@ -55,10 +59,10 @@ services:
       context: ./frontend
       dockerfile: Dockerfile.dev
     image: spp-frontend:dev
-    container_name: spp-${WORKTREE_SLUG:-main}-frontend
+    container_name: spp-frontend${WORKTREE_SLUG:+-${WORKTREE_SLUG}}
     ports:
       # Host-side port is worktree-assigned; container always listens on 4000.
-      - "${FRONTEND_PORT:-4000}:4000"
+      - '${FRONTEND_PORT:-4000}:4000'
     volumes:
       - ./frontend:/app
       # Named volume preserves the container's node_modules (linux-alpine
@@ -74,6 +78,25 @@ services:
       - VITE_BACKEND_URL=http://backend:3000
     depends_on:
       - backend
+
+  # Legacy 2018 frontend, kept for feature-parity reference. Port hard-coded
+  # to 8000 as before; running it in multiple worktrees simultaneously will
+  # conflict, which is acceptable — legacy is reference material, not
+  # actively developed.
+  frontend-legacy:
+    build:
+      context: ./frontend-legacy
+      dockerfile: Dockerfile.dev
+      args:
+        SPP_API_URL: 'http://localhost:3000/api'
+    image: spp-frontend-legacy:dev
+    container_name: spp-frontend-legacy${WORKTREE_SLUG:+-${WORKTREE_SLUG}}
+    ports:
+      - '8000:8000'
+    volumes:
+      - ./frontend-legacy:/app
+    environment:
+      - NODE_ENV=development
 
 networks:
   no-internet:
