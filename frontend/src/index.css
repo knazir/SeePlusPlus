@@ -1,1 +1,74 @@
 @import 'tailwindcss';
+
+/* Self-hosted variable fonts (entire weight range in one file each). */
+@import '@fontsource-variable/geist';
+@import '@fontsource-variable/jetbrains-mono';
+
+/* Design tokens — ported from tmp/design-spec/project/src/styles.css "dark
+ * (canonical)". Tailwind v4 expands these into utilities automatically:
+ *   --color-bg-0          → bg-bg-0, text-bg-0, border-bg-0, ...
+ *   --font-sans           → font-sans
+ *   --duration-med        → duration-med
+ *   --ease-out-soft       → ease-out-soft
+ * Light theme and the accent-variant overrides are v1-out-of-scope; add only
+ * when a real use case demands them.
+ */
+@theme {
+  --color-bg-0: #0d0f12;
+  --color-bg-1: #14171c;
+  --color-bg-2: #1a1e24;
+  --color-bg-3: #222730;
+
+  --color-line-soft: #2a2f38;
+  --color-line: #353b47;
+  --color-line-strong: #4a5160;
+
+  --color-ink-0: #e8e6e1;
+  --color-ink-1: #b9b6ae;
+  --color-ink-2: #7a7a74;
+  --color-ink-3: #55564f;
+
+  --color-accent: #d97757;
+  --color-accent-soft: rgba(217, 119, 87, 0.14);
+  --color-accent-line: rgba(217, 119, 87, 0.38);
+  --color-accent-dim: #8c4d38;
+
+  --color-warn: #d4a147;
+  --color-warn-soft: rgba(212, 161, 71, 0.14);
+  --color-warn-line: rgba(212, 161, 71, 0.48);
+
+  --color-ok: #7ea37a;
+  --color-err: #c85a5a;
+  --color-err-soft: rgba(200, 90, 90, 0.12);
+
+  --font-sans:
+    'Geist Variable', ui-sans-serif, -apple-system, 'Segoe UI', system-ui, sans-serif;
+  --font-mono:
+    'JetBrains Mono Variable', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+
+  --duration-fast: 140ms;
+  --duration-med: 280ms;
+  --duration-slow: 460ms;
+
+  --ease-out-soft: cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+/* Body base — mirrors the mock's reset + type scale. */
+@layer base {
+  html,
+  body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+  }
+  body {
+    background-color: var(--color-bg-0);
+    color: var(--color-ink-0);
+    font-family: var(--font-sans);
+    font-size: 13px;
+    line-height: 1.45;
+    letter-spacing: -0.003em;
+    -webkit-font-smoothing: antialiased;
+    overflow: hidden;
+  }
+}
