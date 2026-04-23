@@ -13,7 +13,7 @@ Web tool for visualizing C++ execution step-by-step: stack frames, heap, pointer
 - `frontend-legacy/` — original 2018 frontend, still functional. Reference for feature parity; do not modify unless asked.
 - `copilot/` — AWS Copilot manifests for deployed environments.
 - `docs/` — architecture, development, deployment, infrastructure guides.
-  - `docs/v2/` — the phased plan, spike memos, ADRs, phase retros.
+  - `docs/v2/` — v2 README, backlog, and ADRs. Start at `docs/v2/README.md`.
 - `.agents/` — conventions for human + Claude collaborators (worktree setup, PR checklist, subagent patterns).
 - `.claude/` — Claude config. `settings.local.json` is user-local (gitignored).
 - `localdev.sh` — wrapper around `docker compose` that loads `.env.local` if present.
@@ -73,5 +73,5 @@ No monorepo, no root package.json, no shared tsconfig base. When the frontend la
 
 - No trailing whitespace; no leading whitespace on blank lines.
 - Update docs in `docs/` only when a change makes existing content wrong.
-- Cutover of this branch to `master` happens at P7 (see `docs/v2/plan.md`).
+- Cutover of `v2` → `master` is the final item on the v2 backlog (see `docs/v2/README.md`).
 - Don't commit unless asked.
