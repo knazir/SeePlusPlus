@@ -24,8 +24,9 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm install --only=production
 
-# Copy the build output
+# Copy the build output and the schema file (applied on boot by src/db.ts)
 COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/schema.sql ./schema.sql
 
 EXPOSE 3000
 CMD ["node", "dist/index.js"]

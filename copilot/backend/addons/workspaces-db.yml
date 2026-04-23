@@ -1,0 +1,135 @@
+Parameters:
+  App:
+    Type: String
+    Description: Your application's name.
+  Env:
+    Type: String
+    Description: The environment name your service, job, or workflow is being deployed to.
+  Name:
+    Type: String
+    Description: Your workload's name.
+
+# Per-environment knobs. Single-AZ everywhere today; flip prod.MultiAZ to true
+# when there's an availability SLA to defend. Doubles cost, don't do it
+# prophylactically.
+Mappings:
+  EnvConfig:
+    test:
+      DBInstanceClass: db.t4g.micro
+      AllocatedStorage: 20
+      BackupRetentionPeriod: 1
+      MultiAZ: false
+      DeletionProtection: false
+    prod:
+      DBInstanceClass: db.t4g.micro
+      AllocatedStorage: 20
+      BackupRetentionPeriod: 7
+      MultiAZ: false
+      DeletionProtection: true
+
+Resources:
+  workspacesDbSubnetGroup:
+    Metadata:
+      'aws:copilot:description': 'Subnet group for the workspaces RDS instance'
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: !Sub 'Private subnets for ${App}-${Env} workspaces DB'
+      SubnetIds: !Split
+        - ','
+        - Fn::ImportValue: !Sub '${App}-${Env}-PrivateSubnets'
+
+  workspacesDbSecurityGroup:
+    Metadata:
+      'aws:copilot:description': 'Security group for the workspaces RDS instance'
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: !Sub 'Allow backend to reach the ${App}-${Env} workspaces DB'
+      VpcId:
+        Fn::ImportValue: !Sub '${App}-${Env}-VpcId'
+      Tags:
+        - Key: Name
+          Value: !Sub '${App}-${Env}-workspaces-db-sg'
+
+  # Only the environment's shared SG (backend ECS tasks sit behind it) can
+  # reach the DB on 5432. No public access, ever.
+  workspacesDbIngress:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      Description: Allow Postgres from the environment's service SG
+      GroupId: !Ref workspacesDbSecurityGroup
+      IpProtocol: tcp
+      FromPort: 5432
+      ToPort: 5432
+      SourceSecurityGroupId:
+        Fn::ImportValue: !Sub '${App}-${Env}-EnvironmentSecurityGroup'
+
+  workspacesDbSecret:
+    Metadata:
+      'aws:copilot:description': 'Secrets Manager secret holding the DB credentials (JSON)'
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Description: !Sub 'Workspaces DB credentials for ${App}-${Env}'
+      GenerateSecretString:
+        SecretStringTemplate: '{"username": "spp_app"}'
+        GenerateStringKey: password
+        PasswordLength: 32
+        ExcludePunctuation: true
+
+  workspacesDb:
+    Metadata:
+      'aws:copilot:description': 'The workspaces Postgres RDS instance'
+    Type: AWS::RDS::DBInstance
+    DeletionPolicy: Snapshot
+    UpdateReplacePolicy: Snapshot
+    Properties:
+      DBInstanceIdentifier: !Sub '${App}-${Env}-workspaces'
+      DBName: workspaces
+      Engine: postgres
+      EngineVersion: '16.4'
+      DBInstanceClass: !FindInMap [EnvConfig, !Ref Env, DBInstanceClass]
+      AllocatedStorage: !FindInMap [EnvConfig, !Ref Env, AllocatedStorage]
+      StorageType: gp3
+      StorageEncrypted: true
+      MasterUsername: !Sub '{{resolve:secretsmanager:${workspacesDbSecret}::username}}'
+      MasterUserPassword: !Sub '{{resolve:secretsmanager:${workspacesDbSecret}::password}}'
+      DBSubnetGroupName: !Ref workspacesDbSubnetGroup
+      VPCSecurityGroups:
+        - !Ref workspacesDbSecurityGroup
+      PubliclyAccessible: false
+      MultiAZ: !FindInMap [EnvConfig, !Ref Env, MultiAZ]
+      BackupRetentionPeriod: !FindInMap [EnvConfig, !Ref Env, BackupRetentionPeriod]
+      DeletionProtection: !FindInMap [EnvConfig, !Ref Env, DeletionProtection]
+      CopyTagsToSnapshot: true
+      AutoMinorVersionUpgrade: true
+
+  # Wires the DB's host/port/dbname back into the same secret, so the backend
+  # gets a single JSON blob with every field it needs.
+  workspacesDbSecretAttachment:
+    Type: AWS::SecretsManager::SecretTargetAttachment
+    Properties:
+      SecretId: !Ref workspacesDbSecret
+      TargetId: !Ref workspacesDb
+      TargetType: AWS::RDS::DBInstance
+
+  # Grants the backend task role permission to read the credentials secret.
+  # Copilot auto-attaches any ManagedPolicy output to the task role.
+  workspacesDbAccessPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      Description: !Sub 'Grants read access to the ${App}-${Env} workspaces DB secret'
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - secretsmanager:GetSecretValue
+              - secretsmanager:DescribeSecret
+            Resource: !Ref workspacesDbSecret
+
+Outputs:
+  WORKSPACES_DB_SECRET_ARN:
+    Description: "ARN of the Secrets Manager secret holding the DB credentials JSON"
+    Value: !Ref workspacesDbSecret
+  workspacesDbAccessPolicy:
+    Description: "The IAM::ManagedPolicy to attach to the task role"
+    Value: !Ref workspacesDbAccessPolicy

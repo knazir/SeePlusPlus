@@ -3,10 +3,12 @@ import cors from "cors";
 import crypto from "crypto";
 import express, { Express, Request, Response } from "express";
 
+import { closeDb, initDb } from "./db";
 import {
     createRunner,
-    TraceRunner 
+    TraceRunner
 } from "./runners";
+import { workspacesRouter } from "./routes/workspaces";
 import {
     buildValgrindResponse,
     preprocessCode,
@@ -98,8 +100,32 @@ app.post("/api/run", async (req: Request, res: Response) => {
     }
 });
 
+app.use("/api/workspaces", workspacesRouter);
+
 // Start server
 //------------------------------------------------------------------------------
-app.listen(PORT, () => {
-    console.log(`[Server]: See++ backend is running at http://localhost:${PORT}`);
-});
+async function start(): Promise<void> {
+    try {
+        await initDb();
+    } catch (err) {
+        // Don't block startup on DB failure — the runner endpoint still works
+        // and /api/workspaces returns 503 until DATABASE_URL is healthy.
+        console.error("[Server]: failed to initialize database:", err);
+    }
+
+    const server = app.listen(PORT, () => {
+        console.log(`[Server]: See++ backend is running at http://localhost:${PORT}`);
+    });
+
+    const shutdown = async (signal: string) => {
+        console.log(`[Server]: received ${signal}, shutting down`);
+        server.close(async () => {
+            await closeDb();
+            process.exit(0);
+        });
+    };
+    process.on("SIGTERM", () => void shutdown("SIGTERM"));
+    process.on("SIGINT", () => void shutdown("SIGINT"));
+}
+
+void start();
