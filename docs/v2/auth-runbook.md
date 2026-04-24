@@ -36,11 +36,11 @@ OAuth client ID**.
 - **Authorized JavaScript origins:**
   - `http://localhost:4000`
   - `https://frontend.test.spp.seepluspl.us`
-  - `https://beta.seepluspl.us`
+  - `https://seepluspl.us`
 - **Authorized redirect URIs:**
   - `http://localhost:4000/api/auth/google/callback`
   - `https://frontend.test.spp.seepluspl.us/api/auth/google/callback`
-  - `https://beta.seepluspl.us/api/auth/google/callback`
+  - `https://seepluspl.us/api/auth/google/callback`
 
 Click **Create**. Copy the **Client ID** and **Client Secret** — the secret
 is shown once. If you lose it, regenerate and repeat step 5.

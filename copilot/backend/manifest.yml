@@ -80,7 +80,7 @@ environments:
   prod:
     variables:
       LAMBDA_FUNCTION_NAME: spp-trace-executor-prod
-      GOOGLE_CLIENT_ID: ""
+      GOOGLE_CLIENT_ID: "63892591155-m7k6kl38eb8lrr68ne1jgq744a07bbsm.apps.googleusercontent.com"
     secrets:
       GOOGLE_CLIENT_SECRET: /copilot/spp/prod/secrets/GOOGLE_CLIENT_SECRET
       SESSION_SECRET: /copilot/spp/prod/secrets/SESSION_SECRET

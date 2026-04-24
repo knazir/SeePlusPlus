@@ -41,7 +41,7 @@ d772446 dx: unify .env.local into .env; harden worktree-ports.sh against overwri
 |---|---|---|
 | **Local** | Latest `v2` via `./localdev.sh up` | All features work. Dev auth on if `DEV_AUTH_ENABLED=true` in `.env`. |
 | **Test** (`frontend.test.spp.seepluspl.us`) | Behind latest `v2` | Last full deploy was around `8169850`. **Flags + admin + polish since then are NOT yet on test.** Needs a `copilot svc deploy --name backend --env test` + `--name frontend --env test` to catch up. Zero blocker — just hasn't happened. |
-| **Prod** (`beta.seepluspl.us`) | `frontend-legacy` (untouched) | v2 has never been deployed to prod. RDS doesn't exist there yet. See "Cutover" below. |
+| **Prod** (`seepluspl.us` post-cutover; `frontend-legacy` moving to `old.seepluspl.us`) | `frontend-legacy` on the apex today, untouched | v2 has never been deployed to prod. RDS doesn't exist there yet. See "Cutover" below. |
 
 ---
 
@@ -90,9 +90,14 @@ No explicit backlog of further pre-cutover bugs yet. If the user continues, expe
 1. **Push latest `v2` to test env** — `copilot svc deploy backend test` + `frontend test`. Brings test up to date with local.
 2. **Bootstrap prod secrets** — `copilot secret init --name GOOGLE_CLIENT_SECRET --values prod:...`, same for `SESSION_SECRET` (generate fresh `openssl rand -hex 32`), and optionally `ADMIN_EMAILS`.
 3. **Fill in `GOOGLE_CLIENT_ID` for prod** in `copilot/backend/manifest.yml` (currently empty string).
-4. **Register `https://beta.seepluspl.us/api/auth/google/callback`** in the Google OAuth client's authorized redirect URIs.
-5. **First prod deploy** — `copilot svc deploy backend prod` creates prod RDS (~10 min), then `copilot svc deploy frontend prod`. `beta.seepluspl.us` flips from legacy to v2.
-6. **Retire legacy** — `copilot svc delete --name frontend-legacy --env prod` once we're confident.
+4. **Register `https://seepluspl.us/api/auth/google/callback`** in the Google OAuth client's authorized redirect URIs (replaces the `beta.seepluspl.us` entry from earlier drafts).
+5. **First prod deploy** — order matters because `seepluspl.us` currently resolves to `frontend-legacy`:
+   1. `copilot svc deploy backend prod` creates prod RDS (~10 min).
+   2. `copilot svc deploy --name frontend-legacy --env prod` — releases the apex Route53 record and moves legacy to `old.seepluspl.us`.
+   3. `copilot svc deploy --name frontend --env prod` — takes over the apex; v2 goes live at `seepluspl.us`.
+
+   Expect a brief (minutes) window where apex resolves to nothing between steps 5.ii and 5.iii. `legacy.seepluspl.us` and `beta.seepluspl.us` are retired in this swap and will NXDOMAIN afterward.
+6. **Retire legacy** — once we're confident nothing still points at `old.seepluspl.us`, `copilot svc delete --name frontend-legacy --env prod`.
 7. **Squash-merge `v2` → `master`**, delete the `v2` branch.
 8. **Relicense** — GPL-2.0 → MIT on orchestration code (per original cutover plan). The frontend v2 is a clean rewrite; MIT is clean.
 
@@ -200,7 +205,7 @@ Nothing in this list is urgent; they're here so the next session sees them in on
 If the user hasn't done these yet and they come up:
 
 - Rebuild local `.env` with real values (see runbook + `.env.example`). Can't sign in locally without it.
-- For cutover: create Google OAuth client redirect URI for `beta.seepluspl.us`, run `copilot secret init` for prod secrets.
+- For cutover: create Google OAuth client redirect URI for `seepluspl.us`, run `copilot secret init` for prod secrets.
 - If the test env has been idle long enough that it was torn down via `copilot env delete test` to save cost, recreating it needs `copilot env init --name test --default-config` + `copilot env deploy --name test` + the two service deploys.
 
 ---
