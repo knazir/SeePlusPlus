@@ -153,6 +153,24 @@ export interface AppState {
   heapDensity: HeapDensity;
   setHeapDensity: (d: HeapDensity) => void;
 
+  /**
+   * Fraction of the editor+viz row allocated to the editor pane, in [0, 1].
+   * Clamped against pixel minimums at render time so neither pane ever
+   * disappears, even if a stored value would imply a collapsed pane on a
+   * narrow window. Persisted.
+   */
+  editorFraction: number;
+  setEditorFraction: (f: number) => void;
+
+  /**
+   * User-set console height in pixels when the console is expanded.
+   * `null` means "use the default"; otherwise the stored value is clamped
+   * against pixel minimums at render time so the console and the main area
+   * can never collapse to zero. Persisted.
+   */
+  consoleHeightPx: number | null;
+  setConsoleHeightPx: (h: number | null) => void;
+
   // auth
   /** Signed-in user, or null if anonymous / still loading. */
   me: Me | null;
@@ -194,6 +212,40 @@ function readDensity(): HeapDensity {
     // SSR / private-mode / disabled storage — fall through.
   }
   return 'normal';
+}
+
+// Pane size persistence. Values get re-clamped against pixel minimums at
+// render time; the storage layer just validates that what it reads is a
+// plausible number.
+const EDITOR_FRACTION_KEY = 'spp.editorFraction';
+export const DEFAULT_EDITOR_FRACTION = 0.5;
+
+function readEditorFraction(): number {
+  try {
+    const raw = localStorage.getItem(EDITOR_FRACTION_KEY);
+    if (raw === null) return DEFAULT_EDITOR_FRACTION;
+    const n = parseFloat(raw);
+    // Broad outer guard rails; per-render clamp against pixel minimums
+    // tightens this further depending on the actual viewport width.
+    if (Number.isFinite(n) && n >= 0.1 && n <= 0.9) return n;
+  } catch {
+    // SSR / private-mode / disabled storage — fall through.
+  }
+  return DEFAULT_EDITOR_FRACTION;
+}
+
+const CONSOLE_HEIGHT_KEY = 'spp.consoleHeightPx';
+
+function readConsoleHeightPx(): number | null {
+  try {
+    const raw = localStorage.getItem(CONSOLE_HEIGHT_KEY);
+    if (raw === null || raw === '') return null;
+    const n = parseFloat(raw);
+    if (Number.isFinite(n) && n >= 40 && n <= 2000) return n;
+  } catch {
+    // SSR / private-mode / disabled storage — fall through.
+  }
+  return null;
 }
 
 export type ModalKind =
@@ -639,6 +691,29 @@ export const useAppStore = create<AppState>((set, get) => ({
       // Ignore — persistence is best-effort.
     }
     set({ heapDensity: d });
+  },
+
+  editorFraction: readEditorFraction(),
+  setEditorFraction: (f) => {
+    // Broad outer guard rails (per-render clamp tightens further).
+    const clamped = Math.max(0.1, Math.min(0.9, f));
+    try {
+      localStorage.setItem(EDITOR_FRACTION_KEY, String(clamped));
+    } catch {
+      // Ignore — persistence is best-effort.
+    }
+    set({ editorFraction: clamped });
+  },
+
+  consoleHeightPx: readConsoleHeightPx(),
+  setConsoleHeightPx: (h) => {
+    try {
+      if (h === null) localStorage.removeItem(CONSOLE_HEIGHT_KEY);
+      else localStorage.setItem(CONSOLE_HEIGHT_KEY, String(h));
+    } catch {
+      // Ignore — persistence is best-effort.
+    }
+    set({ consoleHeightPx: h });
   },
 
   me: null,
