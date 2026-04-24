@@ -48,11 +48,29 @@ export class LocalDockerRunner implements TraceRunner {
                 this.userCodeImageName
             ].join(" ");
 
-            await execPromise(dockerCmd);
+            // The container exits non-zero when the user's code fails to compile,
+            // which makes exec throw. But the container DOES get to write gcc's
+            // stderr to `main_cc_err.txt` before exiting, so we swallow the
+            // throw here and decide what to do after reading the output files.
+            let dockerError: Error | null = null;
+            try {
+                await execPromise(dockerCmd);
+            } catch (err) {
+                dockerError = err as Error;
+            }
 
             // Read results
             const ccStdout = fs.existsSync(ccStdoutFile) ? fs.readFileSync(ccStdoutFile, "utf-8") : "";
             const ccStderr = fs.existsSync(ccStderrFile) ? fs.readFileSync(ccStderrFile, "utf-8") : "";
+
+            // No compile output + docker throw => genuine orchestration failure
+            // (image missing, daemon down, permission error on the mount, etc.).
+            // Re-throw so it surfaces as a 500. Compile failures will have
+            // ccStderr populated, so we fall through and let buildValgrindResponse
+            // turn that into a proper UncaughtException trace.
+            if (dockerError && ccStderr.trim().length === 0) {
+                throw dockerError;
+            }
 
             let stdout = "";
             let stderr = "";

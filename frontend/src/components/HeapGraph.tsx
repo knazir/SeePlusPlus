@@ -2,22 +2,18 @@ import { useLayoutEffect, useMemo, useRef } from 'react';
 import { useAppStore, useCurrentStep } from '../store';
 import { HeapNode } from './HeapNode';
 import { captureRects, playEnter, playFlip } from '../anim/flip';
-import { recognize } from '../viz/recognize';
 import { orphanAddrs } from '../viz/reachability';
+import { layoutHeap, type NodeSize } from '../viz/layoutHeap';
 
 /**
- * Heap graph renderer with enter + FLIP animations only.
+ * Heap graph renderer. Uses @dagrejs/dagre (rankdir TB, acyclicer: greedy)
+ * to lay out every heap block per step, applying `position: absolute;
+ * left/top` imperatively in a layout effect so the measure→place→paint
+ * sequence is invisible to the user.
  *
- * We deliberately don't animate cards OUT — React unmounts them before any
- * useLayoutEffect can fire, and the contortions needed to keep a ghost DOM
- * alive past the step change added more complexity than the exit animation
- * was worth. Cards that leave the heap just disappear. Enter and FLIP
- * carry the weight of communicating "something changed here."
- *
- * HeapNode wraps its animated content in an outer div that carries the ref
- * and data-heap-addr. Enter animations apply to the inner article via
- * [data-heap-inner], so the outer's bounding rect stays layout-accurate
- * and arrow endpoints don't lurch while a card fades in.
+ * Positioning uses `left/top` so FLIP — which animates `transform` — stays
+ * orthogonal and smoothly carries cards between step layouts. Enter
+ * animations still apply to the inner article.
  */
 
 /** Find the animation target inside a heap node's outer wrapper. */
@@ -28,21 +24,17 @@ function innerOf(outer: HTMLElement): HTMLElement {
 export function HeapGraph() {
   const step = useCurrentStep();
   const stepIndex = useAppStore((s) => s.stepIndex);
-  const recognitionOn = useAppStore((s) => s.recognitionOn);
 
   const elsRef = useRef<Map<string, HTMLElement>>(new Map());
   const prevRectsRef = useRef<Map<string, DOMRect>>(new Map());
   const prevAddrsRef = useRef<Set<string>>(new Set());
+  const containerRef = useRef<HTMLDivElement | null>(null);
 
-  const recognized = step && recognitionOn ? recognize(step) : null;
   const orphans = useMemo(() => (step ? orphanAddrs(step) : new Set<string>()), [step]);
-
-  const entries = useMemo(() => {
-    if (!step) return [] as Array<[string, unknown]>;
-    return recognized
-      ? recognized.chain.map((addr): [string, unknown] => [addr, step.heap[addr]])
-      : Object.entries(step.heap);
-  }, [step, recognized]);
+  const entries = useMemo(
+    () => (step ? (Object.entries(step.heap) as Array<[string, unknown]>) : []),
+    [step],
+  );
 
   useLayoutEffect(() => {
     if (!step) {
@@ -51,10 +43,35 @@ export function HeapGraph() {
       return;
     }
 
-    // FLIP any node whose layout moved.
+    // Measure every mounted card, compute a dagre layout, then apply
+    // top-left positions imperatively. Doing this in a layout effect keeps
+    // the two-pass measure-then-place dance invisible — the browser only
+    // paints the final positioned state.
+    const sizes = new Map<string, NodeSize>();
+    for (const [addr, el] of elsRef.current) {
+      const r = el.getBoundingClientRect();
+      sizes.set(addr, { w: r.width, h: r.height });
+    }
+    const { positions, width, height } = layoutHeap(entries, sizes);
+    for (const [addr, el] of elsRef.current) {
+      const p = positions.get(addr);
+      if (!p) {
+        el.style.position = '';
+        el.style.left = '';
+        el.style.top = '';
+        continue;
+      }
+      el.style.position = 'absolute';
+      el.style.left = `${p.x}px`;
+      el.style.top = `${p.y}px`;
+    }
+    if (containerRef.current) {
+      containerRef.current.style.width = `${width}px`;
+      containerRef.current.style.height = `${height}px`;
+    }
+
     playFlip(prevRectsRef.current, elsRef.current);
 
-    // Enter: nodes mounted this render that weren't in the previous set.
     for (const [addr, el] of elsRef.current) {
       if (prevAddrsRef.current.has(addr)) continue;
       playEnter(innerOf(el));
@@ -62,7 +79,7 @@ export function HeapGraph() {
 
     prevRectsRef.current = captureRects(elsRef.current);
     prevAddrsRef.current = new Set(elsRef.current.keys());
-  }, [stepIndex, step, recognitionOn]);
+  }, [stepIndex, step, entries]);
 
   if (!step) return null;
   if (entries.length === 0) {
@@ -73,12 +90,8 @@ export function HeapGraph() {
     );
   }
 
-  const layoutClass = recognized
-    ? 'flex flex-row flex-wrap items-start gap-3'
-    : 'flex flex-col gap-3';
-
   return (
-    <div className={layoutClass} data-testid="heap-graph" data-recognized={recognized?.kind}>
+    <div ref={containerRef} className="relative" data-testid="heap-graph">
       {entries.map(([addr, block]) => (
         <HeapNode
           key={addr}

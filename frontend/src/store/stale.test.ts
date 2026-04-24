@@ -10,9 +10,9 @@ beforeEach(() => {
     trace: null,
     lastRunCode: null,
     error: null,
+    buildOutput: null,
     stepIndex: 0,
     playing: false,
-    recognitionOn: false,
     consoleOpen: true,
     modal: null,
   });

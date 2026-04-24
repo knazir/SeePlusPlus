@@ -17,10 +17,17 @@ export function StackFrames() {
   // Top of stack first; mock puts the active frame first in the list.
   const frames = [...step.stackToRender].reverse();
 
+  // Key prefixed by stack position: some backend traces emit duplicate frames
+  // with the same (funcName, FP) at the same step (root cause is upstream in
+  // SPP-Valgrind / the parser). React requires unique sibling keys; if we
+  // rely on uniqueHash alone, a single collision silently accumulates DOM
+  // nodes across step scrubs. Prefixing with the depth guarantees uniqueness
+  // within a render while still preserving per-depth identity across steps,
+  // so unmounting of frames that pop off the top still works cleanly.
   return (
     <ol className="flex flex-col gap-1.5 px-3 pb-5" data-testid="stack-frames">
-      {frames.map((frame) => (
-        <FrameCard key={frame.uniqueHash} frame={frame} />
+      {frames.map((frame, i) => (
+        <FrameCard key={`${i}_${frame.uniqueHash}`} frame={frame} />
       ))}
     </ol>
   );

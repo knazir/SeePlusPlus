@@ -6,7 +6,7 @@ import { isCArray, isCData, isCStruct } from '../trace/schema';
 import type { ExecutionPoint } from '../trace/schema';
 
 /** Collect all addresses referenced by a (possibly nested) encoded value. */
-function collectPointers(v: unknown, out: Set<string>): void {
+export function collectPointers(v: unknown, out: Set<string>): void {
   if (v === null || v === undefined) return;
   if (isCData(v)) {
     const type = v[2];

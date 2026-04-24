@@ -9,9 +9,9 @@ beforeEach(() => {
     trace: null,
     lastRunCode: null,
     error: null,
+    buildOutput: null,
     stepIndex: 0,
     playing: false,
-    recognitionOn: false,
     consoleOpen: true,
     modal: null,
     themePreference: 'dark',
@@ -66,15 +66,32 @@ describe('useAppStore — workspace + execution', () => {
     expect(s.error).toMatch(/unexpected trace shape/i);
   });
 
-  it('run() captures a backend HTTP error with status + body', async () => {
+  it('run() surfaces a parsed `{"error": "..."}` body as the user-facing error', async () => {
     const fetchFn = vi
       .fn<typeof fetch>()
-      .mockResolvedValue(new Response('compile barfed', { status: 500 }));
+      .mockResolvedValue(new Response(JSON.stringify({ error: 'undefined reference to main' }), { status: 500 }));
     await useAppStore.getState().run(fetchFn);
     const s = useAppStore.getState();
     expect(s.trace).toBeNull();
-    expect(s.error).toMatch(/500/);
-    expect(s.error).toContain('compile barfed');
+    expect(s.error).toBe('undefined reference to main');
+  });
+
+  it('run() swaps noisy `Command failed: docker …` bodies for a generic message', async () => {
+    const fetchFn = vi
+      .fn<typeof fetch>()
+      .mockResolvedValue(new Response(JSON.stringify({ error: 'Command failed: docker run --rm --network spp_no-internet …' }), { status: 500 }));
+    await useAppStore.getState().run(fetchFn);
+    const s = useAppStore.getState();
+    expect(s.error).toBe('Build or runtime failure. Check the console for details.');
+  });
+
+  it('run() falls back to generic message when the body is non-JSON or empty', async () => {
+    const fetchFn = vi
+      .fn<typeof fetch>()
+      .mockResolvedValue(new Response('', { status: 500 }));
+    await useAppStore.getState().run(fetchFn);
+    const s = useAppStore.getState();
+    expect(s.error).toBe('Build or runtime failure. Check the console for details.');
   });
 
   it('run() is reentrancy-safe while a previous run is in flight', async () => {

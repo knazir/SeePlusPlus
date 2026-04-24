@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@codemirror/lang-cpp": "^6.0.3",
+    "@dagrejs/dagre": "^3.0.0",
     "@fontsource-variable/geist": "^5.2.8",
     "@fontsource-variable/jetbrains-mono": "^5.2.8",
     "@uiw/react-codemirror": "^4.25.9",

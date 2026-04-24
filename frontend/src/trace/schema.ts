@@ -67,6 +67,15 @@ export function displayEncoded(v: unknown): string {
 
 const EncodedValueSchema: z.ZodType<EncodedValue> = z.unknown();
 
+// The backend prepends `#define union struct\n` to every user program before
+// compilation (see `backend/src/valgrind_utils.ts`). That shifts every line
+// number reported by Valgrind up by one. We compensate here, at the validator
+// boundary, so every downstream consumer sees user-source line numbers.
+// The legacy frontend did the same adjustment in its model layer, with a
+// comment reading "IMPORTANT: we do line - 1 to discount the #define for
+// fixing unions". If the backend ever stops prepending, drop this shift.
+const LINE_PREPEND_OFFSET = 1;
+
 const StackFrameSchema = z
   .object({
     funcName: z.string(),
@@ -77,7 +86,8 @@ const StackFrameSchema = z
     encodedLocals: z.record(z.string(), EncodedValueSchema),
     line: z.number().optional(),
   })
-  .passthrough();
+  .passthrough()
+  .transform((f) => (typeof f.line === 'number' ? { ...f, line: f.line - LINE_PREPEND_OFFSET } : f));
 
 const ExecutionPointSchema = z
   .object({
@@ -91,11 +101,18 @@ const ExecutionPointSchema = z
     stdout: z.string(),
     exceptionMsg: z.string().optional(),
   })
-  .passthrough();
+  .passthrough()
+  .transform((ep) => ({ ...ep, line: ep.line - LINE_PREPEND_OFFSET }));
 
 export const ProgramTraceSchema = z.object({
   code: z.string(),
   trace: z.array(ExecutionPointSchema),
+  /**
+   * Raw build output (gcc stderr) when the run failed to compile. Present
+   * only on build-failure responses; the store hoists this into its own
+   * field and the bottom console renders it verbatim.
+   */
+  buildOutput: z.string().optional(),
 });
 
 export type StackFrame = z.infer<typeof StackFrameSchema>;
