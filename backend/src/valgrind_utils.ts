@@ -1,18 +1,7 @@
 //------------------------------------------------------------------------------
 import { parseValgrindTrace, ProgramTrace } from "./parse_vg_trace";
 
-// Types
-//------------------------------------------------------------------------------
-interface UncaughtExceptionTrace {
-    code: string;
-    trace: Array<{
-        event: "uncaughtException";
-        exceptionMsg: string;
-        line?: number;
-    }>;
-}
-
-export type ValgrindTrace = ProgramTrace | UncaughtExceptionTrace;
+export type ValgrindTrace = ProgramTrace;
 
 //------------------------------------------------------------------------------
 export function preprocessCode(userCode: string): string {
@@ -33,7 +22,7 @@ export function buildValgrindResponse(
     if (ccStderr.includes("error:")     ||
         ccStderr.includes("#error")     ||
         ccStderr.includes("undefined reference")) {
-        return handleGccError(userCodeFileName, originalUserCode, stderr);
+        return handleGccError(userCodeFileName, originalUserCode, ccStderr);
     }
 
     // Lambda mode: shift stdout by 1 step to compensate for timing offset
@@ -80,18 +69,29 @@ function handleGccError(
                     lineNum = maybeLine;
                 }
             }
-            break;        
+            break;
         }
     }
 
+    // Emit a full ExecutionPoint shape so the frontend's Zod validator
+    // accepts this as a regular ProgramTrace. The one-liner exceptionMsg
+    // surfaces in the build-failed banner; the raw gcc output is piped
+    // to the bottom console via `buildOutput`.
     return {
         code: userCode,
+        buildOutput: gccOutput.trim(),
         trace: [
             {
                 event: "uncaughtException",
-                exceptionMsg: exceptionMsg,
-                line: lineNum
-            }
-        ]
+                exceptionMsg,
+                line: lineNum ?? 0,
+                funcName: "",
+                stackToRender: [],
+                globals: {},
+                heap: {},
+                orderedGlobals: [],
+                stdout: "",
+            },
+        ],
     };
 }

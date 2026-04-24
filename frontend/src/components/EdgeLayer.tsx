@@ -18,6 +18,13 @@ interface Edge {
 interface Props {
   /** The element whose descendants carry the [data-ptr-target] / [data-heap-addr] attributes. */
   containerRef: RefObject<HTMLElement | null>;
+  /**
+   * Optional element whose interior bounds clip the heap. If provided,
+   * edges whose source or target lives inside this element and sits
+   * outside its visible rect (e.g. panned offscreen) are dropped — we'd
+   * rather show no arrow than an arrow pointing into blank space.
+   */
+  clipRef?: RefObject<HTMLElement | null>;
 }
 
 /**
@@ -32,7 +39,7 @@ interface Props {
  * nodes frame-by-frame — getBoundingClientRect reflects the animating
  * transform, so this Just Works.
  */
-export function EdgeLayer({ containerRef }: Props) {
+export function EdgeLayer({ containerRef, clipRef }: Props) {
   const [edges, setEdges] = useState<Edge[]>([]);
   const rafRef = useRef<number | null>(null);
   const stepIndex = useAppStore((s) => s.stepIndex);
@@ -50,7 +57,7 @@ export function EdgeLayer({ containerRef }: Props) {
       if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
       rafRef.current = requestAnimationFrame(() => {
         rafRef.current = null;
-        setEdges(computeEdges(container));
+        setEdges(computeEdges(container, clipRef?.current ?? null));
       });
     };
 
@@ -60,7 +67,7 @@ export function EdgeLayer({ containerRef }: Props) {
     const followStart = performance.now();
     const follow = () => {
       if (!following) return;
-      setEdges(computeEdges(container));
+      setEdges(computeEdges(container, clipRef?.current ?? null));
       if (performance.now() - followStart < FLIP_DURATION + FLIP_FOLLOW_MARGIN) {
         rafRef.current = requestAnimationFrame(follow);
       }
@@ -81,7 +88,7 @@ export function EdgeLayer({ containerRef }: Props) {
         rafRef.current = null;
       }
     };
-  }, [containerRef, stepIndex, trace]);
+  }, [containerRef, clipRef, stepIndex, trace]);
 
   return (
     <svg
@@ -156,8 +163,13 @@ function resolveTarget(
   );
 }
 
-function computeEdges(container: HTMLElement): Edge[] {
+function pointInRect(x: number, y: number, r: DOMRect): boolean {
+  return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom;
+}
+
+function computeEdges(container: HTMLElement, clip: HTMLElement | null): Edge[] {
   const cRect = container.getBoundingClientRect();
+  const clipRect = clip?.getBoundingClientRect() ?? null;
   const ptrs = Array.from(container.querySelectorAll<HTMLElement>('[data-ptr-target]'));
   const out: Edge[] = [];
   for (let i = 0; i < ptrs.length; i++) {
@@ -178,14 +190,26 @@ function computeEdges(container: HTMLElement): Edge[] {
     const tgtCenterX = t.left + t.width / 2;
     const targetX = srcCenterX < tgtCenterX ? t.left : t.right;
     const sourceX = srcCenterX < tgtCenterX ? s.right : s.left;
+    const sourceY = s.top + s.height / 2;
+    const targetY = t.top + t.height / 2;
+    // Clip: drop edges whose source or target point has been panned out of
+    // the heap viewport. Endpoints outside the clip container (e.g. stack
+    // chips) aren't clipped because they never pan. We check the ANCHOR
+    // POINT itself, not the enclosing rect, so a card with its left edge
+    // clipped (anchor = target's left side) correctly drops the arrow
+    // even though part of the card is still visible.
+    if (clip && clipRect) {
+      if (clip.contains(p) && !pointInRect(sourceX, sourceY, clipRect)) continue;
+      if (clip.contains(targetEl) && !pointInRect(targetX, targetY, clipRect)) continue;
+    }
     out.push({
       key: `${i}:${target}`,
       kind,
       target,
       x1: sourceX - cRect.left,
-      y1: s.top + s.height / 2 - cRect.top,
+      y1: sourceY - cRect.top,
       x2: targetX - cRect.left,
-      y2: t.top + t.height / 2 - cRect.top,
+      y2: targetY - cRect.top,
     });
   }
   return out;

@@ -77,6 +77,14 @@ export interface AppState {
   /** The code that produced the current trace. Derived-`stale` = code !== lastRunCode. */
   lastRunCode: string | null;
   error: string | null;
+  /**
+   * Raw build output (gcc stderr) from the most recent failed run. Rendered
+   * verbatim in the bottom console so users see the actual diagnostic instead
+   * of just the banner one-liner. `null` when the last run succeeded or when
+   * the failure had no captured build output (e.g. pure docker orchestration
+   * failure).
+   */
+  buildOutput: string | null;
   run: (fetchFn?: RunFetch) => Promise<void>;
 
   // step navigation
@@ -97,9 +105,6 @@ export interface AppState {
   togglePlay: () => void;
 
   // ui
-  recognitionOn: boolean;
-  toggleRecognition: () => void;
-
   consoleOpen: boolean;
   toggleConsole: () => void;
 
@@ -274,6 +279,39 @@ async function createAndOpenShareModal(): Promise<void> {
   }
 }
 
+/**
+ * Turn a `runCode` failure into a user-facing string.
+ *
+ * The backend's /api/run error body is typically `{"error": "<raw message>"}`.
+ * For genuine user-facing problems (compile errors, runtime traps) that's
+ * already reasonable. For orchestration failures — most commonly
+ * `Command failed: docker run …` when the code-runner container exits
+ * non-zero — the raw message leaks docker command-line internals that are
+ * useless to a student. We swap those for a generic "build or runtime
+ * failure, check the console" message; the actual diagnostics show up in
+ * the console pane (stdout/stderr/build tabs) either way.
+ */
+function friendlyRunErrorMessage(err: unknown): string {
+  if (err instanceof RunError) {
+    // Try to parse `{"error": "..."}`. If the body isn't JSON, fall through.
+    let rawMsg = err.body;
+    try {
+      const parsed = JSON.parse(err.body) as { error?: unknown };
+      if (typeof parsed?.error === 'string') rawMsg = parsed.error;
+    } catch {
+      // Body wasn't JSON — use it as-is (may be empty).
+    }
+    const trimmed = rawMsg.trim();
+    // Swap the noisy docker-shell failure for something actionable.
+    if (/^Command failed: docker\b/i.test(trimmed) || trimmed === '') {
+      return 'Build or runtime failure. Check the console for details.';
+    }
+    return trimmed;
+  }
+  if (err instanceof Error) return err.message;
+  return String(err);
+}
+
 export const useAppStore = create<AppState>((set, get) => ({
   code: DEFAULT_PROGRAM,
   setCode: (code) => set({ code }),
@@ -282,17 +320,43 @@ export const useAppStore = create<AppState>((set, get) => ({
   trace: null,
   lastRunCode: null,
   error: null,
+  buildOutput: null,
 
   run: async (fetchFn) => {
     if (get().running) return;
     const sentCode = get().code;
-    set({ running: true, error: null });
+    set({ running: true, error: null, buildOutput: null });
     try {
       const raw = await runCode(sentCode, fetchFn);
       const parsed = ProgramTraceSchema.safeParse(raw);
       if (!parsed.success) {
         set({
+          trace: null,
+          lastRunCode: null,
+          stepIndex: 0,
+          playing: false,
           error: `Backend returned an unexpected trace shape.\n${parsed.error.message}`,
+          buildOutput: null,
+          running: false,
+        });
+        return;
+      }
+      // Compile-failure traces arrive as a single ExecutionPoint with
+      // event: "uncaughtException" and an empty stack/heap. Hoist them into
+      // the error + buildOutput channels so VizPane renders the build-failed
+      // empty state and ConsolePane renders the raw gcc diagnostic.
+      const firstStep = parsed.data.trace[0];
+      const isBuildFailure =
+        parsed.data.trace.length === 1 &&
+        firstStep?.event === 'uncaughtException';
+      if (isBuildFailure) {
+        set({
+          trace: null,
+          lastRunCode: null,
+          stepIndex: 0,
+          playing: false,
+          error: firstStep?.exceptionMsg || 'Build failed.',
+          buildOutput: parsed.data.buildOutput ?? firstStep?.exceptionMsg ?? null,
           running: false,
         });
         return;
@@ -305,13 +369,19 @@ export const useAppStore = create<AppState>((set, get) => ({
         running: false,
       });
     } catch (err) {
-      const msg =
-        err instanceof RunError
-          ? `${err.message}${err.body ? `\n${err.body}` : ''}`
-          : err instanceof Error
-            ? err.message
-            : String(err);
-      set({ error: msg, running: false });
+      // A failed run (compile error, docker failure, schema mismatch) invalidates
+      // the old visualization — keeping the stale trace around would mislead
+      // users into thinking their edit is reflected. Clear it so VizPane drops
+      // into its build-error empty state.
+      set({
+        trace: null,
+        lastRunCode: null,
+        stepIndex: 0,
+        playing: false,
+        error: friendlyRunErrorMessage(err),
+        buildOutput: null,
+        running: false,
+      });
     }
   },
 
@@ -386,9 +456,6 @@ export const useAppStore = create<AppState>((set, get) => ({
     }
   },
   togglePlay: () => get().setPlaying(!get().playing),
-
-  recognitionOn: false,
-  toggleRecognition: () => set({ recognitionOn: !get().recognitionOn }),
 
   consoleOpen: true,
   toggleConsole: () => set({ consoleOpen: !get().consoleOpen }),
@@ -490,6 +557,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         stepIndex: 0,
         playing: false,
         error: null,
+        buildOutput: null,
       });
     } catch (err) {
       const msg =

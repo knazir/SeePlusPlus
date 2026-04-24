@@ -11,6 +11,7 @@ beforeEach(() => {
     trace: TINY_TRACE,
     lastRunCode: '',
     error: null,
+    buildOutput: null,
     stepIndex: 0,
     playing: false,
     consoleOpen: true,

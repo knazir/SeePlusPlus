@@ -21,8 +21,15 @@ interface ExecutionPoint {
 
 export interface ProgramTrace {
     code: string,
-    trace: ExecutionPoint[]
-} 
+    trace: ExecutionPoint[],
+    /**
+     * Raw build output (e.g. gcc stderr) when the run failed to compile.
+     * Present only on build-failure responses; absent for successful runs.
+     * The frontend routes this to the bottom console so users see the actual
+     * diagnostic instead of a generic "build failed" placeholder.
+     */
+    buildOutput?: string,
+}
 
 //------------------------------------------------------------------------------
 export function parseValgrindTrace(
@@ -174,7 +181,7 @@ function finalizeTrace(
         const cur = filtered[i + 1];
 
         const prevFrameIds = prev.stackToRender.map(f => f.frameId);
-        const curFrameIds = cur.stackToRender.map(f => f.frameid);
+        const curFrameIds = cur.stackToRender.map(f => f.frameId);
 
         if (JSON.stringify(prevFrameIds) === JSON.stringify(curFrameIds)) {
             // Idental stack => push
