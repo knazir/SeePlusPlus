@@ -88,8 +88,14 @@ describe('encoded-value helpers', () => {
     expect(displayEncoded(['C_DATA', '0x1', 'int', 42])).toBe('42');
     expect(displayEncoded(['C_DATA', '0x1', 'pointer', '0xabc'])).toBe('→ 0xabc');
     expect(displayEncoded(['C_DATA', '0x1', 'pointer', null])).toBe('nullptr');
+    expect(displayEncoded(['C_DATA', '0x1', 'pointer', '0x0'])).toBe('nullptr');
     expect(displayEncoded(null)).toBe('?');
     expect(displayEncoded(['C_DATA', '0x1', 'int', '<UNINITIALIZED>'])).toBe('?');
+    // Uninitialized pointer must not leak `<UNINITIALIZED>` through the
+    // pointer branch — regression guard for the reordered check in
+    // displayEncoded.
+    expect(displayEncoded(['C_DATA', '0x1', 'pointer', '<UNINITIALIZED>'])).toBe('?');
+    expect(displayEncoded(['C_DATA', '0x1', 'ref', '<UNINITIALIZED>'])).toBe('?');
     expect(
       displayEncoded([
         'C_STRUCT',

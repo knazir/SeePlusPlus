@@ -2,12 +2,21 @@
 // See docs/v2/adr/0004-editor-cm6.md.
 import { useEffect, useMemo, useRef } from 'react';
 import CodeMirror, { EditorView } from '@uiw/react-codemirror';
-import { HighlightStyle, syntaxHighlighting } from '@codemirror/language';
+import { EditorState } from '@codemirror/state';
+import { HighlightStyle, indentUnit, syntaxHighlighting } from '@codemirror/language';
+import { indentWithTab } from '@codemirror/commands';
+import { keymap } from '@codemirror/view';
 import { tags as t } from '@lezer/highlight';
 import { cpp } from '@codemirror/lang-cpp';
 import { useAppStore, useCurrentStep, useIsStale } from '../store';
 import { setTraceLine, traceLineField } from '../editor/traceLine';
 import { gutterJump } from '../editor/gutterJump';
+
+// Four spaces per indent level, with Tab key inserting an indent (spaces,
+// not \t). Matches the default program's formatting and the legacy See++
+// editor's convention. indentUnit accepts either spaces or \t — we emit
+// spaces so copied code pastes cleanly into anywhere.
+const FOUR_SPACES = '    ';
 
 const sppTheme = EditorView.theme(
   {
@@ -95,6 +104,13 @@ export function EditorPane() {
       // basicSetup's lineNumbers (disabled below) to keep a single gutter.
       gutterJump((line) => jumpToNextOccurrence(line)),
       traceLineField,
+      // 4-space indentation. tabSize controls visual column width for any
+      // literal tab characters; indentUnit controls what gets INSERTED on
+      // new lines / Tab press (4 spaces). indentWithTab rebinds Tab to the
+      // indent command so it inserts an indent unit instead of a literal tab.
+      EditorState.tabSize.of(4),
+      indentUnit.of(FOUR_SPACES),
+      keymap.of([indentWithTab]),
       sppTheme,
     ],
     [jumpToNextOccurrence],
