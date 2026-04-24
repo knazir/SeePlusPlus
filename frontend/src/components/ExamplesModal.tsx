@@ -1,5 +1,6 @@
 import { Modal } from './Modal';
 import { useAppStore } from '../store';
+import { kbd } from '../platform/kbd';
 
 interface Example {
   id: string;
@@ -228,7 +229,7 @@ export function ExamplesModal() {
         ))}
       </ul>
       <p className="mt-4 font-mono text-[11px] text-ink-3">
-        Tip: <span className="text-ink-1">⌘K</span> opens this modal from anywhere.
+        Tip: <span className="text-ink-1">{kbd('K')}</span> opens this modal from anywhere.
       </p>
     </Modal>
   );

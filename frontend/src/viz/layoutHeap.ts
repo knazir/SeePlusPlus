@@ -32,6 +32,20 @@ export interface HeapLayout {
   height: number;
 }
 
+/** User-facing heap spacing preset; maps to dagre's nodesep/ranksep. */
+export type HeapDensity = 'dense' | 'normal' | 'airy';
+
+const DENSITY_SPACING: Record<HeapDensity, { nodesep: number; ranksep: number }> = {
+  dense: { nodesep: 12, ranksep: 16 },
+  normal: { nodesep: 24, ranksep: 32 },
+  airy: { nodesep: 40, ranksep: 56 },
+};
+
+export interface LayoutHeapOptions {
+  /** Spacing preset. Defaults to 'normal'. */
+  density?: HeapDensity;
+}
+
 /**
  * Compute a top-to-bottom layered layout for a set of heap entries.
  *
@@ -43,15 +57,18 @@ export interface HeapLayout {
 export function layoutHeap(
   entries: ReadonlyArray<readonly [string, unknown]>,
   sizes: ReadonlyMap<string, NodeSize>,
+  opts: LayoutHeapOptions = {},
 ): HeapLayout {
   const positions = new Map<string, NodePosition>();
   if (entries.length === 0) return { positions, width: 0, height: 0 };
 
+  const { nodesep, ranksep } = DENSITY_SPACING[opts.density ?? 'normal'];
+
   const g = new dagre.graphlib.Graph({ directed: true, multigraph: false, compound: false });
   g.setGraph({
     rankdir: 'TB',
-    nodesep: 24,
-    ranksep: 32,
+    nodesep,
+    ranksep,
     marginx: 8,
     marginy: 8,
     acyclicer: 'greedy',
