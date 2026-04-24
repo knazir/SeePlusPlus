@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { useAppStore, useIsStale } from '../store';
+import { useAppStore, useFlag, useIsStale } from '../store';
+import { FLAGS } from '../flags/names';
 import { nextPreference, type ThemePreference } from '../theme/theme';
 import { SettingsMenu } from './SettingsMenu';
 
@@ -15,6 +16,7 @@ export function TopBar() {
 
   const stepsCount = trace?.trace.length ?? 0;
   const heapBytes = estimateHeapBytes(trace);
+  const tutorEnabled = useFlag(FLAGS.TUTOR_PANEL);
 
   return (
     <header
@@ -50,18 +52,20 @@ export function TopBar() {
 
       <div className="flex-1" />
 
-      <Section>
-        <TopbarBtn
-          primary
-          kbd="⌘J"
-          disabled
-          title="Tutor lands in v1.5"
-          data-testid="tutor-button"
-        >
-          <span aria-hidden>✦</span>
-          Tutor
-        </TopbarBtn>
-      </Section>
+      {tutorEnabled && (
+        <Section>
+          <TopbarBtn
+            primary
+            kbd="⌘J"
+            disabled
+            title="Tutor lands in v1.5"
+            data-testid="tutor-button"
+          >
+            <span aria-hidden>✦</span>
+            Tutor
+          </TopbarBtn>
+        </Section>
+      )}
 
       <Section>
         <IconBtn

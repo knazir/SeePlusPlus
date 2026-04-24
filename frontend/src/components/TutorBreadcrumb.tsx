@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { useAppStore, useCurrentStep } from '../store';
+import { useAppStore, useCurrentStep, useFlag } from '../store';
+import { FLAGS } from '../flags/names';
 
 /**
  * Placeholder tutor breadcrumb. Real tutor (streaming, evidence-grounded) wires
@@ -11,9 +12,10 @@ export function TutorBreadcrumb() {
   const step = useCurrentStep();
   const stepIndex = useAppStore((s) => s.stepIndex);
   const error = useAppStore((s) => s.error);
+  const tutorEnabled = useFlag(FLAGS.TUTOR_PANEL);
   const [dismissed, setDismissed] = useState(false);
 
-  if (!step || error || dismissed) return null;
+  if (!tutorEnabled || !step || error || dismissed) return null;
 
   const copy = breadcrumbCopy(step, stepIndex);
 
