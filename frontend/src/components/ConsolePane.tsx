@@ -1,6 +1,15 @@
 import { useAppStore, useCurrentStep } from '../store';
 
-export function ConsolePane() {
+interface Props {
+  /**
+   * Height of the pane in pixels when the console is open. Set by App
+   * from the user's resized value, clamped against main's live bounds.
+   * Ignored when the console is collapsed (the header-only 2rem strip).
+   */
+  height?: number;
+}
+
+export function ConsolePane({ height }: Props) {
   const error = useAppStore((s) => s.error);
   const buildOutput = useAppStore((s) => s.buildOutput);
   const step = useCurrentStep();
@@ -13,9 +22,12 @@ export function ConsolePane() {
 
   return (
     <section
-      className={`flex shrink-0 flex-col border-t border-line-soft bg-bg-1 ${
-        consoleOpen ? 'h-24 lg:h-32' : 'h-8'
+      className={`flex shrink-0 flex-col bg-bg-1 ${
+        // When open, the Splitter above supplies the visual seam so we omit
+        // the border-top; when closed, there's no splitter and we need one.
+        consoleOpen ? '' : 'border-t border-line-soft'
       }`}
+      style={{ height: consoleOpen ? (typeof height === 'number' ? height : undefined) : '2rem' }}
       data-testid="console-pane"
       data-open={consoleOpen || undefined}
     >

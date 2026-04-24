@@ -24,12 +24,12 @@ export function VizPane() {
 
   return (
     <section
-      className="flex min-h-0 flex-1 flex-col border-l border-line bg-bg-0"
+      className="flex min-h-0 flex-1 flex-col bg-bg-0"
       data-testid="viz-pane"
     >
       <header className="flex h-[34px] items-center justify-between border-b border-line-soft bg-bg-0 px-3.5 font-mono text-[10px] uppercase tracking-[0.12em] text-ink-3">
         <div className="flex items-center gap-4">
-          <span>execution visualization</span>
+          <span>visualization</span>
           {step && (
             <span className="normal-case tracking-normal" data-testid="viz-counts">
               <span className="text-ink-2">{heapOn} on heap</span>
@@ -132,7 +132,7 @@ export function VizPane() {
         ) : (
           <div className="flex h-full w-full items-center justify-center">
             <p className="font-mono text-xs text-ink-3" data-testid="viz-empty">
-              Click <span className="text-ink-1">Run</span> to fetch a trace.
+              Click <span className="text-ink-1">Run</span> to visualize.
             </p>
           </div>
         )}

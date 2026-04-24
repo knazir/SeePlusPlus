@@ -2,7 +2,7 @@
 // See docs/v2/adr/0004-editor-cm6.md.
 import { useEffect, useMemo, useRef } from 'react';
 import CodeMirror, { EditorView } from '@uiw/react-codemirror';
-import { EditorState } from '@codemirror/state';
+import { EditorState, Prec } from '@codemirror/state';
 import { HighlightStyle, indentUnit, syntaxHighlighting } from '@codemirror/language';
 import { indentWithTab } from '@codemirror/commands';
 import { keymap } from '@codemirror/view';
@@ -96,6 +96,13 @@ export function EditorPane() {
   const stale = useIsStale();
   const viewRef = useRef<EditorView | null>(null);
 
+  // Stable ref so we can bind Mod-Enter in the CM keymap once (extensions
+  // are memoised) but still dispatch the latest `run` action when fired.
+  const runRef = useRef(run);
+  useEffect(() => {
+    runRef.current = run;
+  }, [run]);
+
   const extensions = useMemo(
     () => [
       cpp(),
@@ -110,6 +117,21 @@ export function EditorPane() {
       // indent command so it inserts an indent unit instead of a literal tab.
       EditorState.tabSize.of(4),
       indentUnit.of(FOUR_SPACES),
+      // Mod-Enter runs the trace. @uiw/react-codemirror's basicSetup binds
+      // Mod-Enter to insertBlankLine by default — Prec.highest pulls our
+      // binding ahead of it so we get the run() action instead of a blank
+      // line being inserted. indentWithTab keeps its normal precedence.
+      Prec.highest(
+        keymap.of([
+          {
+            key: 'Mod-Enter',
+            run: () => {
+              void runRef.current();
+              return true;
+            },
+          },
+        ]),
+      ),
       keymap.of([indentWithTab]),
       sppTheme,
     ],
@@ -123,20 +145,9 @@ export function EditorPane() {
     view.dispatch({ effects: setTraceLine.of(step?.line ?? null) });
   }, [step]);
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
-        e.preventDefault();
-        void run();
-      }
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [run]);
-
   return (
     <section
-      className="flex min-h-0 flex-1 flex-col border-b border-line bg-bg-0 lg:border-b-0 lg:border-r"
+      className="flex min-h-0 flex-1 flex-col border-b border-line bg-bg-0 lg:border-b-0"
       data-testid="editor-pane"
     >
       <div
@@ -157,12 +168,6 @@ export function EditorPane() {
               className="inline-block h-1.5 w-1.5 rounded-full bg-warn"
             />
           )}
-          <span
-            className="ml-1.5 flex h-3.5 w-3.5 items-center justify-center rounded-[2px] text-[11px] text-ink-3 hover:bg-bg-3 hover:text-ink-1"
-            aria-label="close (disabled in single-file mode)"
-          >
-            ×
-          </span>
           <span
             aria-hidden
             className="absolute bottom-[-1px] left-0 right-0 h-[1px] bg-accent"
