@@ -1,423 +1,185 @@
-# See++ Infrastructure Guide
+# Infrastructure
 
-This document details the AWS infrastructure components that power See++ in production, including their configuration, relationships, and management.
+See++ is deployed to AWS using [AWS Copilot](https://aws.github.io/copilot-cli/)
+for infrastructure as code. This document catalogs the pieces and how
+they're wired. For the deploy workflow see [`deployment.md`](./deployment.md).
 
-## Infrastructure Overview
+Application name is `spp`. Region is `us-west-2`.
 
-See++ uses a modern, containerized infrastructure deployed on AWS with the following key principles:
-- **Isolation**: User code runs in completely isolated environments
-- **Scalability**: Auto-scaling based on demand
-- **Security**: Multiple layers of security controls
-- **Observability**: Comprehensive logging and monitoring
+## Copilot layout
 
-## AWS Infrastructure Stack
-
-### Core Services
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                        AWS Account                          │
-├─────────────────────────────────────────────────────────────┤
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐  │
-│  │   Lambda    │  │    S3       │  │        IAM          │  │
-│  │ (Serverless)│  │ (Optional)  │  │  (Roles/Policies)   │  │
-│  └─────────────┘  └─────────────┘  └─────────────────────┘  │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐  │
-│  │    ALB      │  │    ECS      │  │       VPC           │  │
-│  │(Load Bal.)  │  │  (Backend)  │  │   (Networking)      │  │
-│  │             │  │             │  │                     │  │
-│  └─────────────┘  └─────────────┘  └─────────────────────┘  │
-└─────────────────────────────────────────────────────────────┘
-```
-
-## Detailed Component Breakdown
-
-### 1. AWS Copilot Application
-
-**Application Name**: `spp`
-
-AWS Copilot is used for infrastructure as code, providing:
-- Environment management (test/prod)
-- Service deployment and scaling
-- Load balancer configuration
-- VPC and networking setup
-
-**Copilot Structure**:
 ```
 copilot/
-├── .workspace              # Application configuration
+├── .workspace                     # app name
 ├── environments/
-│   ├── test/
-│   │   └── manifest.yml    # Test environment config
-│   └── prod/
-│       └── manifest.yml    # Production environment config
+│   ├── test/manifest.yml          # test env config
+│   └── prod/manifest.yml          # prod env config
 ├── backend/
-│   ├── manifest.yml        # Backend service config
+│   ├── manifest.yml               # backend ECS service
 │   └── addons/
-│       └── trace-store.yml # S3 bucket addon
-├── frontend-legacy/
-│   └── manifest.yml        # Legacy frontend service config
-└── frontend/
-    └── manifest.yml        # New frontend service config
+│       ├── workspaces-db.yml      # RDS Postgres + Secrets Manager
+│       ├── trace-store.yml        # S3 bucket (reserved for trace cache)
+│       └── lambda-permissions.yml # IAM policy: backend → Lambda invoke
+├── frontend/manifest.yml          # primary frontend ECS service
+├── frontend-legacy/manifest.yml   # legacy frontend ECS service
+└── deploy-environment.sh          # convenience wrapper for env bootstrap
 ```
 
-### 2. ECS (Elastic Container Service)
+## Services
 
-#### Frontend Services
+Three ECS Load Balanced Web Services plus one Lambda function.
 
-**Legacy Frontend (frontend-legacy)**
-- **Type**: Load Balanced Web Service
-- **Platform**: linux/x86_64
-- **Resources**: 256 CPU, 512 MB memory
-- **Scaling**: 1-10 instances based on CPU (70% threshold)
-- **Load Balancer**: Handles requests to main domain
-- **Port**: 80 (containerized)
+### Backend
 
-**New Frontend (frontend)**
-- **Type**: Load Balanced Web Service
-- **Platform**: linux/x86_64
-- **Resources**: 256 CPU, 512 MB memory
-- **Scaling**: 1-10 instances based on CPU (70% threshold)
-- **Load Balancer**: Handles requests to beta subdomain
-- **Port**: 80 (containerized)
-- **Status**: In development, deployed to beta subdomain
+- **Type**: Load Balanced Web Service, Fargate, `linux/x86_64`.
+- **Resources**: 256 CPU units, 512 MB memory.
+- **Scaling**: test `count: 1` (fixed); prod 1–10 on CPU > 70%.
+- **Port**: 3000, health check at `/api`.
+- **Env vars**: `EXEC_MODE=lambda`, `LAMBDA_FUNCTION_NAME`,
+  `GOOGLE_CLIENT_ID`, `AWS_REGION`, `ALLOWED_ORIGIN_REGEX`.
+- **Secrets** (from SSM): `GOOGLE_CLIENT_SECRET`, `SESSION_SECRET`.
+- **Task role**: permission to invoke the Lambda code runner, read the
+  workspaces DB secret, and access the trace-store bucket.
 
-#### Backend Service
-- **Type**: Load Balanced Web Service
-- **Platform**: linux/x86_64
-- **Resources**: 256 CPU, 512 MB memory
-- **Scaling**: 1-10 instances based on CPU (70% threshold)
-- **Load Balancer**: Handles requests to `/api`
+### Frontend (primary)
 
-#### Code Runner (Lambda Function)
-- **Type**: AWS Lambda (serverless)
-- **Runtime**: Python 3.12 with custom container image
-- **Platform**: Amazon Linux 2023 (x86_64)
-- **Memory**: 10GB (10240 MB)
-- **Timeout**: 120 seconds (2 minutes)
-- **Execution**: Invoked synchronously by backend for each code execution
-- **Concurrency**: Auto-scales up to 1000+ concurrent executions
+- **Type**: Load Balanced Web Service, Fargate.
+- **Resources**: 256 CPU, 512 MB, 1–10 instances.
+- **Port**: 80 inside the container (nginx serves the built React app and
+  proxies `/api/*` to the backend via Copilot Service Connect).
+- **Prod alias**: `seepluspl.us`.
 
-### 3. S3 Storage (Optional - Trace Cache)
+### Frontend (legacy)
 
-**Purpose**: Optional caching layer for frequently-executed code (not currently enabled)
+- Same shape as the primary frontend, but serves the 2018 React 16 app.
+- **Prod alias**: `old.seepluspl.us`.
 
-**Configuration**:
-- **Encryption**: AES256 server-side encryption
-- **Versioning**: Enabled
-- **Public Access**: Completely blocked
-- **Lifecycle**: Non-current versions expire after 30 days
-- **Incomplete Multipart**: Cleanup after 1 day
+### Code runner (Lambda)
 
-**Bucket Structure**:
-```
-s3://[bucket-name]/
-└── [unique-execution-id]/
-    ├── [id]_code.cpp        # User's C++ code
-    ├── [id]_trace.json      # Valgrind execution trace
-    ├── [id]_cc_stdout.txt   # Compilation stdout
-    ├── [id]_cc_stderr.txt   # Compilation stderr
-    ├── [id]_stdout.txt      # Program stdout
-    └── [id]_stderr.txt      # Program stderr
-```
+Not a Copilot-managed service — built and deployed directly via
+`code-runner/lambda/deploy-to-aws.sh`. The backend's task role has
+`lambda:InvokeFunction` permission via `copilot/backend/addons/lambda-permissions.yml`.
 
-### 4. ECR (Elastic Container Registry)
+- **Function names**: `spp-trace-executor-test`, `spp-trace-executor-prod`.
+- **Image**: container built from `code-runner/lambda/Dockerfile.prod`,
+  pushed to ECR.
+- **Base**: Amazon Linux 2023, x86_64.
+- **Memory**: 10 GB (10240 MB). **Timeout**: 120 s.
+- **Handler**: `handler.py` — receives a code string, writes it to `/tmp`,
+  compiles with `g++`, runs under modified Valgrind, returns the trace
+  plus compile + program stdout/stderr as a single JSON payload.
 
-**Purpose**: Store the code-runner Docker image
+## Database
 
-**Repository**: Used for storing versioned code-runner images
-- **Image Tags**: `test`, `prod` for different environments
-- **Platform**: linux/amd64
-- **Lifecycle**: Retention policies to manage storage costs
+Managed as a Copilot addon at `copilot/backend/addons/workspaces-db.yml`.
+Creates an RDS Postgres instance per environment plus a Secrets Manager
+secret containing the DB credentials.
 
-### 5. IAM (Identity and Access Management)
+- **Engine**: Postgres 16.13, `db.t4g.micro`, gp3 storage.
+- **Storage**: 20 GB allocated.
+- **Encryption**: at rest, AWS-managed KMS.
+- **Access**: private subnet only. Inbound 5432 allowed from the
+  environment's shared SG (which backend tasks live in). No public
+  access ever.
+- **Backups**: 1 day retention on test, 7 days on prod.
+- **MultiAZ**: off in both envs today; flip to `true` in the addon's
+  `Mapping` when availability demands it.
+- **Deletion protection**: off on test, on on prod.
+- **Secret**: generated by CloudFormation, attached to the RDS instance
+  so `{ host, port, dbname, username, password }` is a single JSON blob
+  the backend reads from Secrets Manager at startup.
 
-#### Backend Execution Role
-Required for ECS to pull images and write logs:
+The schema (`backend/schema.sql`) is applied on every backend boot with
+`IF NOT EXISTS` semantics — no separate migration tool yet.
 
-```json
-{
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Sid": "S3Access",
-            "Effect": "Allow",
-            "Action": [
-                "s3:GetObject",
-                "s3:PutObject"
-            ],
-            "Resource": "arn:aws:s3:::YOUR-BUCKET-NAME/*"
-        },
-        {
-            "Sid": "LambdaInvoke",
-            "Effect": "Allow",
-            "Action": [
-                "lambda:InvokeFunction"
-            ],
-            "Resource": "*"
-        },
-        {
-            "Sid": "ECRImagePull",
-            "Effect": "Allow",
-            "Action": [
-                "ecr:GetAuthorizationToken",
-                "ecr:BatchGetImage",
-                "ecr:GetDownloadUrlForLayer"
-            ],
-            "Resource": "*"
-        },
-        {
-            "Sid": "CloudWatchLogs",
-            "Effect": "Allow",
-            "Action": [
-                "logs:CreateLogStream",
-                "logs:PutLogEvents",
-                "logs:CreateLogGroup"
-            ],
-            "Resource": "*"
-        },
-        {
-            "Sid": "SSMSecretsAccess",
-            "Effect": "Allow",
-            "Action": [
-                "ssm:GetParameter",
-                "ssm:GetParameters"
-            ],
-            "Resource": "arn:aws:ssm:*:*:parameter/copilot/*"
-        },
-        {
-            "Sid": "SecretsManagerAccess",
-            "Effect": "Allow",
-            "Action": [
-                "secretsmanager:GetSecretValue"
-            ],
-            "Resource": "*"
-        }
-    ]
-}
-```
+## Secrets
 
-#### Backend Task Role
-Required for the backend service to operate:
+Copilot-managed SSM SecureString parameters under
+`/copilot/spp/<env>/secrets/`:
 
-```json
-{
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Sid": "S3Access",
-            "Effect": "Allow",
-            "Action": [
-                "s3:GetObject",
-                "s3:PutObject"
-            ],
-            "Resource": "arn:aws:s3:::YOUR-BUCKET-NAME/*"
-        },
-        {
-            "Sid": "LambdaInvoke",
-            "Effect": "Allow",
-            "Action": [
-                "lambda:InvokeFunction"
-            ],
-            "Resource": "*"
-        },
-        {
-            "Sid": "ECRImagePull",
-            "Effect": "Allow",
-            "Action": [
-                "ecr:GetAuthorizationToken",
-                "ecr:BatchGetImage",
-                "ecr:GetDownloadUrlForLayer"
-            ],
-            "Resource": "*"
-        },
-        {
-            "Sid": "CloudWatchLogs",
-            "Effect": "Allow",
-            "Action": [
-                "logs:CreateLogStream",
-                "logs:PutLogEvents",
-                "logs:CreateLogGroup"
-            ],
-            "Resource": "*"
-        },
-        {
-            "Sid": "SSMSecretsAccess",
-            "Effect": "Allow",
-            "Action": [
-                "ssm:GetParameter",
-                "ssm:GetParameters"
-            ],
-            "Resource": "arn:aws:ssm:*:*:parameter/copilot/*"
-        },
-        {
-            "Sid": "SecretsManagerAccess",
-            "Effect": "Allow",
-            "Action": [
-                "secretsmanager:GetSecretValue"
-            ],
-            "Resource": "*"
-        }
-    ]
-}
-```
+| Name | Set via |
+|---|---|
+| `GOOGLE_CLIENT_SECRET` | `copilot secret init --name GOOGLE_CLIENT_SECRET --values <env>=…` |
+| `SESSION_SECRET` | `copilot secret init --name SESSION_SECRET --values <env>=$(openssl rand -hex 32)` |
 
-#### DenyIAM Policy (Security)
-Applied to backend task role to prevent privilege escalation:
+The backend manifest references them via a `secrets:` block so they're
+injected as env vars at task start. If a secret is absent, the auth
+routes return 503 but the rest of the app still works.
 
-```json
-{
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Action": [
-                "iam:CreateUser",
-                "iam:DeleteUser",
-                "iam:CreatePolicy"
-            ],
-            "Resource": "*",
-            "Effect": "Deny"
-        }
-    ]
-}
-```
+RDS credentials live in a Secrets Manager secret (not SSM) managed
+automatically by the addon; the backend reads them at boot.
 
-### 6. Application Load Balancer (ALB)
+## Networking
 
-**Configuration**:
-- **Timeout**: 300 seconds (required for slow code execution)
-- **Health Checks**: 
-  - Frontend: `GET /`
-  - Backend: `GET /api`
-- **SSL/TLS**: Configured with AWS Certificate Manager
-- **Domain Routing**:
-  - `[your-domain.com]/` → Legacy frontend service
-  - `[your-domain.com]/api/*` → Backend service
-  - `beta.[your-domain.com]/` → New frontend service (when deployed)
+Copilot provisions per environment:
 
-**Note**: Replace `[your-domain.com]` with your actual domain. The exact routing depends on your Copilot service manifest configurations.
+- VPC with public + private subnets across two AZs.
+- Internet Gateway for public subnets.
+- NAT Gateway for private subnet egress.
+- Shared Environment Security Group that all ECS tasks belong to.
+- ALB per service (frontend, frontend-legacy, backend).
+- ACM-managed TLS certs for the aliases declared in service manifests.
 
-### 7. VPC and Networking
+## Domains
 
-**VPC Configuration**:
-- **Public Subnets**: For load balancers and internet gateways
-- **Private Subnets**: For ECS tasks and resources
-- **Security Groups**: Restrictive rules for each service
-- **Internet Gateway**: For public internet access
-- **NAT Gateway**: For private subnet internet access
+Prod:
 
-**Security Groups**:
-- **ALB Security Group**: Allow HTTP/HTTPS from internet
-- **Backend Security Group**: Allow traffic from ALB only
-- **Code Runner Security Group**: No inbound, limited outbound
+| Host | Service |
+|---|---|
+| `seepluspl.us` | `frontend` |
+| `old.seepluspl.us` | `frontend-legacy` |
+| `backend.prod.spp.seepluspl.us` | `backend` (internal, ALB default hostname) |
 
-## Environment-Specific Configuration
+Test uses Copilot's auto-generated ALB hostnames — no custom aliases.
 
-### Test Environment
-- **Scaling**: Fixed to 1 instance per service
-- **Domain**: `*.test.[your-domain.com]`
-- **Deployment**: Recreate strategy for faster deployments
-- **Monitoring**: Basic CloudWatch metrics
+## Container Insights
 
-### Production Environment  
-- **Scaling**: Auto-scaling based on demand
-- **Domains**: 
-  - `[your-domain.com]` (primary - legacy frontend)
-  - `legacy.[your-domain.com]` (alias for legacy frontend)
-  - `beta.[your-domain.com]` (new frontend, when deployed)
-- **Deployment**: Rolling updates for zero downtime
-- **Monitoring**: Enhanced monitoring and alerting
+Disabled by default (`container_insights: false` in the env manifests)
+for cost. Enable by flipping that one line; it gives per-task CPU / memory
+/ network metrics in a pre-built CloudWatch dashboard.
 
-**Note**: The new frontend service may be deployed alongside the legacy frontend to allow for gradual migration and testing. Domain configurations can vary based on deployment strategy and must be configured in your Copilot service manifests.
+## Storage
 
-## Secrets Management
+- **Trace store (S3)** — a bucket defined by
+  `copilot/backend/addons/trace-store.yml`. Versioned, encrypted, no
+  public access, 30-day noncurrent-version expiry. The backend's task
+  role has CRUD access to it. Currently unused by the runtime (the
+  Lambda runner returns traces inline); kept around for a future trace-
+  cache layer.
+- **ECR** — stores the Lambda code runner image under
+  `spp-lambda-trace`, tagged by environment.
 
-### AWS Systems Manager Parameter Store
+## IAM (summary)
 
-The backend service uses minimal secrets, relying on IAM roles for AWS service access. Lambda function configuration (function name, timeout, memory) is managed through environment variables in the Copilot manifest.
+Minimal, least-privilege. The backend task role has:
 
-**No code-runner specific secrets are required** - the backend invokes Lambda functions directly using IAM role permissions.
+- `lambda:InvokeFunction` on all functions (via `lambda-permissions.yml`
+  addon — required because Copilot doesn't apply IAM from the manifest's
+  `task_role.policy` block).
+- `secretsmanager:GetSecretValue` on the workspaces DB secret.
+- `s3:GetObject / PutObject / …` on the trace-store bucket.
+- Standard Copilot-generated permissions for ECS logging and ECR pulls.
 
-## Monitoring and Logging
+## Per-environment differences
 
-### CloudWatch Integration
+| Aspect | test | prod |
+|---|---|---|
+| Backend count | 1 | 1–10 (auto-scale) |
+| Frontend count | 1 | 1–10 |
+| Deployment strategy | `rolling: recreate` (fast) | default rolling (zero-downtime) |
+| RDS backups | 1 day | 7 days |
+| RDS deletion protection | off | on |
+| Domain | auto-generated ALB hostnames | custom aliases above |
 
-**Log Groups**:
-- `/copilot/spp-[env]-backend`: Backend service logs
-- `/copilot/spp-[env]-frontend-legacy`: Frontend service logs
-- `/aws/lambda/spp-trace-executor-[env]`: Lambda code execution logs
+## Cost levers
 
-**Metrics**:
-- ECS service CPU/memory utilization
-- Application Load Balancer request metrics
-- S3 bucket storage and request metrics
-- Custom application metrics
-
-### Container Insights
-- Disabled by default for cost optimization
-- Can be enabled for detailed container metrics
-
-## Cost Optimization
-
-### Resource Right-Sizing
-- **Development**: Minimal resources for cost efficiency
-- **Production**: Balanced for performance and cost
-
-### Auto Scaling
-- **Scale down**: During low usage periods
-- **Scale up**: During high demand automatically
-
-### Storage Lifecycle
-- **S3**: Automatic cleanup of old execution traces
-- **ECR**: Image lifecycle policies for old images
-- **CloudWatch**: Log retention policies
-
-## Security Best Practices
-
-### Network Security
-- **Private Subnets**: All compute resources in private subnets
-- **Security Groups**: Restrictive inbound/outbound rules
-- **No Internet**: Code runner containers cannot access internet
-
-### Access Control
-- **IAM Least Privilege**: Minimal required permissions
-- **Service-to-Service**: Authentication via IAM roles
-- **Secrets**: Stored in AWS Systems Manager
-
-### Data Protection
-- **Encryption at Rest**: S3 server-side encryption
-- **Encryption in Transit**: TLS for all communications
-- **Temporary Storage**: Automatic cleanup of user data
-
-## Disaster Recovery
-
-### Backup Strategy
-- **Infrastructure**: Version-controlled Copilot configurations
-- **Data**: S3 versioning for temporary data protection
-- **Images**: ECR automatic replication
-
-### Multi-Region Considerations
-- **Current**: Single region deployment (us-west-2)
-- **Future**: Multi-region capability via Copilot
-
-## Troubleshooting
-
-### Common Issues
-
-1. **Slow Execution**: Check ECS task startup times
-2. **Permission Errors**: Verify IAM roles and policies
-3. **Network Issues**: Check security groups and VPC config
-4. **Storage Issues**: Verify S3 bucket permissions
-
-### Debugging Tools
-- **CloudWatch Logs**: Service and application logs
-- **ECS Console**: Task status and resource utilization
-- **S3 Console**: File upload/download verification
-- **IAM Policy Simulator**: Permission testing
-
-## Next Steps
-
-For operational procedures:
-- [Deployment Guide](./deployment.md) - How to deploy infrastructure
-- [Development Guide](./development.md) - Local development setup
-- [Architecture Guide](./architecture.md) - System design overview 
+- **Container Insights off** — biggest knob. Flip on when you want the
+  metrics.
+- **RDS Single-AZ** — halves DB cost vs MultiAZ. Flip to MultiAZ when
+  there's an availability SLA to defend.
+- **ECS count = 1 on test** — Copilot's `count: 1` override prevents
+  auto-scaling up in a lightly-used env.
+- **Lambda** — pay-per-invocation; idle cost is zero.
+- **Delete the test env when not in use** — `copilot env delete --name test`
+  tears it down; `copilot env init` + `copilot env deploy` brings it
+  back in ~10 minutes (RDS provision is the slow step).

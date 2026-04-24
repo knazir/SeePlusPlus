@@ -64,7 +64,7 @@ variables:
 #
 # GOOGLE_CLIENT_ID is public and lives here; GOOGLE_CLIENT_SECRET + SESSION_SECRET
 # are SSM SecureString parameters created via `copilot secret init` (see
-# docs/v2/auth-runbook.md). If a secret is absent, the backend's auth routes
+# docs/oauth-setup.md). If a secret is absent, the backend's auth routes
 # return 503 gracefully — the rest of the service still works.
 environments:
   test:

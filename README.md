@@ -39,8 +39,8 @@ See++ is a tool for visualizing and debugging C++ code aimed at helping students
 1. Clone the repo via `git clone https://github.com/knazir/SeePlusPlus.git`.
 2. Download and install [Docker Desktop](https://www.docker.com/products/docker-desktop/).
 3. Copy `.env.example` to `.env`.
-4. Run `./localdev.sh` from the root `SeePlusPlus/` directory.
-5. Visit `http://localhost:8000` in your browser and start visualizing your code.
+4. Run `./localdev.sh up` from the root `SeePlusPlus/` directory.
+5. Visit `http://localhost:4000` in your browser and start visualizing your code.
 
 ### Deploy Your Own
 1. Clone the repo via `git clone https://github.com/knazir/SeePlusPlus.git`.
@@ -101,14 +101,11 @@ Ordered from highest to lowest priority.
 - [ ] Create GitHub Issue/PR templates
 - [ ] Create CONTRIBUTING.md and CLA for contributions
 - [x] Create deployment and architecture guides in docs
-- [ ] Rewrite original 2018 frontend to be more robust, extensible, and use modern web patterns
+- [x] Rewrite original 2018 frontend to be more robust, extensible, and use modern web patterns
 - [ ] Setup GitHub actions for automated deployment
 - [ ] Add test suite for each service and modified Valgrind
 - [ ] Add smart assist features to help better understand your code and flow
 - [ ] Add support for other languages (C, Python, JavaScript, and more)
-
-## Contributing
-We welcome PRs and issue reports of all sizes! We're still getting a `CONTRIBUTING.md` guide and contributor license agreement setup, but feel free to explore the project and experiment in the meantime.
 
 
 ## License

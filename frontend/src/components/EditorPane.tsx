@@ -1,5 +1,3 @@
-// CM6 chosen over Monaco for v1; revisit at multi-file (backlog #17+).
-// See docs/v2/adr/0004-editor-cm6.md.
 import { useEffect, useMemo, useRef } from 'react';
 import CodeMirror, { EditorView } from '@uiw/react-codemirror';
 import { EditorState, Prec } from '@codemirror/state';

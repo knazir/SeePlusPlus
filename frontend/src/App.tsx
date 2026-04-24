@@ -75,6 +75,22 @@ export function App() {
     void loadFlags();
   }, [loadMe, loadFlags]);
 
+  // Renormalize the persisted console height against the live viewport.
+  // Runs once after mount (so a stored value from a tall window is clamped
+  // down when reopened on a short window) and on every resize (so shrinking
+  // the browser self-corrects the stored value instead of leaving stale
+  // state around). No-op when the user hasn't dragged yet (null).
+  useEffect(() => {
+    const renormalize = () => {
+      if (consoleHeightPx === null) return;
+      const clamped = clampConsoleHeight(consoleHeightPx, mainRef.current);
+      if (clamped !== consoleHeightPx) setConsoleHeightPx(clamped);
+    };
+    renormalize();
+    window.addEventListener('resize', renormalize);
+    return () => window.removeEventListener('resize', renormalize);
+  }, [consoleHeightPx, setConsoleHeightPx]);
+
   // Seed editor from /w/:slug if the page loaded on that route.
   useEffect(() => {
     if (route.kind !== 'loading-slug') return;

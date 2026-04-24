@@ -1,456 +1,182 @@
-# See++ Local Development Guide
-
-This guide covers everything you need to know to set up, run, and develop See++ locally using Docker Compose.
+# Local development
 
 ## Prerequisites
 
-Before you begin, ensure you have the following installed:
+- **Docker Desktop** — everything runs under `docker compose`.
+- **Git** — `code-runner/SPP-Valgrind` is a submodule, so clone with
+  `--recurse-submodules` or run `git submodule update --init` after
+  cloning.
 
-### Required Software
-- **Docker Desktop**: [Download here](https://www.docker.com/products/docker-desktop/)
-- **Git**: For cloning the repository
-- **Text Editor/IDE**: VS Code, IntelliJ, or your preferred editor
+Optional, only if you plan to deploy:
 
-### Optional (for AWS deployment)
-- **AWS CLI**: For deploying to AWS environments
-- **AWS Copilot CLI**: For infrastructure management
+- **AWS CLI** and **Copilot CLI** — for pushing to an AWS environment.
 
-## Quick Start
-
-### 1. Clone the Repository
+## First-time setup
 
 ```bash
-git clone https://github.com/knazir/SeePlusPlus.git
+git clone --recurse-submodules https://github.com/knazir/SeePlusPlus.git
 cd SeePlusPlus
-```
-
-### 2. Environment Configuration
-
-Create a `.env` file in the project root:
-
-```bash
-cp .env.example .env  # If .env.example exists
-# OR create manually:
-touch .env
-```
-
-**Required Environment Variables** (for local development):
-```bash
-# Local Development Configuration
-EXEC_MODE=local
-PORT=3000
-USER_CODE_FILE_PREFIX=main
-
-# AWS Configuration (only needed for deployment)
-AWS_REGION=us-west-2
-AWS_ACCOUNT_ID=your-account-id
-ECR_REPO=your-ecr-repo-url
-```
-
-### 3. Start the Application
-
-```bash
-./localdev.sh
-```
-
-This command will:
-- Build all Docker images
-- Start all services
-- Make the application available at `http://localhost:8000`
-
-## Development Workflow
-
-### Using the localdev.sh Script
-
-The `localdev.sh` script provides a comprehensive development workflow:
-
-#### Basic Commands
-
-```bash
-# Start all services (default)
+cp .env.example .env
 ./localdev.sh up
-
-# Stop all services
-./localdev.sh down
-
-# Restart services without rebuilding
-./localdev.sh restart
-
-# Rebuild and restart everything
-./localdev.sh rebuild
-
-# Build specific service
-./localdev.sh build backend
-./localdev.sh build frontend-legacy
-
-# Clean up everything (containers, images, volumes)
-./localdev.sh clean
 ```
 
-#### Debugging Commands
+`localdev.sh` is a thin wrapper around `docker compose` that loads
+`.env`. The first `up` builds the images — 5–10 minutes cold. After
+that, `up -d` is a few seconds.
+
+You'll end up with four running services:
+
+| Service | URL | What it does |
+|---|---|---|
+| Frontend (current) | http://localhost:4000 | React 18 + Vite dev server |
+| Frontend (legacy) | http://localhost:8000 | Kept for reference |
+| Backend | http://localhost:3000/api | Express API |
+| Postgres | localhost:5432 (user `spp`, pw `spp`, db `seepp_main`) | Persistence for workspaces, sessions, flags |
+
+Open the current frontend at http://localhost:4000.
+
+## `.env` essentials
+
+The only thing you *must* set for local dev is the execution mode and
+session secret. `cp .env.example .env` gets you most of the way; fill in
+the rest as needed.
+
+| Variable | Purpose |
+|---|---|
+| `EXEC_MODE` | `local` to run user code in a Docker container; `lambda` to invoke a deployed Lambda. Local is the default. |
+| `SESSION_SECRET` | Any random hex string for signing session cookies. Generate with `openssl rand -hex 32`. |
+| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Required to sign in with Google. See [`oauth-setup.md`](./oauth-setup.md). Skip both if you use `DEV_AUTH_ENABLED`. |
+| `DEV_AUTH_ENABLED` | Set to `true` to enable a one-click local-only sign-in as `dev@localhost`. Triple-gated server-side; can't activate in deployed environments. |
+| `DEV_AUTH_IS_ADMIN` | Defaults to `true`. When set, the dev user has `is_admin = true` so you can exercise `/admin`. |
+| `ADMIN_EMAILS` | Comma-separated. Listed emails get `is_admin` on sign-in. |
+
+`.env` changes don't hot-reload into already-running containers — restart
+the affected service:
 
 ```bash
-# View logs (last 50 lines)
-./localdev.sh logs backend
-./localdev.sh logs frontend-legacy
-
-# Stream logs in real-time
-./localdev.sh logs backend --tail
-./localdev.sh logs frontend-legacy --tail
-
-# Open shell in running container
-./localdev.sh exec backend
-./localdev.sh exec frontend-legacy
+./localdev.sh up -d --force-recreate backend
 ```
 
-#### Help
-```bash
-./localdev.sh help
-```
-
-### Service Architecture
-
-When running locally, you'll have these services:
-
-```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Frontend      │    │    Backend      │    │  Code Runner    │
-│  (Legacy)       │    │                 │    │                 │
-│ localhost:8000  │◄──►│ localhost:3000  │◄──►│   (on-demand)   │
-│  (New)          │    │                 │    │                 │
-│ localhost:8080  │    │                 │    │                 │
-│                 │    │                 │    │                 │
-│ React Dev Server│    │ Node.js/Express │    │ Docker Container│
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-```
-
-### Frontend Development (React)
-
-**Locations**: 
-- `frontend-legacy/` (currently functional - main production)
-- `frontend/` (under development - new implementation)
-
-**Development Servers**: 
-- Legacy: `http://localhost:8000`
-- New: `http://localhost:8080` (when running)
-
-**Key Features**:
-- Hot reload for code changes
-- Live code editor with syntax highlighting (CodeMirror in legacy, Monaco Editor in new)
-- Real-time visualization updates
-- Integrated debugging tools
-
-**Technology Stack**:
-- **Legacy**: React 16.x, CodeMirror, Konva.js, JavaScript/JSX
-- **New**: React 19.x, Monaco Editor, TypeScript
-
-**Development Tips**:
-- Changes to React components auto-reload
-- Console errors appear in browser developer tools
-- API calls go to `http://localhost:3000/api`
-- The new frontend is under active development - check with maintainers for current status
-
-**File Structure** (Legacy):
-```
-frontend-legacy/
-├── src/
-│   ├── App.jsx              # Main application component
-│   ├── editor/
-│   │   └── Ide.jsx          # Code editor component
-│   ├── visualization/
-│   │   ├── Visualization.jsx # Main visualization
-│   │   └── Output.jsx       # Output display
-│   ├── utils/
-│   │   ├── Api.js           # Backend communication
-│   │   └── VisualizationTool.js # Visualization logic
-│   └── components/          # Reusable components
-├── package.json             # Dependencies and scripts
-└── Dockerfile.dev           # Development container config
-```
-
-**File Structure** (New):
-```
-frontend/
-├── src/                     # TypeScript source files
-├── public/                  # Static assets
-├── package.json             # Modern React dependencies
-├── tsconfig.json            # TypeScript configuration
-└── Dockerfile.dev           # Development container config
-```
-
-**Note**: The new frontend (`frontend/`) uses modern React patterns, TypeScript, and Monaco Editor instead of CodeMirror. It's configured as a separate service that can be deployed alongside the legacy frontend.
-
-### Backend Development (Node.js/TypeScript)
-
-**Location**: `backend/`
-
-**Development Server**: `http://localhost:3000`
-
-**Key Features**:
-- TypeScript compilation with hot reload
-- Automatic restart on code changes (nodemon)
-- Local Docker runner for code execution
-- Direct file system access for debugging
-
-**Development Tips**:
-- Changes auto-restart the server
-- Logs appear in terminal or via `./localdev.sh logs backend --tail`
-- Code execution uses local Docker containers
-- Debug with `console.log()` or your preferred debugger
-
-**File Structure**:
-```
-backend/
-├── src/
-│   ├── index.ts                # Main Express server
-│   ├── runners/
-│   │   ├── runner.interface.ts # Common interface
-│   │   ├── local.ts            # Local Docker runner
-│   │   ├── lambda.ts           # AWS Lambda runner
-│   │   └── index.ts            # Runner factory
-│   ├── valgrind_utils.ts       # Trace processing
-│   └── parse_vg_trace.ts       # Valgrind parser
-├── package.json                # Dependencies and scripts
-├── tsconfig.json               # TypeScript configuration
-└── Dockerfile.dev              # Development container config
-```
-
-### Code Runner Development
-
-**Location**: `code-runner/`
-
-**Key Components**:
-- Modified Valgrind for execution tracing
-- Compilation and execution scripts
-- Docker container configuration
-
-**Testing Code Runner**:
-1. The code runner image is built automatically
-2. It's triggered when you submit code via the frontend
-3. Execution happens in isolated Docker containers
-4. Results are stored in `/tmp/spp-usercode/` locally
-
-## Docker Compose Configuration
-
-The `docker-compose.yml` defines the complete local environment:
-
-### Services
-
-#### Frontend (frontend-legacy)
-- **Port**: 8000
-- **Build**: `frontend-legacy/Dockerfile.dev`
-- **Volumes**: Hot reload via volume mount
-- **Environment**: Development mode with API URL
-
-#### Backend
-- **Port**: 3000
-- **Build**: `backend/Dockerfile.dev`
-- **Volumes**: Hot reload and Docker socket access
-- **Environment**: Local execution mode
-
-#### Code Runner Build
-- **Purpose**: Builds the code runner image
-- **No Running Instance**: Uses `replicas: 0`
-- **Network**: Isolated `no-internet` network
-
-### Networks
-
-#### no-internet
-- **Type**: Bridge network with no external access
-- **Purpose**: Isolated execution environment for user code
-- **Security**: Prevents code from accessing the internet
-
-## Environment Variables
-
-### Local Development Variables
+## Common commands
 
 ```bash
-# Execution Configuration
-EXEC_MODE=local                   # Use local Docker runner
-PORT=3000                         # Backend port
-USER_CODE_FILE_PREFIX=main        # Default filename for user code
-
-# Development Mode
-NODE_ENV=development              # Enable development features
+./localdev.sh up                # start / resume
+./localdev.sh up -d             # detached
+./localdev.sh down              # stop
+./localdev.sh logs -f backend   # tail backend logs
+./localdev.sh ps                # show service state
+./localdev.sh exec backend sh   # shell into a container
+./localdev.sh build backend     # rebuild one image
+./localdev.sh down -v           # stop + drop postgres volume (nuclear)
 ```
 
-### AWS Variables (for deployment testing)
+Any `docker compose` subcommand works — `localdev.sh` just forwards
+arguments with `.env` loaded.
+
+## Running tests
+
+Frontend (Vitest):
 
 ```bash
-# AWS Configuration
-AWS_REGION=us-west-2                        # AWS region
-AWS_ACCOUNT_ID=123456789012                 # Your AWS account ID
-
-# Lambda Configuration (from AWS deployment)
-LAMBDA_FUNCTION_NAME=spp-trace-executor-prod # or -test for test environment
+cd frontend
+npx vitest run
+npx vitest            # watch mode
+npx vitest run src/components/VizPane.test.tsx
 ```
 
-## Development Best Practices
+Backend (Jest via the `npm test` script; add the first test before you
+rely on it):
 
-### Code Style
-
-#### Frontend (JavaScript/JSX)
-- Use ESLint configuration in `.eslintrc.json`
-- Follow React best practices
-- Use PropTypes for component validation
-- Prefer functional components for new code
-
-#### Backend (TypeScript)
-- Enable strict TypeScript checking
-- Use proper typing for all functions
-- Follow Express.js conventions
-- Use async/await for promises
-
-### Testing Strategy
-
-#### Manual Testing
-1. **Frontend**: Test in browser with developer tools
-2. **Backend**: Use API testing tools (Postman, curl)
-3. **Integration**: Test full workflow through UI
-
-#### Code Execution Testing
-1. **Simple Programs**: Basic C++ programs
-2. **Memory Operations**: Programs with dynamic memory
-3. **Error Cases**: Compilation errors, runtime errors
-4. **Edge Cases**: Large programs, infinite loops
-
-### Debugging Techniques
-
-#### Frontend Debugging
 ```bash
-# Open browser developer tools
-# Check console for React errors
-# Use React Developer Tools extension
-./localdev.sh logs frontend-legacy --tail
+cd backend
+npm test
 ```
 
-#### Backend Debugging
+Type-check without emitting:
+
 ```bash
-# View server logs
-./localdev.sh logs backend --tail
-
-# Execute shell in backend container
-./localdev.sh exec backend
-
-# Check API endpoints
-curl http://localhost:3000/api
+cd frontend && npx tsc --noEmit
+cd backend  && npx tsc --noEmit
 ```
 
-#### Code Runner Debugging
+## Signing in locally
+
+The quick path: add `DEV_AUTH_ENABLED=true` to `.env`, restart the
+backend, and the sign-in modal will show a "Sign in as Dev User (local
+only)" button that completes the full session flow without a Google
+round-trip.
+
+The real path: register a Google OAuth client (see
+[`oauth-setup.md`](./oauth-setup.md)), drop the Client ID + Secret into
+`.env`, and use the regular Google button.
+
+## Feature flags locally
+
+Flags are in Postgres. Toggle them at http://localhost:4000/admin — the
+page is admin-gated, which is why `DEV_AUTH_IS_ADMIN=true` exists.
+Changes take effect immediately; no reload needed. See
+[`feature-flags.md`](./feature-flags.md) for how to add one.
+
+## Working on the code runner
+
+`code-runner/local/Dockerfile` builds an image that compiles SPP-Valgrind
+from source. The first build is slow (~5 min). After that the backend
+spawns a container per `/api/run` request; the image itself is rebuilt
+only when you change its Dockerfile or submodule contents.
+
+If you change the SPP-Valgrind submodule:
+
 ```bash
-# Check local execution files
-ls -la /tmp/spp-usercode/
-
-# View Docker containers
-docker ps -a
-
-# Check code runner image
-docker images | grep spp-code-runner
+./localdev.sh build code-runner-build
+./localdev.sh up -d --force-recreate backend
 ```
+
+If you change the Lambda handler (`code-runner/lambda/handler.py`) and
+want to test it locally, set `EXEC_MODE=lambda` and use the
+`deploy-to-aws.sh` script in that directory — the backend will invoke
+your deployed Lambda.
+
+## Debugging
+
+**Frontend** — browser devtools. Vite hot-reloads on save. The Zustand
+store is introspectable via a debugger statement anywhere (e.g.
+`useAppStore.getState()`).
+
+**Backend** — `./localdev.sh logs -f backend`. `console.log` is the
+current baseline.
+
+**Trace pipeline** — the `/api/run` response includes compile stdout +
+stderr alongside the trace. If a program compiles but produces a weird
+trace, `backend/src/parse_vg_trace.ts` is where the translation happens
+— add `JSON.stringify` logging to the input `obj` to see Valgrind's raw
+output.
 
 ## Troubleshooting
 
-### Common Issues
+**Frontend comes up but API calls fail.** Backend probably didn't start
+cleanly. `./localdev.sh logs backend` — the most common cause is a DB
+connection failure on first boot (Postgres takes a few seconds longer
+than the backend to be ready).
 
-#### Port Conflicts
-```bash
-# Check if ports are in use
-lsof -i :3000  # Backend
-lsof -i :8000  # Frontend
+**"Cannot connect to the Docker daemon".** Docker Desktop isn't running
+or hasn't finished starting.
 
-# Solution: Stop conflicting services or change ports
+**Editor highlights the wrong line during scrubbing.** Usually a sign
+that the `#define union struct` offset isn't being compensated
+correctly. See `backend/src/valgrind_utils.ts::preprocessCode` for the
+prepend and `frontend/src/trace/schema.ts` for the offset.
+
+**`.env` changes don't take effect.** `./localdev.sh up -d` without
+`--force-recreate` keeps existing containers. Use
+`./localdev.sh up -d --force-recreate <service>`.
+
+**Port conflicts (3000 / 4000 / 5432 / 8000).** Something else is
+listening on those ports. Either stop it or override in `.env`:
+
+```
+BACKEND_PORT=3100
+FRONTEND_PORT=4100
+DB_PORT=5100
 ```
 
-#### Docker Issues
-```bash
-# Docker daemon not running
-# Solution: Start Docker Desktop
-
-# Permission issues (Linux/WSL)
-sudo docker ps
-# Solution: Add user to docker group
-sudo usermod -aG docker $USER
-```
-
-#### Build Failures
-```bash
-# Clean rebuild
-./localdev.sh clean
-./localdev.sh rebuild
-
-# Check Docker disk space
-docker system df
-docker system prune  # Clean up if needed
-```
-
-#### Code Execution Failures
-```bash
-# Check code runner image
-docker images spp-code-runner:dev
-
-# Rebuild code runner
-./localdev.sh build code-runner-build
-
-# Check execution logs
-./localdev.sh logs backend --tail
-```
-
-### Performance Issues
-
-#### Slow Startup
-- **Cause**: Docker image builds
-- **Solution**: Use `./localdev.sh up` instead of rebuild
-
-#### Memory Usage
-- **Monitoring**: Use Docker Desktop resource monitor
-- **Optimization**: Adjust Docker Desktop memory limits
-
-### Network Issues
-
-#### API Connection Failed
-```bash
-# Check backend is running
-curl http://localhost:3000/api
-
-# Check Docker network
-docker network ls
-```
-
-#### Frontend Can't Reach Backend
-- Verify API URL in frontend configuration
-- Check CORS settings in backend
-- Ensure both services are running
-
-## Development Workflow Examples
-
-### Making a Frontend Change
-
-1. Edit React component in `frontend-legacy/src/`
-2. Save file (auto-reload triggers)
-3. Test in browser at `http://localhost:8000`
-4. Check browser console for errors
-5. View logs if needed: `./localdev.sh logs frontend-legacy`
-
-### Making a Backend Change
-
-1. Edit TypeScript file in `backend/src/`
-2. Save file (nodemon restarts server)
-3. Test API endpoint with curl or frontend
-4. Check logs: `./localdev.sh logs backend --tail`
-5. Debug with `console.log()` if needed
-
-### Adding a New Feature
-
-1. **Plan**: Determine frontend/backend changes needed
-2. **Backend First**: Implement API changes
-3. **Test API**: Use curl or Postman
-4. **Frontend**: Implement UI changes
-5. **Integration Test**: Test full workflow
-6. **Code Review**: Review changes before commit
-
-## Next Steps
-
-For production deployment:
-- [Deployment Guide](./deployment.md) - AWS deployment procedures
-- [Infrastructure Guide](./infrastructure.md) - AWS infrastructure details
-- [Architecture Guide](./architecture.md) - System design overview 
+The container-internal ports stay the same; only the host mapping changes.
