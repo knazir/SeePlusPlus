@@ -8,31 +8,58 @@ interface Props {
   registerEl?: (el: HTMLElement | null) => void;
 }
 
+/**
+ * The heap-node DOM is split into two layers intentionally:
+ *
+ *   <div data-heap-addr ref={registerEl}>          ← layout-only wrapper
+ *     <article data-heap-inner>                    ← animation target
+ *       …card contents…
+ *     </article>
+ *   </div>
+ *
+ * The outer div is what `registerEl` tracks and what EdgeLayer finds via
+ * `[data-heap-addr]` — its getBoundingClientRect always reflects layout
+ * geometry because no transform animations ever run on it. The inner
+ * article is where enter/exit animations apply their transforms; they
+ * translate + scale the inner without moving the outer, so arrows keep
+ * pointing to the correct layout position even while a card is fading in
+ * or out.
+ *
+ * FLIP animations still target the outer (they animate layout moves), and
+ * `settleAnimations` only cancels those, leaving enter/exit alone.
+ */
+
 export function HeapNode({ addr, block, orphan, registerEl }: Props) {
   const { hoveredAddr, setHoveredAddr } = useHover();
   const highlighted = hoveredAddr === addr;
   const enter = () => setHoveredAddr(addr);
   const leave = () => setHoveredAddr(null);
 
+  const shared = {
+    ref: registerEl as React.Ref<HTMLDivElement>,
+    'data-heap-addr': addr,
+    'data-orphan': orphan || undefined,
+    'data-highlighted': highlighted || undefined,
+    onMouseEnter: enter,
+    onMouseLeave: leave,
+  };
+
   if (!isCArray(block)) {
     return (
-      <article
-        ref={registerEl}
-        data-heap-addr={addr}
-        data-orphan={orphan || undefined}
-        data-highlighted={highlighted || undefined}
-        onMouseEnter={enter}
-        onMouseLeave={leave}
-        className={`rounded-[3px] border px-2 py-1 font-mono text-[11px] transition-colors duration-fast ease-out-soft ${
-          orphan
-            ? 'border-dashed border-warn-line bg-warn-soft text-ink-1'
-            : highlighted
-              ? 'border-accent-line bg-accent-soft text-ink-0'
-              : 'border-line bg-bg-1 text-ink-1'
-        }`}
-      >
-        {addr}: {displayEncoded(block)}
-      </article>
+      <div {...shared}>
+        <article
+          data-heap-inner
+          className={`rounded-[3px] border px-2 py-1 font-mono text-[11px] transition-colors duration-fast ease-out-soft ${
+            orphan
+              ? 'border-dashed border-warn-line bg-warn-soft text-ink-1'
+              : highlighted
+                ? 'border-accent-line bg-accent-soft text-ink-0'
+                : 'border-line bg-bg-1 text-ink-1'
+          }`}
+        >
+          {addr}: {displayEncoded(block)}
+        </article>
+      </div>
     );
   }
 
@@ -41,50 +68,46 @@ export function HeapNode({ addr, block, orphan, registerEl }: Props) {
   const typeName = isCStruct(solo) ? String(solo[2]) : 'heap';
 
   return (
-    <article
-      ref={registerEl}
-      data-heap-addr={addr}
-      data-orphan={orphan || undefined}
-      data-highlighted={highlighted || undefined}
-      data-testid="heap-node"
-      onMouseEnter={enter}
-      onMouseLeave={leave}
-      className={`flex min-w-[140px] flex-col overflow-hidden rounded-[3px] border font-mono text-[11px] transition-colors duration-fast ease-out-soft ${
-        orphan
-          ? 'border-dashed border-warn-line bg-warn-soft'
-          : highlighted
-            ? 'border-accent-line bg-accent-soft shadow-[0_0_0_1px_var(--color-accent-line)]'
-            : 'border-line bg-bg-1'
-      }`}
-    >
-      <header
-        className={`flex items-center justify-between border-b px-2 py-1 ${
-          orphan ? 'border-warn-line bg-warn-soft' : 'border-line-soft bg-bg-2'
+    <div {...shared} data-testid="heap-node">
+      <article
+        data-heap-inner
+        className={`flex min-w-[140px] flex-col overflow-hidden rounded-[3px] border font-mono text-[11px] transition-colors duration-fast ease-out-soft ${
+          orphan
+            ? 'border-dashed border-warn-line bg-warn-soft'
+            : highlighted
+              ? 'border-accent-line bg-accent-soft shadow-[0_0_0_1px_var(--color-accent-line)]'
+              : 'border-line bg-bg-1'
         }`}
       >
-        <span className={`flex items-center gap-1.5 text-[10px] tracking-[0.04em] ${orphan ? 'text-warn' : 'text-accent'}`}>
-          {typeName}
-          {orphan && (
-            <span
-              title="No pointer from stack/globals reaches this block (potential leak)"
-              className="rounded-[2px] border border-warn-line bg-bg-0 px-1 py-[0.5px] text-[9px] uppercase tracking-[0.08em]"
-            >
-              orphan
-            </span>
+        <header
+          className={`flex items-center justify-between border-b px-2 py-1 ${
+            orphan ? 'border-warn-line bg-warn-soft' : 'border-line-soft bg-bg-2'
+          }`}
+        >
+          <span className={`flex items-center gap-1.5 text-[10px] tracking-[0.04em] ${orphan ? 'text-warn' : 'text-accent'}`}>
+            {typeName}
+            {orphan && (
+              <span
+                title="No pointer from stack/globals reaches this block (potential leak)"
+                className="rounded-[2px] border border-warn-line bg-bg-0 px-1 py-[0.5px] text-[9px] uppercase tracking-[0.08em]"
+              >
+                orphan
+              </span>
+            )}
+          </span>
+          <span className="text-[10px] text-ink-3">{addr}</span>
+        </header>
+        <div className="flex flex-col">
+          {isCStruct(solo) ? (
+            <StructFields fields={solo.slice(3) as ReadonlyArray<readonly [string, unknown]>} />
+          ) : (
+            elements.map((el, i) => (
+              <FieldRow key={i} name={`[${i}]`} value={el} />
+            ))
           )}
-        </span>
-        <span className="text-[10px] text-ink-3">{addr}</span>
-      </header>
-      <div className="flex flex-col">
-        {isCStruct(solo) ? (
-          <StructFields fields={solo.slice(3) as ReadonlyArray<readonly [string, unknown]>} />
-        ) : (
-          elements.map((el, i) => (
-            <FieldRow key={i} name={`[${i}]`} value={el} />
-          ))
-        )}
-      </div>
-    </article>
+        </div>
+      </article>
+    </div>
   );
 }
 
