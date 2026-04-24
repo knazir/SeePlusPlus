@@ -33,6 +33,11 @@ services:
       - OAUTH_CALLBACK_BASE_URL=${OAUTH_CALLBACK_BASE_URL:-http://localhost:${FRONTEND_PORT:-4000}}
       # Local-only dev sign-in; triple-gated server-side. See auth-runbook.
       - DEV_AUTH_ENABLED=${DEV_AUTH_ENABLED:-}
+      # Admin bootstrap — comma/semicolon-separated emails promoted on sign-in.
+      - ADMIN_EMAILS=${ADMIN_EMAILS:-}
+      # Auto-promote dev@localhost when DevAuthProvider is in use (default on
+      # in dev; set to "false" to test the non-admin path).
+      - DEV_AUTH_IS_ADMIN=${DEV_AUTH_IS_ADMIN:-true}
     depends_on:
       - code-runner-local-build
       - postgres

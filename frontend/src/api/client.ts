@@ -141,6 +141,7 @@ export interface Me {
   email: string;
   displayName: string | null;
   avatarUrl: string | null;
+  isAdmin: boolean;
 }
 
 export interface MeResponse {
@@ -154,6 +155,76 @@ export async function fetchMe(fetchFn: typeof fetch = fetch): Promise<MeResponse
     return { user: null, providers: [] };
   }
   return (await res.json()) as MeResponse;
+}
+
+// --- flags ----------------------------------------------------------------
+
+export type PublicFlags = Record<string, boolean>;
+
+export interface AdminFlag {
+  name: string;
+  enabled: boolean;
+  description: string | null;
+  updatedAt: string;
+  updatedBy: string | null;
+}
+
+export async function fetchFlags(fetchFn: typeof fetch = fetch): Promise<PublicFlags> {
+  const res = await fetchFn('/api/flags');
+  if (!res.ok) return {};
+  return (await res.json()) as PublicFlags;
+}
+
+export async function fetchAdminFlags(
+  fetchFn: typeof fetch = fetch,
+): Promise<AdminFlag[]> {
+  const res = await fetchFn('/api/admin/flags', { credentials: 'include' });
+  if (!res.ok) {
+    throw new Error(`GET /api/admin/flags failed (${res.status})`);
+  }
+  const data = (await res.json()) as { flags: AdminFlag[] };
+  return data.flags;
+}
+
+export async function setAdminFlag(
+  name: string,
+  enabled: boolean,
+  description: string | undefined,
+  fetchFn: typeof fetch = fetch,
+): Promise<AdminFlag> {
+  const body: Record<string, unknown> = { enabled };
+  if (description !== undefined) body.description = description;
+  const res = await fetchFn(`/api/admin/flags/${encodeURIComponent(name)}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+    credentials: 'include',
+  });
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    throw new Error(text || `PUT /api/admin/flags/${name} failed (${res.status})`);
+  }
+  const data = (await res.json()) as { flag: AdminFlag };
+  return data.flag;
+}
+
+export async function deleteAdminFlag(
+  name: string,
+  fetchFn: typeof fetch = fetch,
+): Promise<void> {
+  const res = await fetchFn(`/api/admin/flags/${encodeURIComponent(name)}`, {
+    method: 'DELETE',
+    credentials: 'include',
+  });
+  if (!res.ok) {
+    throw new Error(`DELETE /api/admin/flags/${name} failed (${res.status})`);
+  }
+}
+
+export async function reloadAdminFlags(
+  fetchFn: typeof fetch = fetch,
+): Promise<void> {
+  await fetchFn('/api/admin/flags/reload', { method: 'POST', credentials: 'include' });
 }
 
 export async function logout(fetchFn: typeof fetch = fetch): Promise<void> {

@@ -4,6 +4,7 @@ import { create } from 'zustand';
 import {
   createWorkspace,
   deleteWorkspace as deleteWorkspaceApi,
+  fetchFlags,
   fetchMe,
   getWorkspace,
   logout as logoutApi,
@@ -13,6 +14,7 @@ import {
   updateWorkspace,
   WorkspaceError,
   type Me,
+  type PublicFlags,
 } from '../api/client';
 import { ProgramTraceSchema, type ProgramTrace } from '../trace/schema';
 import {
@@ -153,6 +155,10 @@ export interface AppState {
   loadMe: () => Promise<void>;
   /** POST /api/auth/logout, then clear local state. */
   signOut: () => Promise<void>;
+
+  // feature flags — loaded once on mount, returned by `useFlag` hook below.
+  flags: PublicFlags;
+  loadFlags: () => Promise<void>;
 }
 
 export type PointerRouting = 'curved' | 'straight' | 'orthogonal';
@@ -558,6 +564,17 @@ export const useAppStore = create<AppState>((set, get) => ({
       set({ me: null });
     }
   },
+
+  flags: {},
+  loadFlags: async () => {
+    try {
+      const flags = await fetchFlags();
+      set({ flags });
+    } catch {
+      // Flag fetch failure is non-fatal — we keep whatever's in memory
+      // (probably {}) and code paths fall through to their defaults.
+    }
+  },
 }));
 
 /** Select the ExecutionPoint at the current step, or null before any run. */
@@ -571,4 +588,11 @@ export function useCurrentStep() {
 /** True when a trace exists but its source has been edited since the run. */
 export function useIsStale(): boolean {
   return useAppStore((s) => s.trace !== null && s.code !== s.lastRunCode);
+}
+
+/** Read a feature flag. Defaults to `false` if unknown (because the flags
+ *  haven't loaded yet, the server is down, or the flag truly doesn't exist).
+ *  Pair with `useAppStore(s => s.loadFlags)` called on App mount. */
+export function useFlag(name: string, defaultValue = false): boolean {
+  return useAppStore((s) => s.flags[name] ?? defaultValue);
 }

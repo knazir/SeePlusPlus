@@ -6,7 +6,10 @@ import express, { Express, Request, Response } from "express";
 import { closeDb, getPool, initDb } from "./db";
 import { registerProviders } from "./auth/providers";
 import { buildSessionMiddleware } from "./auth/session";
+import { loadFlags } from "./flags";
+import { adminRouter } from "./routes/admin";
 import { authRouter } from "./routes/auth";
+import { flagsRouter } from "./routes/flags";
 import {
     createRunner,
     TraceRunner
@@ -122,6 +125,7 @@ async function start(): Promise<void> {
     }
 
     registerProviders();
+    await loadFlags();
 
     const pool = getPool();
     const sessionMw = pool ? buildSessionMiddleware(pool) : null;
@@ -129,6 +133,8 @@ async function start(): Promise<void> {
 
     app.use("/api/auth", authRouter);
     app.use("/api/workspaces", workspacesRouter);
+    app.use("/api/flags", flagsRouter);
+    app.use("/api/admin", adminRouter);
 
     const server = app.listen(PORT, () => {
         console.log(`[Server]: See++ backend is running at http://localhost:${PORT}`);

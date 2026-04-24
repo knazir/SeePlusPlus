@@ -162,6 +162,7 @@ export function toApi(user: User): Record<string, unknown> {
         email: user.email,
         displayName: user.displayName,
         avatarUrl: user.avatarUrl,
+        isAdmin: user.isAdmin,
     };
 }
 
@@ -172,4 +173,31 @@ export const requireAuth = (req: Request, res: Response, next: () => void) => {
         return;
     }
     next();
+};
+
+/** Stricter gate: must be authenticated AND flagged as admin in the DB.
+ *  Any failure yields the same 404 to an unauthenticated viewer so we
+ *  don't advertise the existence of admin endpoints. */
+export const requireAdmin = async (
+    req: Request,
+    res: Response,
+    next: () => void,
+) => {
+    const pool = getPool();
+    const userId = req.session?.userId;
+    if (!pool || !userId) {
+        res.status(404).json({ error: "not found" });
+        return;
+    }
+    try {
+        const user = await findUserById(pool, userId);
+        if (!user?.isAdmin) {
+            res.status(404).json({ error: "not found" });
+            return;
+        }
+        next();
+    } catch (err) {
+        console.error("[auth] requireAdmin check failed:", err);
+        res.status(500).json({ error: "authorization check failed" });
+    }
 };
