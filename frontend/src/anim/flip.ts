@@ -21,10 +21,31 @@ export const FLIP_FOLLOW_MARGIN = 60;
  *  half a pixel as zero so we skip the animate() call entirely. */
 export const FLIP_DELTA_EPSILON = 0.5;
 
-/** Snapshot every element's layout rect. Caller keys by whatever identity is stable across renders (we use heap addr). */
+/**
+ * Cancel any in-flight Web Animations on the given element and wipe the
+ * inline transform so subsequent measurements reflect the element's settled
+ * layout geometry (not a mid-animation transform).
+ *
+ * Why this matters for FLIP: if step N+1 fires while step N's FLIP is still
+ * running, `getBoundingClientRect` returns the mid-animation position. Both
+ * the "previous" and "current" captures then reflect animated state, and the
+ * delta is non-zero even when layout didn't change — that's the jitter.
+ * Calling this before every capture/measure keeps the math on settled rects.
+ */
+function settleAnimations(el: HTMLElement): void {
+  if (typeof el.getAnimations !== 'function') return;
+  for (const anim of el.getAnimations()) anim.cancel();
+  if (el.style?.transform) el.style.transform = '';
+}
+
+/** Snapshot every element's layout rect, after settling any in-flight
+ *  animations so the rects reflect layout, not a frame of the animation. */
 export function captureRects(els: Map<string, HTMLElement>): Map<string, DOMRect> {
   const rects = new Map<string, DOMRect>();
-  for (const [key, el] of els) rects.set(key, el.getBoundingClientRect());
+  for (const [key, el] of els) {
+    settleAnimations(el);
+    rects.set(key, el.getBoundingClientRect());
+  }
   return rects;
 }
 
@@ -42,6 +63,9 @@ export function computeDelta(prev: DOMRect, curr: DOMRect): FlipDelta {
  * For each key in `currentEls` that also appears in `prevRects`: if the element
  * has moved, animate it from its old position (via inverse transform) back to
  * its new position (identity transform).
+ *
+ * Settles any previous animation on the element first — otherwise measurement
+ * reflects a mid-animation transform and we get phantom sub-pixel deltas.
  */
 export function playFlip(
   prevRects: Map<string, DOMRect>,
@@ -50,6 +74,7 @@ export function playFlip(
   for (const [key, el] of currentEls) {
     const prev = prevRects.get(key);
     if (!prev) continue;
+    settleAnimations(el);
     const { dx, dy } = computeDelta(prev, el.getBoundingClientRect());
     if (Math.abs(dx) < FLIP_DELTA_EPSILON && Math.abs(dy) < FLIP_DELTA_EPSILON) continue;
     el.animate(

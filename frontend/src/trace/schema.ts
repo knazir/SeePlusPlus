@@ -34,14 +34,18 @@ export function displayEncoded(v: unknown): string {
   if (isCData(v)) {
     const type = v[2];
     const val = v[3];
+    // SPP-Valgrind emits the literal '<UNINITIALIZED>' string for locals
+    // declared-but-not-assigned. Render as `?` uniformly across all types
+    // BEFORE the pointer special-case — otherwise uninit pointers would
+    // fall into the pointer branch and render as `→ <UNINITIALIZED>`.
+    if (val === '<UNINITIALIZED>') return '?';
     if (type === 'pointer' || type === 'ref') {
-      return val == null ? 'nullptr' : `→ ${String(val)}`;
+      // A genuine null pointer reads as `nullptr` to match C++ vocab.
+      // `0x0` is the wire-format equivalent SPP-Valgrind sometimes emits.
+      if (val === null || val === undefined || val === '0x0') return 'nullptr';
+      return `→ ${String(val)}`;
     }
     if (val === null || val === undefined) return '?';
-    // SPP-Valgrind emits a literal '<UNINITIALIZED>' string for locals that
-    // have been declared but not yet assigned. Rendering the marker verbatim
-    // reads as noise; the legacy UI showed a '?' and it's much cleaner.
-    if (val === '<UNINITIALIZED>') return '?';
     return typeof val === 'string' ? JSON.stringify(val) : String(val);
   }
   if (isCStruct(v)) {
