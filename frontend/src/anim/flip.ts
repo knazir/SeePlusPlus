@@ -21,20 +21,30 @@ export const FLIP_FOLLOW_MARGIN = 60;
  *  half a pixel as zero so we skip the animate() call entirely. */
 export const FLIP_DELTA_EPSILON = 0.5;
 
+/** Tag on every FLIP-produced animation so settleAnimations() can cancel
+ *  only the translate animations, leaving enter/exit (opacity+scale)
+ *  running to completion. */
+const FLIP_ANIM_ID = 'spp-flip-translate';
+
 /**
- * Cancel any in-flight Web Animations on the given element and wipe the
- * inline transform so subsequent measurements reflect the element's settled
+ * Cancel any in-flight FLIP translate animation on the given element and
+ * wipe its inline transform so subsequent measurements reflect the settled
  * layout geometry (not a mid-animation transform).
  *
- * Why this matters for FLIP: if step N+1 fires while step N's FLIP is still
- * running, `getBoundingClientRect` returns the mid-animation position. Both
- * the "previous" and "current" captures then reflect animated state, and the
+ * Why this matters: if step N+1 fires while step N's FLIP is still running,
+ * getBoundingClientRect returns a mid-animation transform. Both the
+ * "previous" and "current" captures then reflect animated state, and the
  * delta is non-zero even when layout didn't change — that's the jitter.
- * Calling this before every capture/measure keeps the math on settled rects.
+ *
+ * Crucially, this does NOT cancel enter/exit animations (which change
+ * opacity+scale, not transform in a way the next step needs to re-invert).
+ * Filtering by FLIP_ANIM_ID keeps those animations untouched.
  */
 function settleAnimations(el: HTMLElement): void {
   if (typeof el.getAnimations !== 'function') return;
-  for (const anim of el.getAnimations()) anim.cancel();
+  for (const anim of el.getAnimations()) {
+    if (anim.id === FLIP_ANIM_ID) anim.cancel();
+  }
   if (el.style?.transform) el.style.transform = '';
 }
 
@@ -82,7 +92,7 @@ export function playFlip(
         { transform: `translate(${dx}px, ${dy}px)` },
         { transform: 'translate(0, 0)' },
       ],
-      { duration: FLIP_DURATION, easing: FLIP_EASING, fill: 'both' },
+      { duration: FLIP_DURATION, easing: FLIP_EASING, fill: 'both', id: FLIP_ANIM_ID },
     );
   }
 }
