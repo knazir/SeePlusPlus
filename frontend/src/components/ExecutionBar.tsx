@@ -55,18 +55,18 @@ export function ExecutionBar() {
     >
       {/* Primary transport group */}
       <ButtonGroup>
-        <XbButton label="Restart" onClick={() => stepTo(0)} disabled={atStart} data-testid="exec-restart">↶</XbButton>
-        <XbButton label="Step back" onClick={stepBackward} disabled={atStart} data-testid="exec-step-back">◁</XbButton>
-        <XbButton label={playing ? 'Pause' : 'Play'} onClick={togglePlay} disabled={disabled} primary data-testid="exec-play">
+        <XbButton label="Restart" onClick={() => stepTo(0)} disabled={atStart} disabledReason={disabled ? 'Run first to load a trace' : 'Already at the first step'} data-testid="exec-restart">↶</XbButton>
+        <XbButton label="Step back" onClick={stepBackward} disabled={atStart} disabledReason={disabled ? 'Run first to load a trace' : 'Already at the first step'} data-testid="exec-step-back">◁</XbButton>
+        <XbButton label={playing ? 'Pause' : 'Play'} onClick={togglePlay} disabled={disabled} disabledReason="Run first to load a trace" primary data-testid="exec-play">
           {playing ? '⏸' : '▶'}
         </XbButton>
-        <XbButton label="Step forward" onClick={stepForward} disabled={atEnd} data-testid="exec-step-forward">▷</XbButton>
-        <XbButton label="Jump to end" onClick={() => stepTo(totalSteps - 1)} disabled={atEnd} data-testid="exec-jump-end">⇥</XbButton>
+        <XbButton label="Step forward" onClick={stepForward} disabled={atEnd} disabledReason={disabled ? 'Run first to load a trace' : 'Already at the last step'} data-testid="exec-step-forward">▷</XbButton>
+        <XbButton label="Jump to end" onClick={() => stepTo(totalSteps - 1)} disabled={atEnd} disabledReason={disabled ? 'Run first to load a trace' : 'Already at the last step'} data-testid="exec-jump-end">⇥</XbButton>
       </ButtonGroup>
 
       <ButtonGroup>
-        <XbButton label="Step into" onClick={stepInto} disabled={!canStepInto} data-testid="exec-step-in">↴</XbButton>
-        <XbButton label="Step out" onClick={stepOut} disabled={!canStepOut} data-testid="exec-step-out">↱</XbButton>
+        <XbButton label="Step into" onClick={stepInto} disabled={!canStepInto} disabledReason={disabled ? 'Run first to load a trace' : 'No function call to step into from this line'} data-testid="exec-step-in">↴</XbButton>
+        <XbButton label="Step out" onClick={stepOut} disabled={!canStepOut} disabledReason={disabled ? 'Run first to load a trace' : 'Already in the top-level frame'} data-testid="exec-step-out">↱</XbButton>
       </ButtonGroup>
 
       <span className="font-mono text-[10px] uppercase tracking-[0.1em] text-ink-3">timeline</span>
@@ -110,6 +110,12 @@ interface XbButtonProps {
   disabled?: boolean;
   primary?: boolean;
   title?: string;
+  /**
+   * Human-readable reason shown as a tooltip when the button is disabled.
+   * Users and screen readers otherwise see only a greyed-out control with
+   * no explanation of why — making disabled state actively hostile.
+   */
+  disabledReason?: string;
   children: React.ReactNode;
   'data-testid'?: string;
 }
@@ -120,16 +126,19 @@ function XbButton({
   disabled,
   primary,
   title,
+  disabledReason,
   children,
   'data-testid': testid,
 }: XbButtonProps) {
+  const tooltip = disabled && disabledReason ? disabledReason : (title ?? label);
   return (
     <button
       type="button"
       onClick={onClick}
       disabled={disabled}
       aria-label={label}
-      title={title ?? label}
+      aria-describedby={undefined}
+      title={tooltip}
       data-testid={testid}
       className={`flex h-7 w-[30px] items-center justify-center rounded-[3px] font-mono text-[11px] transition-colors duration-fast ease-out-soft disabled:cursor-not-allowed disabled:opacity-35 ${
         primary

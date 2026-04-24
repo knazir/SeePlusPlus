@@ -1,327 +1,146 @@
-# AWS Copilot Infrastructure
+# `copilot/`
 
-This directory contains the AWS Copilot configuration for deploying the See++ application to AWS.
+AWS Copilot manifests and addons for See++. For the full deploy workflow
+and end-to-end architecture, see [`docs/deployment.md`](../docs/deployment.md)
+and [`docs/infrastructure.md`](../docs/infrastructure.md). This README is
+an orientation for reading and editing the files in this directory.
 
-## Quick Start
-
-### Automated Deployment
-
-To deploy a complete environment (including all manual configuration steps):
-
-```bash
-# From project root
-./copilot/deploy-environment.sh test   # Deploy test environment
-./copilot/deploy-environment.sh prod   # Deploy production environment
-```
-
-The script will:
-- ✅ Create the environment (if it doesn't exist)
-- ✅ Deploy backend service
-- ✅ Configure IAM roles and policies (Lambda invoke permissions)
-- ✅ Set load balancer timeout to 300 seconds
-- ✅ Build and deploy Lambda function (code execution)
-- ✅ Set S3 bucket lifecycle policy
-- ✅ Deploy frontend services
-- ✅ Verify deployment
-
-**Time estimate**: 20-25 minutes (includes Lambda Docker build and push)
-
-### Prerequisites
-
-Before running the deployment script, ensure you have:
-
-1. **AWS CLI** installed and configured:
-   ```bash
-   aws --version
-   aws sts get-caller-identity
-   ```
-
-2. **AWS Copilot CLI** installed:
-   ```bash
-   copilot --version
-   ```
-
-3. **Docker** installed and running:
-   ```bash
-   docker --version
-   docker ps
-   ```
-
-4. **AWS Permissions**: Your AWS credentials must have permissions for:
-   - ECS, ECR, S3, IAM, VPC, ALB, CloudFormation, SSM Parameter Store
-
-### Safety Features
-
-- **Non-destructive**: The script will ask for confirmation if the environment already exists
-- **Idempotent**: Safe to run multiple times - will update existing resources
-- **Validation**: Checks prerequisites before starting
-- **Error handling**: Exits immediately on any error
-
-## Directory Structure
+## Layout
 
 ```
 copilot/
-├── .workspace                    # Copilot application configuration
-├── deploy-environment.sh         # Automated deployment script
-├── README.md                     # This file
+├── .workspace                       # Copilot application: "spp"
+├── deploy-environment.sh            # Convenience wrapper for env bootstrap
 ├── environments/
-│   ├── test/
-│   │   └── manifest.yml         # Test environment configuration
-│   └── prod/
-│       └── manifest.yml         # Production environment configuration
+│   ├── test/manifest.yml
+│   └── prod/manifest.yml
 ├── backend/
-│   ├── manifest.yml             # Backend service configuration
+│   ├── manifest.yml                 # ECS Load Balanced Web Service
 │   └── addons/
-│       └── trace-store.yml      # S3 bucket for execution traces
-├── frontend-legacy/
-│   └── manifest.yml             # Legacy frontend configuration
-└── frontend/
-    └── manifest.yml             # New frontend configuration
+│       ├── workspaces-db.yml        # RDS Postgres + Secrets Manager
+│       ├── trace-store.yml          # S3 bucket (reserved for trace cache)
+│       └── lambda-permissions.yml   # IAM: backend → Lambda invoke
+├── frontend/manifest.yml            # Primary frontend ECS service
+└── frontend-legacy/manifest.yml     # Legacy frontend ECS service
 ```
 
-## Manual Deployment (Advanced)
+## Services at a glance
 
-If you prefer manual control over the deployment process, follow these steps:
+| Service | Port | Prod alias |
+|---|---|---|
+| `backend` | 3000 | (internal, via Service Connect) |
+| `frontend` | 80 | `seepluspl.us` |
+| `frontend-legacy` | 80 | `old.seepluspl.us` |
 
-### 1. Create Environment
+All three run on Fargate, 256 CPU / 512 MB, `linux/x86_64`. Prod auto-
+scales 1–10 on CPU > 70%; test is pinned to a single instance.
+
+The Lambda code runner (`spp-trace-executor-<env>`) is **not** Copilot-
+managed — it's built and pushed by `code-runner/lambda/deploy-to-aws.sh`.
+The backend's `lambda-permissions.yml` addon grants the task role
+permission to invoke it.
+
+## Addons
+
+Three CloudFormation templates attached to the backend stack. Copilot
+auto-wires any `AWS::IAM::ManagedPolicy` output to the service's task
+role and any `secrets` output into the container env.
+
+- **`workspaces-db.yml`** — RDS Postgres 16.13, `db.t4g.micro`, private
+  subnet, gp3 encrypted storage. A Secrets Manager secret holds the
+  generated `{ username, password, host, port, dbname }` JSON and is
+  attached to the instance so the backend reads credentials without
+  hardcoding them. Per-env knobs (backup retention, MultiAZ, deletion
+  protection) are in the top-of-file `Mappings` block.
+- **`trace-store.yml`** — S3 bucket (versioned, encrypted, no public
+  access, 30-day non-current expiry). Currently unused at runtime; kept
+  for a future trace-cache layer. The backend task role has full CRUD on
+  it.
+- **`lambda-permissions.yml`** — minimal IAM policy granting
+  `lambda:InvokeFunction` on `*`. Separate from the backend manifest's
+  `task_role.policy` block because Copilot doesn't apply inline
+  manifest-level IAM — addons are the supported path.
+
+## Secrets
+
+Backend secrets live in SSM at `/copilot/spp/<env>/secrets/` and are
+referenced in `backend/manifest.yml` under the `secrets:` block. The
+backend's task role is generated with read permission on that SSM path
+prefix automatically.
+
+| Name | Notes |
+|---|---|
+| `GOOGLE_CLIENT_SECRET` | From the Google Cloud Console. Rotate via the same `copilot secret init` command. |
+| `SESSION_SECRET` | Per-environment random hex — generate with `openssl rand -hex 32`. Rotation invalidates every active session. |
+
+The `GOOGLE_CLIENT_ID` is not sensitive and lives directly in
+`backend/manifest.yml` as a per-env `variables:` entry.
+
+RDS credentials live in **Secrets Manager**, not SSM — they're generated
+by CloudFormation inside `workspaces-db.yml` and never need manual
+rotation.
+
+### Initialize secrets for a new environment
 
 ```bash
-copilot env init --name test --profile default --default-config
-copilot env deploy --name test
+copilot secret init --name GOOGLE_CLIENT_SECRET --values <env>=<value>
+copilot secret init --name SESSION_SECRET      --values <env>=$(openssl rand -hex 32)
 ```
 
-### 2. Deploy Services
-
-```bash
-copilot svc deploy --name backend --env test
-copilot svc deploy --name frontend-legacy --env test
-copilot svc deploy --name frontend --env test
-```
-
-### 3. Manual Configuration
-
-After deploying services, you must complete these manual steps:
-
-1. **Configure IAM Roles** - See [deployment.md](../docs/deployment.md)
-2. **Set Load Balancer Timeout** - See [deployment.md](../docs/deployment.md)
-3. **Build and Deploy Lambda Function** - See [deployment.md](../docs/deployment.md)
-4. **Set S3 Lifecycle** - See [deployment.md](../docs/deployment.md)
-
-Refer to the [full deployment guide](../docs/deployment.md) for detailed instructions.
-
-## Service Configurations
-
-### Backend Service
-
-- **Type**: Backend Service (internal ALB)
-- **Resources**: 256 CPU, 512 MB memory
-- **Scaling**: 1-10 instances based on CPU utilization
-- **Port**: 8080
-- **Health Check**: `/api`
-
-### Frontend Services
-
-Both frontends use the same resource configuration:
-
-- **Type**: Load Balanced Web Service
-- **Resources**: 256 CPU, 512 MB memory
-- **Scaling**: 1-10 instances based on CPU utilization
-- **Port**: 80
-- **Health Check**: `/`
-
-**frontend-legacy**: Current production frontend (React 16 + CodeMirror)
-**frontend**: New modern frontend (React 19 + Monaco Editor)
-
-### Code Runner
-
-- **Type**: AWS Lambda function
-- **Resources**: 10GB memory (scales CPU automatically)
-- **Timeout**: 2 minutes
-- **Platform**: Amazon Linux 2023 (x86_64)
-- **Deployment**: Automated via `deploy-environment.sh` script
-
-## Environment Differences
-
-### Test Environment
-
-- **Purpose**: Testing and staging
-- **Scaling**: Fixed to 1 instance per service (cost optimization)
-- **Deployment**: Recreate strategy for faster deployments
-- **Domain**: Auto-generated by Copilot
-
-### Production Environment
-
-- **Purpose**: Live production traffic
-- **Scaling**: Auto-scaling 1-10 instances based on CPU
-- **Deployment**: Rolling updates for zero downtime
-- **Domain**: Custom domain configured in manifests
-
-## Common Operations
-
-### View Environment Status
-
-```bash
-copilot env show --name test
-copilot env show --name prod
-```
-
-### View Service Status
-
-```bash
-copilot svc status --name backend --env test
-copilot svc status --name frontend-legacy --env prod
-```
-
-### View Service Logs
-
-```bash
-copilot svc logs --name backend --env test --follow
-copilot svc logs --name frontend-legacy --env prod --since 1h
-```
-
-### Deploy Service Updates
-
-```bash
-# Deploy backend changes
-copilot svc deploy --name backend --env prod
-
-# Deploy frontend changes
-copilot svc deploy --name frontend-legacy --env prod
-```
-
-### Delete Environment (⚠️ Destructive)
-
-```bash
-# This will delete ALL resources in the environment
-copilot env delete --name test
-```
-
-## Secrets Management
-
-Secrets are stored in AWS Systems Manager Parameter Store. The backend service requires minimal secrets since code execution is handled by Lambda:
-
-```
-/copilot/spp/{environment}/secrets/
-└── ECR_REPO          # (Optional) ECR repository for frontend images
-```
-
-Lambda function configuration (function name, timeout, etc.) is managed through environment variables in the Copilot manifest.
-
-### View Secrets
+### Inspect what's there
 
 ```bash
 aws ssm get-parameters-by-path \
-    --path "/copilot/spp/test/secrets" \
-    --with-decryption
+  --path "/copilot/spp/<env>/secrets" \
+  --with-decryption
 ```
 
-### Update a Secret
+## Common operations
 
 ```bash
-aws ssm put-parameter \
-    --name "/copilot/spp/test/secrets/ECR_REPO" \
-    --value "123456789.dkr.ecr.us-west-2.amazonaws.com/spp-frontend" \
-    --type "SecureString" \
-    --overwrite
+# Status
+copilot env show --name <env>
+copilot svc status --name backend --env <env>
+
+# Logs
+copilot svc logs --name backend --env <env> --follow
+copilot svc logs --name frontend --env <env> --since 1h
+
+# Deploy one service
+copilot svc deploy --name backend --env <env>
+
+# Delete one service (e.g. retiring frontend-legacy)
+copilot svc delete --name frontend-legacy --env <env>
+
+# Destroy an entire environment (takes ~15 minutes)
+copilot env delete --name <env>
 ```
 
-## Troubleshooting
+## Per-environment differences
 
-### Deployment Script Fails
+| | test | prod |
+|---|---|---|
+| ECS count | 1 (fixed) | 1–10 auto-scale |
+| Deployment strategy | `rolling: recreate` | default rolling |
+| RDS backups | 1 day | 7 days |
+| RDS deletion protection | off | on |
+| Custom domain aliases | none (use auto-generated hostnames) | `seepluspl.us`, `old.seepluspl.us` |
+| Container Insights | off | off (flip on in `environments/<env>/manifest.yml` when needed) |
 
-Check the error message and:
+## Gotchas specific to this directory
 
-1. Verify AWS credentials: `aws sts get-caller-identity`
-2. Check Copilot version: `copilot --version` (should be v1.27+)
-3. Ensure Docker is running: `docker ps`
-4. Review CloudFormation events in AWS Console
-
-### Service Health Issues
-
-```bash
-# Check service status
-copilot svc status --name backend --env test
-
-# View detailed logs
-copilot svc logs --name backend --env test --since 1h
-
-# Check ECS task status
-aws ecs describe-services --cluster spp-test-Cluster --services backend
-```
-
-### Code Execution Fails
-
-1. Check Lambda function logs:
-   ```bash
-   aws logs tail /aws/lambda/spp-trace-executor-test --follow
-   aws logs tail /aws/lambda/spp-trace-executor-prod --follow
-   ```
-
-2. Verify Lambda function exists and is configured:
-   ```bash
-   aws lambda get-function --function-name spp-trace-executor-test
-   aws lambda get-function-configuration --function-name spp-trace-executor-test
-   ```
-
-3. Test Lambda function directly:
-   ```bash
-   aws lambda invoke \
-     --function-name spp-trace-executor-test \
-     --payload '{"code":"int main() { return 0; }"}' \
-     response.json
-   ```
-
-4. Check backend has Lambda invoke permissions:
-   ```bash
-   copilot svc show --name backend --env test --json | grep -A 10 "taskRole"
-   ```
-
-### Load Balancer Timeout Errors
-
-If you see 504 Gateway Timeout errors:
-
-```bash
-# Verify ALB timeout is set to 300 seconds
-aws elbv2 describe-load-balancer-attributes \
-    --load-balancer-arn <your-lb-arn> \
-    --query 'Attributes[?Key==`idle_timeout.timeout_seconds`]'
-```
-
-## Cost Optimization
-
-### Minimize Costs in Test Environment
-
-1. **Delete when not in use**:
-   ```bash
-   copilot env delete --name test
-   ```
-
-2. **Scale down services**:
-   Edit `copilot/environments/test/manifest.yml` and set:
-   ```yaml
-   count: 1  # Fixed to 1 instance
-   ```
-
-3. **Stop after hours**: Use AWS Instance Scheduler to stop ECS tasks
-
-### Monitor Costs
-
-- Enable AWS Cost Explorer
-- Set up billing alarms for unexpected charges
-- Review ECS, S3, and ECR costs regularly
-
-## Additional Resources
-
-- **Full Deployment Guide**: [docs/deployment.md](../docs/deployment.md)
-- **Infrastructure Details**: [docs/infrastructure.md](../docs/infrastructure.md)
-- **Architecture Overview**: [docs/architecture.md](../docs/architecture.md)
-- **Development Setup**: [docs/development.md](../docs/development.md)
-- **AWS Copilot Docs**: https://aws.github.io/copilot-cli/
-
-## Support
-
-For issues or questions:
-1. Check the [troubleshooting section](#troubleshooting) above
-2. Review the [full documentation](../docs/)
-3. Check AWS CloudFormation events in the console
-4. Review service logs with `copilot svc logs`
+- **Addon output names are alphanumeric only.** CloudFormation rejects
+  underscores. Names ending in `Arn` get filtered out of auto-wiring; use
+  a different suffix (e.g. `AccessPolicy`) if you want Copilot to attach
+  the output as a ManagedPolicy.
+- **nginx proxy headers.** The frontend nginx config uses
+  `$forwarded_proto` (not `$scheme`) because Service Connect uses HTTP
+  internally while the ALB terminates HTTPS; setting
+  `X-Forwarded-Proto` to `$scheme` breaks OAuth callbacks.
+- **Service Connect requires static `proxy_pass` targets.** nginx bypasses
+  `/etc/hosts` when given a `resolver` directive + `$variable` target —
+  which is where Service Connect maps short names. Keep `proxy_pass`
+  literal.
+- **ALB idle timeout.** The Copilot default is 60 seconds, but some user
+  programs take longer to compile + run. `deploy-environment.sh` bumps it
+  to 300; if deploying manually, see [`docs/deployment.md`](../docs/deployment.md#alb-idle-timeout).

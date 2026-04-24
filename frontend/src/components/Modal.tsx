@@ -1,4 +1,4 @@
-import { useEffect, type ReactNode } from 'react';
+import { useEffect, useRef, type ReactNode } from 'react';
 
 interface Props {
   title: string;
@@ -10,8 +10,26 @@ interface Props {
   size?: 'md' | 'lg';
 }
 
-/** Simple overlay + centered card. Click-outside + Esc close. */
+/**
+ * Focusable selector used by the Tab-cycle logic. Matches what browsers
+ * consider "keyboard navigable" — inputs, buttons, links with href, and
+ * anything with an explicit positive-or-zero tabindex.
+ */
+const FOCUSABLE_SELECTOR = [
+  'a[href]',
+  'button:not([disabled])',
+  'input:not([disabled]):not([type="hidden"])',
+  'select:not([disabled])',
+  'textarea:not([disabled])',
+  '[tabindex]:not([tabindex="-1"])',
+].join(', ');
+
+/** Simple overlay + centered card. Click-outside + Esc close. Traps focus
+ *  inside the card while open, and restores focus to the previously-focused
+ *  element when closed. */
 export function Modal({ title, onClose, children, 'data-testid': testid, size = 'md' }: Props) {
+  const cardRef = useRef<HTMLDivElement | null>(null);
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -22,6 +40,43 @@ export function Modal({ title, onClose, children, 'data-testid': testid, size = 
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose]);
+
+  // Focus management: on mount, move focus to the first focusable element
+  // inside the card (falling back to the card itself). On unmount, restore
+  // focus to whatever was focused before the modal opened — so dismissing
+  // doesn't dump the user back at <body>, mid-keyboard-flow.
+  useEffect(() => {
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+    const card = cardRef.current;
+    if (!card) return;
+    const focusables = card.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR);
+    // Prefer the first form control / button; fall back to the card itself.
+    const first = focusables[0];
+    if (first) first.focus();
+    else card.focus();
+    return () => {
+      previouslyFocused?.focus?.();
+    };
+  }, []);
+
+  // Tab / Shift+Tab cycle: trap focus within the card.
+  const onCardKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key !== 'Tab') return;
+    const card = cardRef.current;
+    if (!card) return;
+    const focusables = Array.from(card.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR));
+    if (focusables.length === 0) return;
+    const first = focusables[0]!;
+    const last = focusables[focusables.length - 1]!;
+    const active = document.activeElement as HTMLElement | null;
+    if (e.shiftKey && active === first) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && active === last) {
+      e.preventDefault();
+      first.focus();
+    }
+  };
 
   return (
     <div
@@ -36,7 +91,10 @@ export function Modal({ title, onClose, children, 'data-testid': testid, size = 
       aria-label={title}
     >
       <div
-        className={`w-full overflow-hidden rounded-lg border border-line bg-bg-1 shadow-2xl ${size === 'lg' ? 'max-w-3xl' : 'max-w-md'}`}
+        ref={cardRef}
+        tabIndex={-1}
+        onKeyDown={onCardKeyDown}
+        className={`w-full overflow-hidden rounded-lg border border-line bg-bg-1 shadow-2xl focus:outline-none ${size === 'lg' ? 'max-w-3xl' : 'max-w-md'}`}
         onMouseDown={(e) => e.stopPropagation()}
       >
         <header className="flex items-center justify-between border-b border-line-soft px-4 py-3">

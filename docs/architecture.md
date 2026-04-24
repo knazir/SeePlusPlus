@@ -1,293 +1,184 @@
-# See++ Architecture
+# Architecture
 
-This document provides a comprehensive overview of the See++ system architecture, explaining how the various components work together to provide C++ code visualization.
+See++ is a web tool for visualizing C++ program execution step by step. A
+user types code in the browser; the backend compiles and runs it under a
+modified Valgrind; the resulting trace is parsed into JSON; the frontend
+renders the stack, heap, pointers, and variable state at each execution
+point.
 
-## System Overview
+This document covers the moving parts and how they fit together. For
+running it locally see [`development.md`](./development.md); for deploying
+to AWS see [`deployment.md`](./deployment.md) and
+[`infrastructure.md`](./infrastructure.md).
 
-See++ is a distributed web application that compiles and executes C++ code in isolated environments, traces the execution using a modified Valgrind, and provides an interactive visualization of the program's memory state and execution flow.
-
-### High-Level Architecture
-
-```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Frontend      │    │    Backend      │    │  Code Runner    │
-│  (React/JSX)    │◄──►│  (Node.js/TS)   │◄──►│   (Lambda)      │
-│                 │    │                 │    │                 │
-│ - Code Editor   │    │ - API Server    │    │ - Compilation   │
-│ - Visualization │    │ - Orchestration │    │ - Execution     │
-│ - UI Controls   │    │ - Runner Invoke │    │ - Trace Gen     │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-                                │                       │
-                                │                       │
-                       ┌─────────────────┐    ┌─────────────────┐
-                       │   S3 Storage    │    │  AWS Lambda     │
-                       │    (Optional)   │    │                 │
-                       │ - Trace Cache   │    │ - Serverless    │
-                       │                 │    │ - Isolation     │
-                       │                 │    │ - Security      │
-                       └─────────────────┘    └─────────────────┘
-```
-
-## Core Components
-
-### 1. Frontend (React Application)
-
-**Locations**: 
-- `frontend-legacy/` (currently functional - main production)
-- `frontend/` (under development - available at beta subdomain)
-
-**Technology Stack**:
-- **Legacy**: React 16.x, CodeMirror, Konva.js, JavaScript/JSX
-- **New**: React 19.x, Monaco Editor, TypeScript
-
-**Key Responsibilities**:
-- Provide code editor interface with C++ syntax highlighting
-- Send code execution requests to backend
-- Visualize execution traces with interactive controls
-- Display stack frames, heap memory, and variable values
-- Support step-by-step execution navigation
-
-**Deployment Strategy**:
-- **Legacy Frontend**: Deployed to main domain (`[your-domain.com]`)
-- **New Frontend**: Deployed to beta subdomain (`beta.[your-domain.com]`) for testing and gradual migration
-
-**Note**: Domain configuration depends on your specific setup and Copilot service manifest configurations.
-
-**Main Components** (Legacy):
-- `App.jsx`: Main application container with state management
-- `Ide.jsx`: Code editor with CodeMirror integration
-- `Visualization.jsx`: Memory and execution visualization
-- `VisualizationTool.js`: Core visualization logic
-- `Api.js`: Backend communication layer
-
-**Main Components** (New):
-- TypeScript-based React components
-- Monaco Editor integration for code editing
-- Modern React patterns and hooks
-
-### 2. Backend (Node.js/TypeScript API)
-
-**Location**: `backend/`
-
-**Technology Stack**:
-- Node.js with Express framework
-- TypeScript for type safety
-- AWS SDK for ECS and S3 operations
-- CORS enabled for cross-origin requests
-
-**Key Responsibilities**:
-- Receive and preprocess C++ code
-- Orchestrate code execution in isolated environments
-- Manage file storage and retrieval via S3
-- Parse Valgrind traces into visualization data
-- Provide RESTful API endpoints
-
-**Core Architecture**:
-```
-backend/src/
-├── index.ts              # Main Express server and API routes
-├── runners/
-│   ├── runner.interface.ts   # Common runner interface
-│   ├── local.ts             # Local Docker runner (development)
-│   ├── lambda.ts            # AWS Lambda runner (production)
-│   └── index.ts             # Runner factory
-├── valgrind_utils.ts        # Trace parsing and processing
-└── parse_vg_trace.ts        # Valgrind output parser
-```
-
-**API Endpoints**:
-- `GET /api`: Health check endpoint
-- `POST /api/run`: Execute C++ code and return trace data
-
-### 3. Code Runner (Isolated Execution Environment)
-
-**Location**: `code-runner/`
-
-**Technology Stack**:
-- Modified Valgrind (SPP-Valgrind) for execution tracing
-- g++ compiler for C++ compilation
-- Docker containers for isolation
-- Shell scripts for orchestration
-
-**Key Responsibilities**:
-- Compile C++ code using g++
-- Execute programs under modified Valgrind
-- Generate detailed execution traces
-- Capture stdout, stderr, and compilation output
-- Upload results to S3 storage
-
-**Execution Flow**:
-1. Download user code from S3
-2. Compile code using g++
-3. If compilation succeeds, run under Valgrind
-4. Generate JSON trace file
-5. Upload all outputs to S3
-
-### 4. Modified Valgrind (SPP-Valgrind)
-
-**Location**: `code-runner/SPP-Valgrind/` (git submodule)
-
-**Purpose**: 
-- Traces C++ program execution at the instruction level
-- Captures memory allocations, deallocations, and access patterns
-- Records function calls, returns, and stack frame changes
-- Generates JSON output compatible with the visualization frontend
-
-## Data Flow
-
-### Code Execution Workflow
-
-1. **User Input**: User writes C++ code in the frontend editor
-2. **Submission**: Frontend sends POST request to `/api/run` with code
-3. **Preprocessing**: Backend preprocesses code (adds necessary headers)
-4. **Unique ID**: Backend generates UUID for the execution session
-5. **Runner Selection**: Backend selects appropriate runner (Local vs Lambda)
-
-**AWS Lambda Execution Path**:
-6. **Lambda Invoke**: Backend invokes Lambda function with code as payload
-7. **Compilation**: Lambda compiles code using g++ in `/tmp` directory
-8. **Execution**: If compilation succeeds, Lambda executes under modified Valgrind
-9. **Trace Generation**: Valgrind generates execution trace with memory/variable information
-10. **Direct Response**: Lambda returns complete execution results:
-    - `traceContent`: Raw Valgrind execution trace
-    - `ccStdout` / `ccStderr`: Compilation output
-    - `stdout` / `stderr`: Program execution output
-11. **Response Processing**: Backend processes trace data into visualization format
-12. **Frontend Response**: Processed trace data is returned to frontend
-13. **Visualization**: Frontend renders interactive visualization
-
-**Local Development Path** (steps 6-10 replaced):
-6. **File System**: Backend writes code to local filesystem (`/tmp/spp-usercode/[uuid]/input/`)
-7. **Container Launch**: Backend launches local Docker container with volume mounts
-8. **Direct Execution**: Code runner compiles and executes with results written to mounted volumes
-9. **File Reading**: Backend reads results directly from local filesystem (`/tmp/spp-usercode/[uuid]/output/`)
-
-### Memory Management
-
-**Stack Visualization**:
-- Function call stack with frames
-- Local variables with values and types
-- Parameter passing visualization
-- Return value tracking
-
-**Heap Visualization**:
-- Dynamic memory allocations (new/malloc)
-- Memory deallocations (delete/free)
-- Orphaned memory detection (leaks)
-- Pointer/reference relationships
-
-## Deployment Architectures
-
-### Local Development
+## Top-level shape
 
 ```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Frontend      │    │    Backend      │    │  Code Runner    │
-│   (Legacy)      │    │                 │    │                 │
-│ localhost:8000  │◄──►│ localhost:3000  │◄──►│   (on-demand)   │
-│   (New)         │    │                 │    │                 │
-│ localhost:8080  │    │                 │    │                 │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-          │                       │                       │
-          └───────────────────────┼───────────────────────┘
-                                  │
-                        ┌─────────────────┐
-                        │ Docker Network  │
-                        │  (no-internet)  │
-                        └─────────────────┘
+  Browser
+     │
+     ▼
+  Frontend (React + Vite, served by nginx in prod)
+     │  relative /api/* calls
+     ▼
+  Backend (Node + Express + TypeScript)
+     ├──► Code runner ─ Lambda (prod) or Docker (local) ─ runs SPP-Valgrind
+     └──► Postgres     ─ RDS (prod) or docker-compose (local)
 ```
 
-### Production (AWS)
+All user-facing traffic hits the frontend; the frontend proxies `/api/*`
+to the backend over an ALB. The backend is the sole orchestrator — it
+compiles + runs user code via the code runner, parses the Valgrind trace,
+and talks to Postgres for workspaces, sessions, and feature flags.
+
+## Components
+
+### Frontend — `frontend/`
+
+React 18 + TypeScript, built with Vite and styled with Tailwind. State is
+in a single Zustand store (`frontend/src/store/index.ts`). The editor is
+CodeMirror 6 (`@uiw/react-codemirror` + the C++ language package). The
+visualization (`frontend/src/components/VizPane.tsx`) renders a trace as
+stack frames + a heap canvas; the heap uses [@dagrejs/dagre] for
+automatic top-to-bottom layout of linked structures.
+
+Traces arrive as JSON; `frontend/src/trace/schema.ts` is a Zod validator
+that narrows them before any render-time code sees them. If the backend
+and frontend ever drift on shape, validation fails at the boundary rather
+than crashing deep in the render tree.
+
+### Frontend (legacy) — `frontend-legacy/`
+
+The original 2018 React 16 implementation, kept running alongside the
+current frontend for reference and the small set of users who've
+bookmarked it. Served at a secondary domain in production
+(`old.seepluspl.us`). Not under active development.
+
+### Backend — `backend/`
+
+Node + Express + TypeScript. Responsibilities:
+
+- Accept code via `POST /api/run`, preprocess it (prepends
+  `#define union struct\n` as a Valgrind compatibility shim), invoke the
+  code runner, parse the Valgrind trace into the frontend-visible shape.
+- Serve `/api/workspaces/*` for persisting and sharing code snippets.
+- Serve `/api/auth/*` for Google OAuth sign-in (+ an optional local-only
+  dev provider).
+- Serve `/api/flags` (public) and `/admin/*` (admin-gated) for feature
+  flags.
+
+`backend/src/parse_vg_trace.ts` is the canonical translator from
+Valgrind's output to `ProgramTrace` JSON. The `ProgramTrace` interface
+there is the authoritative server-side type; the frontend's Zod schema is
+the authoritative client-side shape.
+
+### Code runner — `code-runner/`
+
+Runs user C++ code in an isolated environment and emits a Valgrind trace.
+
+- `code-runner/lambda/` — AWS Lambda container image (Python handler,
+  Amazon Linux 2023 base, 10 GB memory, 120 s timeout). Used when
+  `EXEC_MODE=lambda`.
+- `code-runner/local/` — Docker container, used when `EXEC_MODE=local`.
+  Spawned fresh per request with no-internet network isolation.
+- `code-runner/SPP-Valgrind/` — git submodule with the modified Valgrind
+  that emits execution traces. Derivative of upstream Valgrind; remains
+  GPL-licensed.
+
+Both runners expose the same contract to the backend:
+```
+{ ccStdout, ccStderr, stdout, stderr, traceContent }
+```
+
+### Database — Postgres
+
+Backs four concerns:
+
+| Table | What's in it |
+|---|---|
+| `workspaces` | Saved code snippets with slug-based share URLs. Optional owner (FK to `users`); anonymous snippets are immutable. |
+| `users` + `user_identities` | Signed-in users and their OAuth-provider linkages (Google today; the schema is provider-agnostic). |
+| `sessions` | Signed session cookies via `express-session` + `connect-pg-simple`. |
+| `feature_flags` | Runtime toggles for in-progress UI, managed via `/admin`. See [`feature-flags.md`](./feature-flags.md). |
+
+Schema is defined in `backend/schema.sql` and applied on every backend
+boot with `IF NOT EXISTS` semantics — there's no separate migration tool
+yet. In deployed environments the database is an RDS Postgres instance
+created by the `workspaces-db.yml` Copilot addon; locally it runs as a
+sibling container in `docker-compose.yml`.
+
+## Trace pipeline
 
 ```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   CloudFront    │    │  Load Balancer  │    │  AWS Lambda     │
-│   (Frontend)    │    │   (Backend)     │    │ (Code Runner)   │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-          │                       │                       │
-          │                       │                       │
-          │                       │        ┌──────────────────┐
-          │                       │        │  Lambda Process  │
-          │                       │        │                  │
-          │                       ├───────►│ 1. Receive code  │
-          │                       │        │ 2. Compile (g++) │
-          │                       │        │ 3. Run Valgrind  │
-          │                       │◄───────│ 4. Return trace  │
-          │                       │        └──────────────────┘
-          │                       │
-          │              ┌────────┴────────┐
-          │              │                 │
-          │              ▼                 ▼
-          │    ┌─────────────────┐    ┌─────────────────┐
-          │    │  Backend ECS    │    │   S3 Storage    │
-          │    │    Service      │    │   (Optional)    │
-          │    │                 │    │                 │
-          └────┼─────────────────┼────┤ • Trace cache   │
-               │                 │    │                 │
-               └─────────────────┘    └─────────────────┘
-                        │
-              ┌─────────────────┐
-              │      IAM        │
-              │ (Roles/Policies)│
-              └─────────────────┘
+  user code
+      │ preprocessCode: prepend "#define union struct\n"
+      ▼
+  code runner (SPP-Valgrind)
+      │ raw JSON lines per execution point
+      ▼
+  parse_vg_trace.ts
+      │ ExecutionPoint[] (stack, heap, globals, …)
+      ▼
+  frontend Zod validator
+      │ ProgramTrace
+      ▼
+  VizPane + StackFrames + HeapGraph
 ```
 
-**Data Flow Details**:
-1. **Backend → Lambda**: Invokes Lambda function with code as synchronous payload
-2. **Lambda**: Compiles code with g++, runs under modified Valgrind in `/tmp`
-3. **Lambda → Backend**: Returns complete execution results (trace, stdout, stderr, compilation outputs)
-4. **Backend**: Processes trace data and returns to frontend
-5. **Optional S3**: Lambda can cache results to S3 for frequently-run code (not currently enabled)
+The `#define union struct` shim lets us render `union` types using the
+existing struct layout code. It shifts source line numbers by one — the
+frontend's Zod validator subtracts the offset at the boundary so every
+downstream consumer sees user-source line numbers.
 
-## Security Model
+## Auth
 
-### Isolation Strategies
+Google OAuth is the primary provider. Sign-in flow:
 
-1. **Network Isolation**: Code runner containers have no internet access
-2. **Resource Limits**: CPU, memory, and execution time constraints
-3. **Filesystem Isolation**: Containers run with limited filesystem access
-4. **IAM Restrictions**: Minimal required permissions for AWS resources
+1. Frontend opens `/api/auth/google/start`; backend generates a state
+   cookie and redirects to Google.
+2. Google redirects back to `/api/auth/google/callback`; backend exchanges
+   the code for a token, fetches profile info, upserts into `users` +
+   `user_identities`, establishes a session, redirects to the app.
 
-### AWS Security
+The `AuthProvider` interface (`backend/src/auth/providers/provider.ts`)
+is provider-agnostic; adding GitHub or another provider is ~100 lines
+plus `copilot secret init` for its secret. See
+[`oauth-setup.md`](./oauth-setup.md).
 
-- **S3 Encryption**: All stored files use server-side encryption
-- **VPC Isolation**: ECS tasks run in private subnets
-- **IAM Least Privilege**: Roles have minimal required permissions
-- **Security Groups**: Restrictive network access rules
+A local-only `DevAuthProvider` can sign the user in as `dev@localhost` in
+one click, triple-gated server-side so it can't activate in a deployed
+environment.
 
-## Performance Considerations
+## Deployment topology (production)
 
-### Performance Characteristics
+```
+        seepluspl.us            old.seepluspl.us
+             │                         │
+             ▼                         ▼
+      ALB (frontend)           ALB (frontend-legacy)
+             │                         │
+             ▼                         ▼
+         nginx ─────┐        nginx (static React 16 app)
+         (serves    │
+          React +   └── /api/* ─► ALB (backend)
+          proxies)                      │
+                                        ├─► Lambda (code runner)
+                                        └─► RDS Postgres
+```
 
-1. **Lambda Cold Start**: ~1-3 seconds for first invocation
-2. **Lambda Warm Execution**: <1 second for subsequent invocations
-3. **Compilation Time**: ~0.5-2 seconds depending on code complexity
-4. **Valgrind Execution**: Varies by program (typically <30 seconds)
+Infrastructure is defined with AWS Copilot. See
+[`infrastructure.md`](./infrastructure.md) for per-service config and
+[`deployment.md`](./deployment.md) for the deploy workflow.
 
-### Optimization Strategies
+## Security model
 
-1. **Lambda Provisioned Concurrency**: Keep functions warm for consistent performance
-2. **Caching**: S3-based caching for frequently-executed code (optional)
-3. **Parallel Processing**: Lambda handles concurrent executions automatically
-4. **Regional Deployment**: Multi-region for reduced latency
-
-## Technology Stack Summary
-
-| Component | Technology | Purpose |
-|-----------|------------|---------|
-| Frontend (Legacy) | React 16.x, CodeMirror, Konva.js | User interface and visualization |
-| Frontend (New) | React 19.x, Monaco Editor, TypeScript | Modern user interface |
-| Backend | Node.js, TypeScript, Express | API server and orchestration |
-| Code Runner (Production) | AWS Lambda, Python, Modified Valgrind, g++ | Serverless code execution |
-| Code Runner (Development) | Docker, Bash, Modified Valgrind, g++ | Local code execution |
-| Storage (Optional) | AWS S3 | Trace caching |
-| Compute | AWS Lambda | Serverless execution |
-| Infrastructure | AWS Copilot | Infrastructure as code |
-| Development | Docker Compose | Local development environment |
-
-## Next Steps
-
-For detailed information on specific aspects:
-- [Local Development Guide](./development.md)
-- [Infrastructure Guide](./infrastructure.md)
-- [Deployment Guide](./deployment.md) 
+- User code runs in isolated Lambda containers (prod) or a no-internet
+  Docker network (local). No filesystem or network access to the rest of
+  the app.
+- The Valgrind binary is GPL-licensed. `code-runner/` therefore remains
+  GPL; the rest of the repo is separately licensed (see `LICENSE`).
+- Sessions are signed with a per-environment secret (SSM-backed) and
+  stored in Postgres. CORS is pinned to `seepluspl.us` and subdomains via
+  a regex on the backend.
+- Admin promotion (`users.is_admin`) happens only via the `ADMIN_EMAILS`
+  environment variable, never through the UI — avoiding a circular-trust
+  footgun.

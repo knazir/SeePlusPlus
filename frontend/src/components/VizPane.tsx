@@ -4,6 +4,7 @@ import { StackFrames } from './StackFrames';
 import { HeapGraph } from './HeapGraph';
 import { HeapViewport, type HeapViewportHandle } from './HeapViewport';
 import { EdgeLayer } from './EdgeLayer';
+import { kbd } from '../platform/kbd';
 
 export function VizPane() {
   const trace = useAppStore((s) => s.trace);
@@ -132,7 +133,10 @@ export function VizPane() {
         ) : (
           <div className="flex h-full w-full items-center justify-center">
             <p className="font-mono text-xs text-ink-3" data-testid="viz-empty">
-              Click <span className="text-ink-1">Run</span> to visualize.
+              Click <span className="text-ink-1">Run</span>
+              <span className="text-ink-3"> or press </span>
+              <span className="text-ink-1">{kbd('↵')}</span>
+              <span className="text-ink-3"> to visualize.</span>
             </p>
           </div>
         )}

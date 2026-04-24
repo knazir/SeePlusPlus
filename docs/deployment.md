@@ -1,266 +1,245 @@
-# See++ Deployment Guide
+# Deployment
 
-This guide documents how to deploy See++ to AWS using AWS Lambda for code execution.
-
-## Overview
-
-See++ uses **AWS Lambda** for code execution across all environments.
-
-**Technical specifications**:
-- **Execution**: Lambda containers with 1-3 second cold start, <1s warm
-- **Scaling**: Automatic concurrency up to 1000+ executions
-- **Stack**: Valgrind 3.27.0 on Amazon Linux 2023
-- **Deployment**: Serverless functions (no container orchestration)
-
-## Architecture
-
-```
-Frontend → Backend (ECS) → Lambda Function (spp-trace-executor-test)
-                            ├── Valgrind 3.27.0
-                            ├── GCC/G++ compiler
-                            └── Python handler
-```
+How to deploy See++ to AWS. Assumes you're using [AWS Copilot](https://aws.github.io/copilot-cli/)
+(the repo ships Copilot manifests under `copilot/`) and you've read
+[`infrastructure.md`](./infrastructure.md) for the overall shape.
 
 ## Prerequisites
 
-- AWS CLI configured with credentials
-- Docker installed and running
-- Copilot CLI installed
-- Valgrind submodule checked out at `code-runner/SPP-Valgrind`
+- AWS account + CLI, credentials configured.
+- `copilot --version` available (v1.27+).
+- Docker running locally (needed for building the Lambda image).
+- `code-runner/SPP-Valgrind` submodule checked out (`git submodule update --init`).
+- Your own domain with a Route53 hosted zone, if you want custom domain
+  aliases. Otherwise Copilot assigns auto-generated ALB hostnames.
 
-## Deployment Steps
+## First-time environment setup
 
-### 1. Build and Deploy Lambda Function
+Pick an environment name — `test`, `prod`, or anything else.
 
-The Lambda deployment is automated via the `deploy-to-aws.sh` script. Deploy to each environment (test, prod):
+```bash
+copilot env init --name <env> --profile default --default-config
+copilot env deploy --name <env>
+```
+
+This creates the VPC, subnets, ALB-ready infra, and ECS cluster. Takes
+about 3–5 minutes.
+
+### Bootstrap secrets
+
+The backend needs two secrets before it can start auth flows. Without
+them, auth routes return 503 but the app still serves non-auth features.
+
+```bash
+# Google OAuth client secret — from the Google Cloud Console. See
+# docs/oauth-setup.md for creating the client in the first place.
+copilot secret init --name GOOGLE_CLIENT_SECRET \
+  --values <env>=<client-secret>
+
+# Session signing secret — generate a fresh one per environment.
+copilot secret init --name SESSION_SECRET \
+  --values <env>=$(openssl rand -hex 32)
+```
+
+Both land in SSM at `/copilot/spp/<env>/secrets/`. The backend manifest
+references them via its `secrets:` block.
+
+### Fill in the Client ID
+
+Unlike the secrets, the OAuth **Client ID** is not sensitive and lives
+directly in `copilot/backend/manifest.yml` as a plain env var under the
+per-env `variables:` block. Set it before the first backend deploy.
+
+## Deploy the Lambda code runner
+
+The Lambda function isn't Copilot-managed — it's built and pushed
+directly.
 
 ```bash
 cd code-runner/lambda
-
-# Deploy to test environment
-./deploy-to-aws.sh test us-west-2
-
-# Deploy to production environment
-./deploy-to-aws.sh prod us-west-2
+./deploy-to-aws.sh <env> us-west-2
 ```
 
-This script:
-- Creates ECR repository `spp-lambda-trace` if it doesn't exist
-- Builds production Docker image using multi-stage build (~394MB)
-- Pushes image to ECR with environment tag (`test` or `prod`)
-- Creates IAM execution role `spp-lambda-execution-role-{env}`
-- Creates/updates Lambda function `spp-trace-executor-{env}`
-- Configures function with:
-  - Memory: 3008 MB
-  - Timeout: 180 seconds (3 minutes)
-  - Architecture: x86_64
+The script:
 
-**Expected Output:**
+1. Creates the ECR repo `spp-lambda-trace` if it doesn't exist.
+2. Builds the Lambda container image (~394 MB) from `Dockerfile.prod`.
+3. Pushes with tag `<env>` (e.g. `test`, `prod`).
+4. Creates / updates the Lambda function `spp-trace-executor-<env>` with
+   memory = 10 GB, timeout = 120 s, x86_64.
+5. Creates the execution role `spp-lambda-execution-role-<env>`.
+
+First run takes 8–12 minutes (mostly the Docker build + push). Subsequent
+runs are faster since the base image layers are cached.
+
+## Deploy the backend
+
+```bash
+copilot svc deploy --name backend --env <env>
 ```
-Lambda function created: spp-trace-executor-{env}
-Function ARN: arn:aws:lambda:us-west-2:ACCOUNT_ID:function:spp-trace-executor-{env}
-State: Active
+
+**On the first deploy of a fresh environment**, this also provisions the
+RDS Postgres instance (via the `workspaces-db.yml` addon) and the S3
+trace-store bucket. Expect ~10 minutes the first time; subsequent
+deploys are 2–3 minutes.
+
+The backend applies `backend/schema.sql` on startup with `IF NOT EXISTS`
+semantics, so the first boot after provisioning creates all tables. No
+separate migration step.
+
+## Deploy the frontends
+
+```bash
+copilot svc deploy --name frontend --env <env>
+copilot svc deploy --name frontend-legacy --env <env>
 ```
 
-### 2. Configure Backend for Lambda Execution
+These are static React apps served by nginx, with `/api/*` proxied to
+the backend over Copilot Service Connect.
 
-The backend must be configured to invoke the Lambda function for code execution.
+## Custom domains
 
-#### 2.1. Environment Variables
-
-Environment variables are set in `copilot/backend/manifest.yml`:
+If you want your ECS services behind your own domain (instead of the
+auto-generated `*.spp.<your-domain>` hostnames Copilot creates), add an
+`http.alias` to the service manifest:
 
 ```yaml
+# copilot/frontend/manifest.yml
 environments:
-  test:
-    count: 1
-    deployment:
-      rolling: "recreate"
-    variables:
-      EXEC_MODE: lambda
-      LAMBDA_FUNCTION_NAME: spp-trace-executor-test
+  prod:
+    http:
+      alias: ["your-domain.com"]
 ```
 
-#### 2.2. IAM Permissions
+Copilot provisions an ACM cert and Route53 alias record automatically,
+provided the application was initialized against a hosted zone you
+control (`copilot app init --domain your-domain.com`).
 
-Lambda invoke permissions are granted via the Copilot addons system in `copilot/backend/addons/lambda-permissions.yml`:
+### Moving an alias between services
 
-```yaml
-Resources:
-  LambdaInvokePolicy:
-    Type: AWS::IAM::ManagedPolicy
-    Properties:
-      PolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Sid: LambdaInvokeFunction
-            Effect: Allow
-            Action:
-              - lambda:InvokeFunction
-            Resource: '*'
-```
+If an alias currently points at service A and you want it on service B
+(e.g. moving the apex from `frontend-legacy` to `frontend`):
 
-**Note:** IAM permissions defined in `manifest.yml`'s `task_role.policy` section are **not applied** by Copilot. You must use the addons system for custom IAM policies.
+1. Remove the alias from A's manifest.
+2. `copilot svc deploy --name A --env <env>` — this releases the
+   Route53 record.
+3. Add the alias to B's manifest.
+4. `copilot svc deploy --name B --env <env>` — this claims it.
 
-### 3. Deploy Backend
+Expect a minutes-long window between steps 2 and 4 where the alias
+returns NXDOMAIN. Don't do both deploys in parallel or CloudFormation
+will conflict on the shared record.
 
-Deploy the backend with the updated configuration:
+## Verifying a deploy
+
+### Backend
 
 ```bash
-copilot svc deploy --name backend --env test
+copilot svc status --name backend --env <env>
+copilot svc logs --name backend --env <env> --since 5m
 ```
 
-This will:
-- Update backend environment variables
-- Attach Lambda invoke policy to backend task role
-- Restart backend tasks with new configuration
+The health check at `/api` should return `See++ backend online`. From an
+internal host (e.g. via `copilot svc exec`):
 
-**Verify deployment:**
 ```bash
-# Check IAM policy attachment
-aws iam list-attached-role-policies \
-  --role-name spp-test-backend-TaskRole-XXXXXXXXXX \
-  --region us-west-2
-
-# Should include:
-# - LambdaInvokePolicy-XXXXXXXXXX
-# - tracestoreAccessPolicy-XXXXXXXXXX
+curl http://backend.<env>.spp.<your-domain>/api
 ```
 
-## Testing
-
-### Manual Lambda Invocation
-
-Test the Lambda function directly:
+### Lambda
 
 ```bash
-aws lambda invoke \
-  --function-name spp-trace-executor-test \
-  --region us-west-2 \
-  --payload '{"code":"#include <iostream>\nint main() { std::cout << \"Hello Lambda!\"; return 0; }"}' \
-  response.json
-
+aws lambda invoke --function-name spp-trace-executor-<env> \
+  --payload '{"code":"int main(){return 0;}"}' response.json
 cat response.json
 ```
 
-### End-to-End Test
+Expect `traceContent`, `ccStdout`, `ccStderr`, `stdout`, `stderr` keys.
 
-1. Visit the test frontend: `https://test.seepluspl.us`
-2. Submit C++ code
-3. Verify execution completes in 1-3 seconds
-4. Check CloudWatch logs for Lambda execution:
+### Database
 
-```bash
-aws logs tail /aws/lambda/spp-trace-executor-test --follow
-```
-
-## Troubleshooting
-
-### Error: "Not authorized to perform: lambda:InvokeFunction"
-
-**Cause:** Backend task role doesn't have Lambda invoke permissions
-
-**Fix:**
-1. Verify `copilot/backend/addons/lambda-permissions.yml` exists
-2. Redeploy backend: `copilot svc deploy --name backend --env test`
-3. Verify policy attachment:
-   ```bash
-   aws iam list-attached-role-policies --role-name spp-test-backend-TaskRole-XXXXXXXXXX
-   ```
-
-### Error: "Function not found"
-
-**Cause:** Lambda function doesn't exist or wrong name configured
-
-**Fix:**
-1. Verify function exists:
-   ```bash
-   aws lambda get-function --function-name spp-trace-executor-test --region us-west-2
-   ```
-2. Check `LAMBDA_FUNCTION_NAME` in backend manifest matches function name
-
-### Lambda Timeout
-
-**Cause:** Code execution exceeds 180-second limit
-
-**Fix:**
-1. Increase timeout in `deploy-to-aws.sh` (line with `--timeout`)
-2. Update function configuration:
-   ```bash
-   aws lambda update-function-configuration \
-     --function-name spp-trace-executor-test \
-     --timeout 300
-   ```
-
-### Image Too Large (>10GB)
-
-**Cause:** Lambda has 10GB image size limit
-
-**Fix:**
-- Use production Dockerfile (`Dockerfile.prod`) which is ~394MB
-- Development Dockerfile (`Dockerfile.dev`) is 2.15GB and too large
-
-## Updating Lambda Code
-
-When Valgrind or handler code changes:
+Schema should have been applied on first backend boot. To confirm:
 
 ```bash
-cd code-runner/lambda
-./deploy-to-aws.sh test us-west-2  # Build, push, and update Lambda
+copilot svc exec --name backend --env <env> --command "sh"
+# then inside the container:
+node -e "const {Pool}=require('pg'); const p=new Pool(); p.query('\\dt').then(r=>console.log(r.rows))"
 ```
 
-The deployment script will build the Docker image, push it to ECR, and update the Lambda function. Lambda will automatically use the new image on next invocation (no restart needed).
+Expect rows for `workspaces`, `users`, `user_identities`, `sessions`,
+`feature_flags`.
 
-## Cost Optimization
+## Updating a deployed environment
 
-Lambda pricing (us-west-2):
-- **Requests:** $0.20 per 1M requests
-- **Duration:** $0.0000166667 per GB-second
+Normal update cycle:
 
-At 3GB memory allocation:
-- 1 second execution = ~$0.00005
-- 1000 executions/day = ~$1.50/month
-- 10,000 executions/day = ~$15/month
+```bash
+# Code changes in backend/src or frontend/src
+copilot svc deploy --name backend --env <env>
+copilot svc deploy --name frontend --env <env>
 
-**Cost characteristics**:
-- Pay-per-invocation model (no idle costs)
-- Scales to zero when not in use
-- Automatic concurrency scaling
-- Serverless infrastructure (no manual provisioning)
+# Lambda / SPP-Valgrind changes
+cd code-runner/lambda && ./deploy-to-aws.sh <env> us-west-2
+```
 
-## Files Reference
+Lambda updates take effect on the next invocation — no service restart
+needed.
 
-### Lambda Code
-- `code-runner/lambda/handler.py` - Lambda entry point
-- `code-runner/lambda/Dockerfile.prod` - Production multi-stage build
-- `code-runner/lambda/Dockerfile.dev` - Development single-stage build
-- `code-runner/lambda/deploy-to-aws.sh` - Build and deploy to AWS script
-- `code-runner/SPP-Valgrind/` - Valgrind 3.27.0 source (git submodule)
+## ALB idle timeout
 
-### Backend Configuration
-- `copilot/backend/manifest.yml` - Backend service configuration
-- `copilot/backend/addons/lambda-permissions.yml` - IAM permissions for Lambda invoke
-- `backend/src/services/lambda-runner.ts` - Lambda invocation logic
+If you see `504 Gateway Timeout` on slow-to-compile programs, the ALB's
+default idle timeout (60 s) is too short. Bump to 300 s:
 
-## Lambda Specifications
+```bash
+aws elbv2 modify-load-balancer-attributes \
+  --load-balancer-arn <your-lb-arn> \
+  --attributes Key=idle_timeout.timeout_seconds,Value=300
+```
 
-| Feature | Configuration |
-|---------|--------------|
-| Execution Mode | Lambda container |
-| Cold Start | 1-3 seconds |
-| Warm Execution | <1 second |
-| Cost Model | Per-invocation (~$0.00005/run) |
-| Concurrency | Auto-scales to 1000+ |
-| Valgrind Version | 3.27.0 (modern) |
-| Base Image | Amazon Linux 2023 |
-| Memory | 10GB (10240 MB) |
-| Timeout | 120 seconds (2 minutes) |
-| Platform | x86_64 |
+`copilot/deploy-environment.sh` does this automatically when used.
 
-## Next Steps
+## Common issues
 
-- Monitor Lambda performance in CloudWatch
-- Adjust memory/timeout based on actual usage patterns
-- Set up CloudWatch alarms for Lambda errors/throttling
-- Consider Lambda Provisioned Concurrency for consistent performance
-- Review Lambda execution logs for optimization opportunities
+**"Function not found" on `/api/run`.** The Lambda wasn't deployed for
+this env, or `LAMBDA_FUNCTION_NAME` in the manifest doesn't match.
+Check with:
+
+```bash
+aws lambda get-function --function-name spp-trace-executor-<env>
+```
+
+**"Not authorized to perform: lambda:InvokeFunction".** The backend's
+task role doesn't have the Lambda-invoke policy attached. Verify
+`copilot/backend/addons/lambda-permissions.yml` is present, then
+redeploy the backend.
+
+**Database not reachable on first boot.** RDS takes ~10 minutes to
+provision. The backend crashes until it can connect; Copilot's rolling
+deploy re-tries on its own. Watch
+`copilot svc logs --name backend --env <env>` to confirm the pool
+eventually connects.
+
+**Sign-in fails with "redirect_uri_mismatch".** The OAuth client's
+authorized redirect URIs don't include this environment's backend
+callback. Add it in the Google Cloud Console — see
+[`oauth-setup.md`](./oauth-setup.md).
+
+## Tearing down
+
+```bash
+# Delete one service
+copilot svc delete --name frontend-legacy --env <env>
+
+# Delete the whole environment (all services, ECS, RDS, S3, VPC)
+copilot env delete --name <env>
+```
+
+`env delete` is destructive and takes ~15 minutes. The RDS instance is
+deleted with a final snapshot by default (`DeletionProtection: true` on
+prod); you'll be prompted.
+
+## Cost notes
+
+See [`infrastructure.md#cost-levers`](./infrastructure.md#cost-levers)
+for per-service knobs. The single biggest lever for a low-traffic
+deployment is deleting the test env when not in use.
