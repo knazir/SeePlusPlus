@@ -149,6 +149,10 @@ export interface AppState {
   pointerRouting: PointerRouting;
   setPointerRouting: (r: PointerRouting) => void;
 
+  /** Spacing between heap nodes in the dagre layout. Persisted. */
+  heapDensity: HeapDensity;
+  setHeapDensity: (d: HeapDensity) => void;
+
   // auth
   /** Signed-in user, or null if anonymous / still loading. */
   me: Me | null;
@@ -177,6 +181,19 @@ function readRouting(): PointerRouting {
     // SSR / private-mode / disabled storage — fall through.
   }
   return 'curved';
+}
+
+export type HeapDensity = 'dense' | 'normal' | 'airy';
+const DENSITY_KEY = 'spp.heapDensity';
+
+function readDensity(): HeapDensity {
+  try {
+    const raw = localStorage.getItem(DENSITY_KEY);
+    if (raw === 'dense' || raw === 'airy' || raw === 'normal') return raw;
+  } catch {
+    // SSR / private-mode / disabled storage — fall through.
+  }
+  return 'normal';
 }
 
 export type ModalKind =
@@ -612,6 +629,16 @@ export const useAppStore = create<AppState>((set, get) => ({
       // Ignore — persistence is best-effort.
     }
     set({ pointerRouting: r });
+  },
+
+  heapDensity: readDensity(),
+  setHeapDensity: (d) => {
+    try {
+      localStorage.setItem(DENSITY_KEY, d);
+    } catch {
+      // Ignore — persistence is best-effort.
+    }
+    set({ heapDensity: d });
   },
 
   me: null,

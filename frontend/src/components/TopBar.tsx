@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useAppStore, useFlag, useIsStale } from '../store';
 import { FLAGS } from '../flags/names';
-import { nextPreference, type ThemePreference } from '../theme/theme';
+import { kbd } from '../platform/kbd';
 import { SettingsMenu } from './SettingsMenu';
 
 export function TopBar() {
@@ -10,8 +10,6 @@ export function TopBar() {
   const openModal = useAppStore((s) => s.openModal);
   const trace = useAppStore((s) => s.trace);
   const error = useAppStore((s) => s.error);
-  const themePreference = useAppStore((s) => s.themePreference);
-  const setThemePreference = useAppStore((s) => s.setThemePreference);
   const stale = useIsStale();
 
   const stepsCount = trace?.trace.length ?? 0;
@@ -28,7 +26,7 @@ export function TopBar() {
       <Section>
         <TopbarBtn
           onClick={() => openModal('examples')}
-          kbd="⌘K"
+          kbd={kbd('K')}
           data-testid="examples-button"
         >
           <span aria-hidden className="text-ink-3">⊞</span>
@@ -56,7 +54,7 @@ export function TopBar() {
         <Section>
           <TopbarBtn
             primary
-            kbd="⌘J"
+            kbd={kbd('J')}
             disabled
             title="Tutor lands in v1.5"
             data-testid="tutor-button"
@@ -68,14 +66,6 @@ export function TopBar() {
       )}
 
       <Section>
-        <IconBtn
-          label={themeLabel(themePreference)}
-          title={themeTooltip(themePreference)}
-          onClick={() => setThemePreference(nextPreference(themePreference))}
-          data-testid="theme-toggle"
-        >
-          <span aria-hidden>{themeIcon(themePreference)}</span>
-        </IconBtn>
         <SettingsMenu />
         <AccountMenu />
       </Section>
@@ -112,11 +102,13 @@ export function TopBar() {
           </span>
           {running ? 'Running…' : 'Run'}
           <span
-            className={`rounded-[2px] px-1.5 py-[1px] text-[10px] ${
-              running ? 'bg-bg-3 text-ink-3' : 'bg-accent-ink-soft text-accent-dim'
+            className={`rounded-[2px] border px-1.5 py-[1px] text-[10px] ${
+              running
+                ? 'border-line bg-bg-3 text-ink-3'
+                : 'border-accent-ink-soft text-accent-ink'
             }`}
           >
-            ⌘↵
+            {kbd('↵')}
           </span>
         </button>
       </div>
@@ -242,13 +234,10 @@ function Brand() {
       className="flex min-w-[220px] items-center gap-2.5 border-r border-line px-4 transition-opacity duration-fast ease-out-soft hover:opacity-80"
     >
       <BrandMark />
-      <div className="flex items-baseline gap-1.5">
-        <span className="font-mono text-[13px] font-medium tracking-[0.01em] text-ink-0">
-          see
-          <span className="text-accent">++</span>
-        </span>
-        <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-ink-3">v2</span>
-      </div>
+      <span className="font-mono text-[13px] font-medium tracking-[0.01em] text-ink-0">
+        see
+        <span className="text-accent">++</span>
+      </span>
     </a>
   );
 }
@@ -320,36 +309,6 @@ function TopbarBtn({
   );
 }
 
-function IconBtn({
-  label,
-  onClick,
-  disabled,
-  title,
-  children,
-  'data-testid': testid,
-}: {
-  label: string;
-  onClick?: () => void;
-  disabled?: boolean;
-  title?: string;
-  children: React.ReactNode;
-  'data-testid'?: string;
-}) {
-  return (
-    <button
-      type="button"
-      aria-label={label}
-      onClick={onClick}
-      disabled={disabled}
-      title={title ?? label}
-      data-testid={testid}
-      className="flex h-7 w-7 items-center justify-center rounded-[4px] text-ink-2 transition-colors duration-fast ease-out-soft hover:bg-bg-2 hover:text-ink-0 disabled:cursor-not-allowed disabled:opacity-50"
-    >
-      {children}
-    </button>
-  );
-}
-
 type Status = 'idle' | 'running' | 'traced' | 'stale' | 'error';
 
 function StatusDot({ kind }: { kind: Status }) {
@@ -403,21 +362,6 @@ function statusLabel({
   if (stale) return 'stale';
   if (trace) return 'traced';
   return 'ready';
-}
-
-function themeIcon(p: ThemePreference): string {
-  if (p === 'dark') return '☾';
-  if (p === 'light') return '☀';
-  return '◐';
-}
-function themeLabel(p: ThemePreference): string {
-  if (p === 'dark') return 'Theme: dark';
-  if (p === 'light') return 'Theme: light';
-  return 'Theme: system';
-}
-function themeTooltip(p: ThemePreference): string {
-  const next = nextPreference(p);
-  return `Theme: ${p} (click for ${next})`;
 }
 
 /** Cheap heap-byte estimate by JSON-stringifying the heap blob. Not exact, but it's only a topbar badge. */

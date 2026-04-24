@@ -24,6 +24,7 @@ function innerOf(outer: HTMLElement): HTMLElement {
 export function HeapGraph() {
   const step = useCurrentStep();
   const stepIndex = useAppStore((s) => s.stepIndex);
+  const heapDensity = useAppStore((s) => s.heapDensity);
 
   const elsRef = useRef<Map<string, HTMLElement>>(new Map());
   const prevRectsRef = useRef<Map<string, DOMRect>>(new Map());
@@ -52,7 +53,7 @@ export function HeapGraph() {
       const r = el.getBoundingClientRect();
       sizes.set(addr, { w: r.width, h: r.height });
     }
-    const { positions, width, height } = layoutHeap(entries, sizes);
+    const { positions, width, height } = layoutHeap(entries, sizes, { density: heapDensity });
     for (const [addr, el] of elsRef.current) {
       const p = positions.get(addr);
       if (!p) {
@@ -79,7 +80,7 @@ export function HeapGraph() {
 
     prevRectsRef.current = captureRects(elsRef.current);
     prevAddrsRef.current = new Set(elsRef.current.keys());
-  }, [stepIndex, step, entries]);
+  }, [stepIndex, step, entries, heapDensity]);
 
   if (!step) return null;
   if (entries.length === 0) {
