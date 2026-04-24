@@ -57,3 +57,18 @@ CREATE INDEX IF NOT EXISTS workspaces_owner_id_idx ON workspaces (owner_id);
 -- unique — two scratch workspaces called "Untitled" is fine; users don't
 -- think in namespaces.
 ALTER TABLE workspaces ADD COLUMN IF NOT EXISTS name TEXT;
+
+-- Role bit on users. Promoted from ADMIN_EMAILS env var at sign-in /
+-- upsert — never via the UI (that would be a circular-trust nightmare).
+-- Single column today; revisit if we ever need >1 role.
+ALTER TABLE users ADD COLUMN IF NOT EXISTS is_admin BOOLEAN NOT NULL DEFAULT false;
+
+-- Feature flags. Auto-created on first isEnabled() call with default=false
+-- so adding a flag in code is a single line. Admins flip them via /admin.
+CREATE TABLE IF NOT EXISTS feature_flags (
+    name         TEXT         PRIMARY KEY,
+    enabled      BOOLEAN      NOT NULL DEFAULT false,
+    description  TEXT,
+    updated_at   TIMESTAMPTZ  NOT NULL DEFAULT now(),
+    updated_by   UUID         REFERENCES users(id) ON DELETE SET NULL
+);

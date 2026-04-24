@@ -201,6 +201,16 @@ function AccountMenu() {
           >
             My workspaces
           </a>
+          {me.isAdmin && (
+            <a
+              href="/admin"
+              role="menuitem"
+              data-testid="account-admin"
+              className="block rounded px-2 py-1.5 font-mono text-[11px] text-ink-1 hover:bg-bg-2 hover:text-ink-0"
+            >
+              Admin
+            </a>
+          )}
           <button
             type="button"
             role="menuitem"
