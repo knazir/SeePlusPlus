@@ -39,6 +39,70 @@ describe('ProgramTraceSchema', () => {
     expect(ProgramTraceSchema.safeParse(bad).success).toBe(false);
   });
 
+  it('clamps line numbers at 0 (compile-failure payloads carry line: 0; -1 must not leak)', () => {
+    const buildFail = {
+      code: '',
+      buildOutput: 'main.cpp:1:1: error: ...',
+      trace: [
+        {
+          event: 'uncaughtException',
+          line: 0,
+          funcName: 'main',
+          stackToRender: [
+            {
+              funcName: 'main',
+              orderedVarNames: [],
+              isHighlighted: true,
+              frameId: 'x',
+              uniqueHash: 'x',
+              encodedLocals: {},
+              line: 0,
+            },
+          ],
+          globals: {},
+          heap: {},
+          orderedGlobals: [],
+          stdout: '',
+          exceptionMsg: 'build failed',
+        },
+      ],
+    };
+    const parsed = ProgramTraceSchema.parse(buildFail);
+    expect(parsed.trace[0]!.line).toBe(0);
+    expect(parsed.trace[0]!.stackToRender[0]!.line).toBe(0);
+  });
+
+  it('shifts non-zero lines by one (compensating for the backend prepended #define)', () => {
+    const t = {
+      code: '',
+      trace: [
+        {
+          event: 'stepLine',
+          line: 5,
+          funcName: 'main',
+          stackToRender: [
+            {
+              funcName: 'main',
+              orderedVarNames: [],
+              isHighlighted: true,
+              frameId: 'x',
+              uniqueHash: 'x',
+              encodedLocals: {},
+              line: 5,
+            },
+          ],
+          globals: {},
+          heap: {},
+          orderedGlobals: [],
+          stdout: '',
+        },
+      ],
+    };
+    const parsed = ProgramTraceSchema.parse(t);
+    expect(parsed.trace[0]!.line).toBe(4);
+    expect(parsed.trace[0]!.stackToRender[0]!.line).toBe(4);
+  });
+
   it('passthrough preserves unknown frame fields (forward compat)', () => {
     const withExtras = {
       code: '',

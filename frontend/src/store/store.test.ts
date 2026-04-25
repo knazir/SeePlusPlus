@@ -94,6 +94,41 @@ describe('useAppStore — workspace + execution', () => {
     expect(s.error).toBe('Build or runtime failure. Check the console for details.');
   });
 
+  it('run() leaves lastRunCode null when the user types between dispatch and resolution', async () => {
+    // Race between run-in-flight and user editing. The resolved trace IS for
+    // sentCode, but the editor has moved on. useIsStale must fire true so the
+    // stale banner shows — even if the user happened to type back to a value
+    // that coincidentally matches some prior lastRunCode.
+    let release: (r: Response) => void = () => {};
+    const pending = new Promise<Response>((resolve) => {
+      release = resolve;
+    });
+    const fetchFn = vi.fn<typeof fetch>().mockReturnValue(pending);
+
+    useAppStore.getState().setCode('int main(){return 1;}');
+    const inFlight = useAppStore.getState().run(fetchFn);
+    // User types during the run.
+    useAppStore.getState().setCode('int main(){return 2;}');
+
+    release(okResponse(TINY_TRACE));
+    await inFlight;
+
+    const s = useAppStore.getState();
+    expect(s.trace).not.toBeNull();
+    expect(s.lastRunCode).toBeNull();
+    // Derived staleness should reflect the race.
+    expect(s.code !== s.lastRunCode).toBe(true);
+  });
+
+  it('run() sets lastRunCode to sentCode when the user did not type during the run', async () => {
+    const fetchFn = vi.fn<typeof fetch>().mockResolvedValue(okResponse(TINY_TRACE));
+    useAppStore.getState().setCode('int main(){}');
+    await useAppStore.getState().run(fetchFn);
+    const s = useAppStore.getState();
+    expect(s.lastRunCode).toBe('int main(){}');
+    expect(s.code === s.lastRunCode).toBe(true);
+  });
+
   it('run() is reentrancy-safe while a previous run is in flight', async () => {
     let release: (r: Response) => void = () => {};
     const pending = new Promise<Response>((resolve) => {

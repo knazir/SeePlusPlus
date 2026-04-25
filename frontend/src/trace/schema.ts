@@ -76,6 +76,14 @@ const EncodedValueSchema: z.ZodType<EncodedValue> = z.unknown();
 // fixing unions". If the backend ever stops prepending, drop this shift.
 const LINE_PREPEND_OFFSET = 1;
 
+// Compile-failure payloads come through as a synthesized point whose `line`
+// can be 0 (when `lineNum` was unknown in valgrind_utils). Without clamping,
+// the transform produces -1, which leaks into any consumer that reads
+// `trace[0].line` before the build-failure hoist. Clamp to 0.
+function shiftLine(n: number): number {
+  return Math.max(0, n - LINE_PREPEND_OFFSET);
+}
+
 const StackFrameSchema = z
   .object({
     funcName: z.string(),
@@ -87,7 +95,7 @@ const StackFrameSchema = z
     line: z.number().optional(),
   })
   .passthrough()
-  .transform((f) => (typeof f.line === 'number' ? { ...f, line: f.line - LINE_PREPEND_OFFSET } : f));
+  .transform((f) => (typeof f.line === 'number' ? { ...f, line: shiftLine(f.line) } : f));
 
 const ExecutionPointSchema = z
   .object({
@@ -102,7 +110,7 @@ const ExecutionPointSchema = z
     exceptionMsg: z.string().optional(),
   })
   .passthrough()
-  .transform((ep) => ({ ...ep, line: ep.line - LINE_PREPEND_OFFSET }));
+  .transform((ep) => ({ ...ep, line: shiftLine(ep.line) }));
 
 export const ProgramTraceSchema = z.object({
   code: z.string(),

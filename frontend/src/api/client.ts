@@ -42,6 +42,21 @@ export class WorkspaceError extends Error {
   }
 }
 
+// Threw out 8 near-identical 6-line "if (!res.ok) { body = await res.text…
+// throw new WorkspaceError(res.status, body || `${verb} ${url} failed`); }"
+// blocks. Rule of three was met twice over.
+async function ensureOkWorkspace(res: Response, label: string): Promise<Response> {
+  if (res.ok) return res;
+  const body = await res.text().catch(() => '');
+  throw new WorkspaceError(res.status, body || `${label} failed (${res.status})`);
+}
+
+async function ensureOkAdmin(res: Response, label: string): Promise<Response> {
+  if (res.ok) return res;
+  const body = await res.text().catch(() => '');
+  throw new Error(body || `${label} failed (${res.status})`);
+}
+
 export interface Workspace {
   slug: string;
   code: string;
@@ -65,10 +80,7 @@ export async function createWorkspace(
     // (owner_id) when the user is signed in.
     credentials: 'include',
   });
-  if (!res.ok) {
-    const body = await res.text().catch(() => '');
-    throw new WorkspaceError(res.status, body || `POST /api/workspaces failed (${res.status})`);
-  }
+  await ensureOkWorkspace(res, 'POST /api/workspaces');
   return (await res.json()) as { slug: string };
 }
 
@@ -79,10 +91,7 @@ export async function getWorkspace(
   const res = await fetchFn(`/api/workspaces/${encodeURIComponent(slug)}`, {
     credentials: 'include',
   });
-  if (!res.ok) {
-    const body = await res.text().catch(() => '');
-    throw new WorkspaceError(res.status, body || `GET /api/workspaces/${slug} failed (${res.status})`);
-  }
+  await ensureOkWorkspace(res, `GET /api/workspaces/${slug}`);
   return (await res.json()) as Workspace;
 }
 
@@ -97,10 +106,7 @@ export async function updateWorkspace(
     body: JSON.stringify({ code }),
     credentials: 'include',
   });
-  if (!res.ok) {
-    const body = await res.text().catch(() => '');
-    throw new WorkspaceError(res.status, body || `PUT /api/workspaces/${slug} failed (${res.status})`);
-  }
+  await ensureOkWorkspace(res, `PUT /api/workspaces/${slug}`);
 }
 
 export async function renameWorkspace(
@@ -114,10 +120,7 @@ export async function renameWorkspace(
     body: JSON.stringify({ name }),
     credentials: 'include',
   });
-  if (!res.ok) {
-    const body = await res.text().catch(() => '');
-    throw new WorkspaceError(res.status, body || `PATCH /api/workspaces/${slug} failed (${res.status})`);
-  }
+  await ensureOkWorkspace(res, `PATCH /api/workspaces/${slug}`);
 }
 
 export async function deleteWorkspace(
@@ -128,10 +131,7 @@ export async function deleteWorkspace(
     method: 'DELETE',
     credentials: 'include',
   });
-  if (!res.ok) {
-    const body = await res.text().catch(() => '');
-    throw new WorkspaceError(res.status, body || `DELETE /api/workspaces/${slug} failed (${res.status})`);
-  }
+  await ensureOkWorkspace(res, `DELETE /api/workspaces/${slug}`);
 }
 
 // --- auth -----------------------------------------------------------------
@@ -179,9 +179,7 @@ export async function fetchAdminFlags(
   fetchFn: typeof fetch = fetch,
 ): Promise<AdminFlag[]> {
   const res = await fetchFn('/api/admin/flags', { credentials: 'include' });
-  if (!res.ok) {
-    throw new Error(`GET /api/admin/flags failed (${res.status})`);
-  }
+  await ensureOkAdmin(res, 'GET /api/admin/flags');
   const data = (await res.json()) as { flags: AdminFlag[] };
   return data.flags;
 }
@@ -200,10 +198,7 @@ export async function setAdminFlag(
     body: JSON.stringify(body),
     credentials: 'include',
   });
-  if (!res.ok) {
-    const text = await res.text().catch(() => '');
-    throw new Error(text || `PUT /api/admin/flags/${name} failed (${res.status})`);
-  }
+  await ensureOkAdmin(res, `PUT /api/admin/flags/${name}`);
   const data = (await res.json()) as { flag: AdminFlag };
   return data.flag;
 }
@@ -216,9 +211,7 @@ export async function deleteAdminFlag(
     method: 'DELETE',
     credentials: 'include',
   });
-  if (!res.ok) {
-    throw new Error(`DELETE /api/admin/flags/${name} failed (${res.status})`);
-  }
+  await ensureOkAdmin(res, `DELETE /api/admin/flags/${name}`);
 }
 
 export async function reloadAdminFlags(
@@ -246,13 +239,7 @@ export async function listMyWorkspaces(
   fetchFn: typeof fetch = fetch,
 ): Promise<WorkspaceListing[]> {
   const res = await fetchFn('/api/workspaces/mine', { credentials: 'include' });
-  if (!res.ok) {
-    const body = await res.text().catch(() => '');
-    throw new WorkspaceError(
-      res.status,
-      body || `GET /api/workspaces/mine failed (${res.status})`,
-    );
-  }
+  await ensureOkWorkspace(res, 'GET /api/workspaces/mine');
   const data = (await res.json()) as { workspaces: WorkspaceListing[] };
   return data.workspaces;
 }
