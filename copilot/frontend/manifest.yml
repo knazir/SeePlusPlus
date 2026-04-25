@@ -1,4 +1,4 @@
-# Frontend service — the primary See++ UI (React 19 + Monaco).
+# Frontend service — the primary See++ UI.
 name: frontend
 type: Load Balanced Web Service
 
@@ -37,6 +37,7 @@ environments:
       build:
         args:
           SPP_API_URL: "https://backend.test.spp.seepluspl.us/api"
+          GA_MEASUREMENT_ID: "G-KNG76T68BJ"
   prod:
     http:
       alias: ["seepluspl.us"]
@@ -44,3 +45,4 @@ environments:
       build:
         args:
           SPP_API_URL: "https://backend.prod.spp.seepluspl.us/api"
+          GA_MEASUREMENT_ID: "G-KNG76T68BJ"

@@ -12,6 +12,10 @@ FROM node:22-alpine AS builder
 
 ARG SPP_API_URL=""
 ENV VITE_BACKEND_URL=$SPP_API_URL
+# Optional: when set, the gtag snippet is injected into index.html at
+# build time (see vite.config.ts). Empty / unset = no analytics shipped.
+ARG GA_MEASUREMENT_ID=""
+ENV VITE_GA_MEASUREMENT_ID=$GA_MEASUREMENT_ID
 
 WORKDIR /app
 COPY package.json package-lock.json ./

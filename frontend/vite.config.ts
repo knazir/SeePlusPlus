@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite';
+import { defineConfig, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 
@@ -15,8 +15,30 @@ const backendUrl =
 // On a host-side `npm run dev` this stays false and we use native watchers.
 const usePolling = process.env.CHOKIDAR_USEPOLLING === 'true';
 
+// Inject the gtag snippet into index.html only when VITE_GA_MEASUREMENT_ID
+// is set at build time. Keeps dev / no-id builds free of any analytics
+// script and avoids a 404'ing gtag URL when the var is unset.
+function googleAnalyticsPlugin(): Plugin {
+  return {
+    name: 'spp-google-analytics',
+    transformIndexHtml(html) {
+      const id = process.env.VITE_GA_MEASUREMENT_ID;
+      if (!id) return html;
+      const tag = `
+    <script async src="https://www.googletagmanager.com/gtag/js?id=${id}"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', '${id}');
+    </script>`;
+      return html.replace('</head>', `${tag}\n  </head>`);
+    },
+  };
+}
+
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [react(), tailwindcss(), googleAnalyticsPlugin()],
   server: {
     host: true, // bind 0.0.0.0 so the container port-forward works
     port: 4000,
