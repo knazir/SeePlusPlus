@@ -38,12 +38,9 @@ export function buildSessionMiddleware(pool: Pool): RequestHandler | null {
         createTableIfMissing: false,
     });
 
-    // In production, force secure cookies — relying on `secure: "auto"` here
-    // is fragile against any deploy that mishandles X-Forwarded-Proto (e.g.,
-    // an ALB health-checking on HTTP, a reverse proxy forgetting the header).
-    // The cost of an explicit boolean is zero; the cost of a session cookie
-    // ever leaving on plaintext is high. trust proxy is set on the Express
-    // app in index.ts.
+    // Force secure cookies in production rather than relying on
+    // `secure: "auto"`, which depends on a correctly forwarded
+    // X-Forwarded-Proto from every layer in front of the app.
     const isProd = process.env.NODE_ENV === "production";
     return session({
         name: "spp.sid",

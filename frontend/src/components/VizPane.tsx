@@ -105,10 +105,7 @@ export function VizPane() {
             running…
           </p>
         ) : trace ? (
-          // LayoutHintsProvider lets HeapGraph publish layout-time card
-          // centers and EdgeLayer read them for stable side-selection
-          // across FLIP animations. Scoped to the trace branch so the
-          // ref resets cleanly between trace identities.
+          // Scoped to the trace branch so the ref resets between traces.
           <LayoutHintsProvider>
             <div
               className="grid h-full min-h-0 w-full"

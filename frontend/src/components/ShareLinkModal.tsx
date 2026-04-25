@@ -8,8 +8,8 @@ import { useAppStore } from '../store';
 
 export function ShareLinkModal() {
   const url = useAppStore((s) => s.shareUrl);
-  // Use the share-only dismissal, not dismissWriteFeedback — closing this
-  // modal must not clobber an in-flight or just-finished save toast.
+  // dismissShareModal (not dismissWriteFeedback) — closing the share
+  // modal must not clobber a save-toast.
   const dismiss = useAppStore((s) => s.dismissShareModal);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [copied, setCopied] = useState(false);

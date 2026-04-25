@@ -129,13 +129,10 @@ authRouter.get("/:provider/callback", async (req: Request, res: Response) => {
         const profile = await provider.exchangeCodeForProfile(code, callbackUrl);
         const user = await upsertUserFromProfile(pool, provider.name, profile);
 
-        // Regenerate the session id before associating it with a user.
-        // `req.session.save()` alone does NOT rotate the id — only
-        // `regenerate` does — which is what blocks classic session-fixation
-        // (attacker plants a pre-auth cookie on the victim, victim logs in,
-        // attacker walks in with the same id). After regenerate, oauthState
-        // and postLoginRedirect from the old session are gone; we already
-        // captured postLogin into a local above, so nothing is lost.
+        // Rotate the session id before associating it with a user — the
+        // pre-auth cookie must not survive into the authenticated session
+        // (classic session-fixation defence). regenerate() drops the old
+        // session contents; postLogin is captured in a local above.
         req.session.regenerate((regenErr) => {
             if (regenErr) {
                 console.error("[auth] session regenerate failed:", regenErr);

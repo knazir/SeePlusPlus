@@ -10,10 +10,7 @@
 export const FLAGS = {
   /** Gates the in-product tutor panel + breadcrumb + topbar button. */
   TUTOR_PANEL: 'tutor-panel',
-  /** Selects ELK as the heap layout engine instead of dagre. The flag
-   *  exists primarily as a forcing function for the layout-engine
-   *  abstraction — both implementations sit behind the same interface,
-   *  and toggling the flag swaps engines at runtime. */
+  /** Selects ELK as the heap layout engine instead of dagre. */
   LAYOUT_ENGINE_ELK: 'layout-engine-elk',
 } as const;
 

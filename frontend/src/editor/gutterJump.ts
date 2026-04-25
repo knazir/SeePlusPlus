@@ -1,26 +1,21 @@
-// Custom line-number gutter with click-to-jump-to-next-occurrence behavior.
-// Matches the legacy frontend's affordance: clicking a line number in the
-// gutter jumps the trace to the next step executing that line (wraps around
-// via the store's jumpToNextOccurrence).
+// Click-to-jump line-number gutter: clicking a number scrubs the trace
+// to the next step executing that line.
 import { lineNumbers } from '@codemirror/view';
 import type { EditorView } from '@codemirror/view';
 
 export function gutterJump(onJump: (line: number) => void) {
   return lineNumbers({
     domEventHandlers: {
-      // Browsers default to moving focus to the nearest contenteditable on
-      // mousedown. For a gutter click we don't want that — it would steal
-      // focus from the timeline and start swallowing Arrow-key scrubs into
-      // CM's caret. preventDefault on mousedown stops the focus transfer
-      // at its source; the subsequent click still fires normally.
+      // Block the default focus transfer to CM's contenteditable so
+      // Arrow-key scrubbing keeps working after a gutter click.
       mousedown(_view, _line, event) {
         event.preventDefault();
-        return false; // don't claim handled — let click keep flowing
+        return false;
       },
       click(view: EditorView, line) {
         const lineNum = view.state.doc.lineAt(line.from).number;
         onJump(lineNum);
-        return true; // handled — stops CM from moving the cursor
+        return true;
       },
     },
   });

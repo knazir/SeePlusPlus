@@ -72,10 +72,8 @@ export function SettingsMenu() {
         <span aria-hidden>⚙</span>
       </button>
       {open && (
-        // Not role="menu": menu semantics imply arrow-key navigation between
-        // menuitems, which we don't provide. This is a popover containing
-        // three independent radio groups, so semantically it's a dialog with
-        // groups inside; AT will read each radio group on its own.
+        // role="dialog" rather than "menu" because the popover hosts
+        // independent radio groups, not arrow-key-navigated menu items.
         <div
           role="dialog"
           aria-label="Settings"

@@ -1,16 +1,12 @@
 import { describe, it, expect, vi } from "vitest";
 
-// Regression tests for the session-fixation fix in auth.ts:127-149.
-// We isolate the regenerate-then-save behavior via a small fake of the
-// `req.session` API surface that records the order of regenerate / userId
-// assignment / save / redirect. We do NOT spin up Express; the goal is to
-// lock in the call sequence, not to integration-test OAuth.
+// Locks in the regenerate → assign → save → redirect order on login,
+// via a fake of the express-session surface. No Express here.
 type FakeSession = {
   id: string;
   userId?: string;
   oauthState?: string;
   postLoginRedirect?: string;
-  // The contract under test:
   regenerate: (cb: (err?: Error) => void) => void;
   save: (cb: (err?: Error) => void) => void;
   destroy: (cb: () => void) => void;
@@ -28,8 +24,7 @@ function makeFakeSession(): FakeSession & {
     __saveCount: 0,
     regenerate(cb: (err?: Error) => void) {
       this.__regenerated = true;
-      // Real express-session clears the session contents on regenerate; mirror
-      // that here so a test that asserts oauthState is gone works.
+      // express-session clears the session contents on regenerate.
       this.id = "post-auth-id";
       this.oauthState = undefined;
       this.postLoginRedirect = undefined;
@@ -47,11 +42,9 @@ function makeFakeSession(): FakeSession & {
   return s as ReturnType<typeof makeFakeSession>;
 }
 
-// Mirror the production callback shape narrowly enough to exercise the
-// regenerate-save-redirect order. We import the real router and exercise it
-// via a synthetic Express-flavored request/response, but that requires the
-// full module stack (db, providers, …). For a focused unit test, replicate
-// the inner block under test directly.
+// Replicates the inner login-finalisation block from auth.ts so we can
+// exercise the call-order contract without booting the full Express
+// module graph (db, providers, …).
 async function executeLoginFinalization(
   session: FakeSession,
   userId: string,

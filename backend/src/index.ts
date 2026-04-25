@@ -38,26 +38,18 @@ const USER_CODE_FILE_PREFIX = process.env.USER_CODE_FILE_PREFIX || "main";
 // honor X-Forwarded-Proto.
 app.set("trust proxy", 1);
 
-// Defense-in-depth headers. We don't render HTML from the API, so CSP would
-// be redundant, but the cheap defaults (X-Content-Type-Options, Referrer-
-// Policy, X-Frame-Options, etc.) are a free win. crossOriginResourcePolicy
-// is left at the default ("same-origin") because the API is only called
-// same-origin via the nginx proxy.
 app.use(helmet());
 
-// Cap request bodies on the JSON parser. /api/run accepts user source code
-// and the rest of the routes accept small JSON; 128KB is well above any
-// legitimate program we care to support and keeps oversize bodies from
-// reaching the runner.
+// 128KB cap on JSON bodies. /api/run takes user code; everything else is
+// small JSON.
 app.use(express.json({ limit: "128kb" }));
 
 const ALLOWED_ORIGIN_REGEX_RAW = process.env.ALLOWED_ORIGIN_REGEX;
 const ALLOWED_ORIGIN_REGEX = ALLOWED_ORIGIN_REGEX_RAW
     ? new RegExp(ALLOWED_ORIGIN_REGEX_RAW)
     : null;
-// Localhost reflection for dev when ALLOWED_ORIGIN_REGEX is unset. Reflecting
-// arbitrary origins with credentials:true is a foot-gun even on localhost — a
-// page in another tab can issue credentialed requests at the dev backend.
+// Allow localhost in dev when no ALLOWED_ORIGIN_REGEX is configured;
+// reflecting arbitrary origins with credentials:true would be unsafe.
 const LOCALHOST_RE = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/;
 app.use(cors({
     origin: (origin, callback) => {
@@ -81,10 +73,9 @@ app.use(cors({
     credentials: true
 }));
 
-// Rate-limit the runner. /api/run is the only endpoint that consumes real
-// resources (Docker container or Lambda invocation) and is unauthenticated;
-// the SHA-256 dedupe in deployed envs only helps for byte-identical code.
-// Workspaces already has its own limiter inside the router.
+// /api/run is the only unauthenticated endpoint that consumes real
+// compute (Docker / Lambda); rate-limit it. Other write paths have
+// limiters inside their own routers.
 const runRateLimit = rateLimit({
     windowMs: 60_000,
     max: 10,

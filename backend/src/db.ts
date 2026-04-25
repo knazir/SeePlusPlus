@@ -67,11 +67,8 @@ export async function initDb(): Promise<void> {
 
     const schemaPath = path.join(__dirname, "..", "schema.sql");
     const sql = fs.readFileSync(schemaPath, "utf8");
-    // Apply schema in a single transaction so a partial failure (one
-    // ALTER TABLE rejected, an out-of-disk error mid-statement) leaves the
-    // database in a consistent state rather than half-applied. IF NOT EXISTS
-    // covers most reapply scenarios; the transaction handles the rest until
-    // a real migration tool lands.
+    // Apply in one transaction so a partial failure rolls back instead of
+    // leaving a half-migrated schema.
     const client = await pool.connect();
     try {
         await client.query("BEGIN");

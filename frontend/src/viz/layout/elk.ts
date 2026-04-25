@@ -1,22 +1,10 @@
-// ELK-backed layout engine. Uses the Eclipse Layout Kernel's `layered`
-// algorithm — same family as dagre (top-to-bottom layered DAG) — but with
-// integrated edge routing, port assignment, and crossing minimisation.
+// ELK-backed layout. The `layered` algorithm lays out nodes AND routes
+// edges in one pass — channel-aware routing avoids the spaghetti that
+// dagre + post-hoc geometry produces on dense heap graphs.
 //
-// Why ELK over dagre: dagre lays out nodes; we glue our own edge routing
-// on top. ELK does both as one decision, with awareness of channel space
-// between layers, so heap-graph spaghetti is much less common. Bundle
-// cost is real (~150KB gzipped) but the visualisation ceiling matters
-// more than payload for a tool whose entire value is making memory
-// legible.
-//
-// Cycles: ELK's layered algorithm handles cycles via its own cycle-
-// breaking pass (default GREEDY) — so circular pointers and doubly-linked
-// lists Just Work, mirroring dagre's behaviour.
-//
-// Async: ELK's bundled build internally uses a Web Worker; the layout
-// call returns a Promise. Pure-JS small-graph cases (≤50 nodes) finish
-// in <50ms, so the async cost is small. The interface is async-by-default
-// either way (see types.ts).
+// ELK only sees edges that live entirely within the heap subgraph
+// (heap → heap). Edges that originate on the stack are handled by the
+// downstream geometry pass.
 import ELK from 'elkjs/lib/elk.bundled.js';
 import type { ElkExtendedEdge } from 'elkjs/lib/elk-api';
 import { collectPointers } from '../reachability';
@@ -74,12 +62,7 @@ async function layout({ entries, sizes, density }: LayoutInput): Promise<LayoutR
       'elk.direction': 'DOWN',
       'elk.spacing.nodeNode': String(nodesep),
       'elk.layered.spacing.nodeNodeBetweenLayers': String(ranksep),
-      // POLYLINE produces straight-segment paths that route around nodes —
-      // the visual we want for heap arrows. ORTHOGONAL produces only
-      // right angles which can look stiffer; SPLINES is heavier and
-      // similar visual to our existing bezier renderer.
       'elk.edgeRouting': 'POLYLINE',
-      // Heuristics that improve real-world heap graphs:
       'elk.layered.crossingMinimization.strategy': 'LAYER_SWEEP',
       'elk.layered.cycleBreaking.strategy': 'GREEDY',
       'elk.layered.nodePlacement.strategy': 'NETWORK_SIMPLEX',
@@ -104,11 +87,9 @@ async function layout({ entries, sizes, density }: LayoutInput): Promise<LayoutR
     maxBottom = Math.max(maxBottom, y + h);
   }
 
-  // Edge polylines from ELK. The `layered` algorithm with edges fed in as
-  // sources/targets returns ElkExtendedEdge results that include `sections`
-  // describing the routed polyline. Cast to access the variant fields —
-  // the runtime shape is guaranteed by the engine's contract for this
-  // algorithm.
+  // ElkExtendedEdge cast: the `layered` algorithm with sources/targets
+  // returns edges with `sections`; the base ElkEdge type doesn't surface
+  // it, but the runtime shape is guaranteed.
   const routedEdges = new Map<string, RoutedLayoutEdge>();
   for (const rawEdge of (result.edges ?? []) as ElkExtendedEdge[]) {
     const section = rawEdge.sections?.[0];

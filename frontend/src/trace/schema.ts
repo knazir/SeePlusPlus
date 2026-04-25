@@ -67,19 +67,14 @@ export function displayEncoded(v: unknown): string {
 
 const EncodedValueSchema: z.ZodType<EncodedValue> = z.unknown();
 
-// The backend prepends `#define union struct\n` to every user program before
-// compilation (see `backend/src/valgrind_utils.ts`). That shifts every line
-// number reported by Valgrind up by one. We compensate here, at the validator
-// boundary, so every downstream consumer sees user-source line numbers.
-// The legacy frontend did the same adjustment in its model layer, with a
-// comment reading "IMPORTANT: we do line - 1 to discount the #define for
-// fixing unions". If the backend ever stops prepending, drop this shift.
+// The backend prepends a single `#define` to every user program before
+// compilation, which shifts every Valgrind-reported line up by one. We
+// compensate here at the validator boundary so consumers see user-source
+// line numbers. Drop this if the backend ever stops prepending.
 const LINE_PREPEND_OFFSET = 1;
 
-// Compile-failure payloads come through as a synthesized point whose `line`
-// can be 0 (when `lineNum` was unknown in valgrind_utils). Without clamping,
-// the transform produces -1, which leaks into any consumer that reads
-// `trace[0].line` before the build-failure hoist. Clamp to 0.
+// Clamp at 0 so synthesized build-failure payloads (which can carry
+// line: 0) don't shift to -1.
 function shiftLine(n: number): number {
   return Math.max(0, n - LINE_PREPEND_OFFSET);
 }
