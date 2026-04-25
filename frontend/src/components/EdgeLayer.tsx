@@ -76,8 +76,28 @@ export function EdgeLayer({ containerRef, clipRef }: Props) {
 
     const ro = new ResizeObserver(schedule);
     ro.observe(container);
+    // Narrow the attribute filter to the attributes that actually change
+    // edge geometry (style for left/top from HeapGraph, and the data
+    // attributes that select source/target elements). Without the filter,
+    // every hover toggle of `data-highlighted` / `data-orphan` re-fires
+    // computeEdges + setEdges + a full re-render, which then writes
+    // data-highlighted on a path and re-fires the observer — a feedback
+    // loop coalesced by rAF but still wasteful and visibly costly on
+    // larger heaps.
     const mo = new MutationObserver(schedule);
-    mo.observe(container, { childList: true, subtree: true, attributes: true });
+    mo.observe(container, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: [
+        'style',
+        'data-heap-addr',
+        'data-ptr-target',
+        'data-stack-addr',
+        'data-stack-contains',
+        'data-stack-expanded',
+      ],
+    });
 
     return () => {
       following = false;
@@ -112,11 +132,12 @@ export function EdgeLayer({ containerRef, clipRef }: Props) {
       </defs>
       {edges.map((e) => {
         const hot = hoveredAddr === e.target;
+        const d = edgePath(e, routing);
         return (
           <g key={e.key} style={{ pointerEvents: 'auto' }}>
             {/* Wide invisible hit-region so hovering the edge is forgiving */}
             <path
-              d={edgePath(e, routing)}
+              d={d}
               fill="none"
               stroke="transparent"
               strokeWidth={10}
@@ -124,7 +145,7 @@ export function EdgeLayer({ containerRef, clipRef }: Props) {
               onMouseLeave={() => setHoveredAddr(null)}
             />
             <path
-              d={edgePath(e, routing)}
+              d={d}
               data-ptr-kind={e.kind}
               data-highlighted={hot || undefined}
               fill="none"
@@ -141,42 +162,52 @@ export function EdgeLayer({ containerRef, clipRef }: Props) {
   );
 }
 
-/**
- * Resolve a pointer-target address to a DOM element, in priority order:
- *   1. A heap block with [data-heap-addr="<target>"]
- *   2. A visible stack local with [data-stack-addr="<target>"]
- *      (only rendered when its frame is expanded)
- *   3. A stack frame that contains the target address in its
- *      [data-stack-contains] list (frame collapsed — we draw to the frame)
- * Null when none match (e.g. pointer into data/text segment, or target
- * is outside the currently-rendered step).
- */
-function resolveTarget(
-  container: HTMLElement,
-  target: string,
-): HTMLElement | null {
-  const escaped = cssEscape(target);
-  return (
-    container.querySelector<HTMLElement>(`[data-heap-addr="${escaped}"]`) ||
-    container.querySelector<HTMLElement>(`[data-stack-addr="${escaped}"]`) ||
-    container.querySelector<HTMLElement>(`[data-stack-contains~="${escaped}"]`)
-  );
-}
-
 function pointInRect(x: number, y: number, r: DOMRect): boolean {
   return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom;
+}
+
+/**
+ * Build an address → element lookup map from a single tree walk, with the
+ * priority order: heap block > visible stack local > stack frame containing
+ * the address. Lower-priority entries don't overwrite higher-priority ones.
+ * Replaces three querySelector calls per pointer (was O(N×3 walks)) with
+ * one walk per render cycle.
+ */
+function buildTargetMap(container: HTMLElement): Map<string, HTMLElement> {
+  const map = new Map<string, HTMLElement>();
+  // Pass 1: heap blocks (highest priority).
+  for (const el of container.querySelectorAll<HTMLElement>('[data-heap-addr]')) {
+    const k = el.getAttribute('data-heap-addr');
+    if (k && !map.has(k)) map.set(k, el);
+  }
+  // Pass 2: stack locals — only fill in addresses we don't already have.
+  for (const el of container.querySelectorAll<HTMLElement>('[data-stack-addr]')) {
+    const k = el.getAttribute('data-stack-addr');
+    if (k && !map.has(k)) map.set(k, el);
+  }
+  // Pass 3: collapsed stack frames containing the target. data-stack-contains
+  // is a space-separated list, so we expand each value to its constituents.
+  for (const el of container.querySelectorAll<HTMLElement>('[data-stack-contains]')) {
+    const list = el.getAttribute('data-stack-contains');
+    if (!list) continue;
+    for (const k of list.split(/\s+/)) {
+      if (k && !map.has(k)) map.set(k, el);
+    }
+  }
+  return map;
 }
 
 function computeEdges(container: HTMLElement, clip: HTMLElement | null): Edge[] {
   const cRect = container.getBoundingClientRect();
   const clipRect = clip?.getBoundingClientRect() ?? null;
   const ptrs = Array.from(container.querySelectorAll<HTMLElement>('[data-ptr-target]'));
+  const targetMap = buildTargetMap(container);
   const out: Edge[] = [];
   for (let i = 0; i < ptrs.length; i++) {
     const p = ptrs[i]!;
     const target = p.getAttribute('data-ptr-target');
     if (!target || target === 'null') continue;
-    const targetEl = resolveTarget(container, target);
+    const targetEl = targetMap.get(target);
     if (!targetEl) continue;
     const kind = p.getAttribute('data-ptr-kind') === 'ref' ? 'ref' : 'pointer';
     const s = p.getBoundingClientRect();
@@ -231,7 +262,3 @@ function edgePath(e: Edge, routing: PointerRouting): string {
   return `M ${e.x1},${e.y1} C ${c1x},${e.y1} ${c2x},${e.y2} ${e.x2},${e.y2}`;
 }
 
-function cssEscape(s: string): string {
-  if (typeof CSS !== 'undefined' && typeof CSS.escape === 'function') return CSS.escape(s);
-  return s.replace(/([\\"'\][#.:>+~*^$|()=@?!{},/])/g, '\\$1');
-}

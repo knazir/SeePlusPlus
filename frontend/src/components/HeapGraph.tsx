@@ -25,10 +25,12 @@ export function HeapGraph() {
   const step = useCurrentStep();
   const stepIndex = useAppStore((s) => s.stepIndex);
   const heapDensity = useAppStore((s) => s.heapDensity);
+  const trace = useAppStore((s) => s.trace);
 
   const elsRef = useRef<Map<string, HTMLElement>>(new Map());
   const prevRectsRef = useRef<Map<string, DOMRect>>(new Map());
   const prevAddrsRef = useRef<Set<string>>(new Set());
+  const prevTraceRef = useRef<typeof trace>(trace);
   const containerRef = useRef<HTMLDivElement | null>(null);
 
   const orphans = useMemo(() => (step ? orphanAddrs(step) : new Set<string>()), [step]);
@@ -42,6 +44,18 @@ export function HeapGraph() {
       prevRectsRef.current = new Map();
       prevAddrsRef.current = new Set();
       return;
+    }
+
+    // Trace identity changed: clear the FLIP state. Valgrind reuses
+    // allocator addresses across runs, so without this the first render of
+    // a new trace would FLIP-animate cards "from" stale prior-run positions
+    // (because prevRectsRef still has those rects keyed by addr). The
+    // existing `if (!step)` branch only resets on null step; trace-flips
+    // mid-step keep step truthy.
+    if (prevTraceRef.current !== trace) {
+      prevRectsRef.current = new Map();
+      prevAddrsRef.current = new Set();
+      prevTraceRef.current = trace;
     }
 
     // Measure every mounted card, compute a dagre layout, then apply
@@ -80,7 +94,7 @@ export function HeapGraph() {
 
     prevRectsRef.current = captureRects(elsRef.current);
     prevAddrsRef.current = new Set(elsRef.current.keys());
-  }, [stepIndex, step, entries, heapDensity]);
+  }, [stepIndex, step, entries, heapDensity, trace]);
 
   if (!step) return null;
   if (entries.length === 0) {
