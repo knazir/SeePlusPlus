@@ -1,6 +1,7 @@
 import { Modal } from './Modal';
 import { useAppStore } from '../store';
 import { kbd } from '../platform/kbd';
+import { track } from '../analytics';
 
 interface Example {
   id: string;
@@ -191,6 +192,7 @@ export function ExamplesModal() {
   const currentCode = useAppStore((s) => s.code);
 
   const pick = (ex: Example) => {
+    track('example_loaded', { example_id: ex.id });
     setCode(ex.code);
     close();
   };
