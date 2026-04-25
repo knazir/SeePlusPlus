@@ -98,23 +98,14 @@ export function EditorPane() {
     () => [
       cpp(),
       syntaxHighlighting(sppHighlight),
-      // Custom line numbers with click-to-jump-to-next-occurrence. Replaces
-      // basicSetup's lineNumbers (disabled below) to keep a single gutter.
+      // Click-to-jump line-number gutter. Replaces basicSetup's
+      // lineNumbers (disabled below) so we have a single gutter.
       gutterJump((line) => jumpToNextOccurrence(line)),
       traceLineField,
-      // 4-space indentation. tabSize controls visual column width for any
-      // literal tab characters; indentUnit controls what gets INSERTED on
-      // new lines / Tab press (4 spaces). indentWithTab rebinds Tab to the
-      // indent command so it inserts an indent unit instead of a literal tab.
       EditorState.tabSize.of(4),
       indentUnit.of(FOUR_SPACES),
-      // Mod-Enter runs the trace. @uiw/react-codemirror's basicSetup binds
-      // Mod-Enter to insertBlankLine by default — Prec.highest pulls our
-      // binding ahead of it so we get the run() action instead of a blank
-      // line being inserted. Zustand actions are stable references, so we
-      // can read it from the store at the moment of dispatch — no ref
-      // forwarding indirection needed. indentWithTab keeps its normal
-      // precedence.
+      // Prec.highest overrides basicSetup's default Mod-Enter binding
+      // (insertBlankLine). indentWithTab keeps its normal precedence.
       Prec.highest(
         keymap.of([
           {
@@ -139,11 +130,8 @@ export function EditorPane() {
     view.dispatch({ effects: setTraceLine.of(step?.line ?? null) });
   }, [step]);
 
-  // When a run starts, blow focus off the editor so global Arrow / Space
-  // shortcuts engage immediately (they're suppressed inside .cm-editor by
-  // useGlobalShortcuts.shouldIgnore). Without this the user has to click
-  // somewhere outside the editor before scrubbing works — defeats the
-  // muscle-memory of "Run, then arrow through the trace."
+  // Drop editor focus when a run starts so global Arrow/Space shortcuts
+  // engage immediately (they're suppressed while the editor is focused).
   useEffect(() => {
     if (!running) return;
     const view = viewRef.current;

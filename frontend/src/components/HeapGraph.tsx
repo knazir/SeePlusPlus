@@ -14,16 +14,10 @@ import { FLAGS } from '../flags/names';
 
 /**
  * Heap graph renderer. Measures every heap card, runs the configured
- * layout engine (dagre by default; ELK behind the LAYOUT_ENGINE_ELK flag),
- * applies `position: absolute; left/top` imperatively, and runs FLIP for
- * step-to-step continuity.
- *
- * Layout is async (the engine interface is `Promise<LayoutResult>` —
- * dagre resolves immediately, ELK runs in a Web Worker). The first frame
- * after a step change still has cards at their previous-step positions
- * via inline style, so async resolve doesn't show a flash of unpositioned
- * cards. FLIP captures `prev` rects in the same effect run, before
- * applying new positions, so animation continues to work.
+ * layout engine, applies positions imperatively, and runs FLIP for
+ * step-to-step continuity. Engine selection is flag-controlled; the
+ * engine interface is async, so cards keep their previous positions
+ * (via inline style) until the new layout resolves.
  */
 
 /** Find the animation target inside a heap node's outer wrapper. */
@@ -59,17 +53,16 @@ export function HeapGraph() {
       return;
     }
 
-    // Trace identity changed: clear the FLIP state. Valgrind reuses
-    // allocator addresses across runs, so without this the first render of
-    // a new trace would FLIP-animate cards "from" stale prior-run positions.
+    // Reset FLIP state on trace change — Valgrind reuses heap addresses
+    // across traces, so prior-run rects keyed by addr would mislead.
     if (prevTraceRef.current !== trace) {
       prevRectsRef.current = new Map();
       prevAddrsRef.current = new Set();
       prevTraceRef.current = trace;
     }
 
-    // Measure every mounted card BEFORE awaiting layout — this captures
-    // current sizes for the engine and the "from" rects for FLIP.
+    // Measure before awaiting layout: captures both the sizes the engine
+    // needs and the "from" rects FLIP needs.
     const sizes = new Map<string, NodeSize>();
     for (const [addr, el] of elsRef.current) {
       const r = el.getBoundingClientRect();
@@ -77,18 +70,7 @@ export function HeapGraph() {
     }
     const fromRects = captureRects(elsRef.current);
 
-    // We deliberately do NOT clear the previous layout's hints here.
-    // Doing so caused a visible curved↔straight flicker on every step
-    // change: between this synchronous render and ELK's async resolve,
-    // EdgeLayer would fall back to geometry-routed beziers, then snap
-    // back to ELK polylines a frame later. EdgeLayer's per-edge
-    // endpoint sanity check handles individual stale polylines (drops
-    // any whose last point doesn't land inside the target's current
-    // rect), so leaving the previous hints in place during the async
-    // window is the right tradeoff.
-
-    // Cancel-on-unmount or on dependency change: if the layout resolves
-    // after we've moved on, ignore its result.
+    // Cancel resolutions that arrive after the deps have changed.
     let cancelled = false;
     const engine = getLayoutEngine(engineName);
     void engine
@@ -96,12 +78,10 @@ export function HeapGraph() {
       .then((result) => {
         if (cancelled) return;
 
-        // Publish layout-time hints for EdgeLayer to consume. The engine
-        // emits centers in HEAP-LOCAL coords (origin = heap container's
-        // top-left); routeEdges compares them against the chip's CLIENT-
-        // coord center, so we translate centers into client coords before
-        // publishing. ELK-routed edge polylines stay in world coords —
-        // EdgeLayer applies the worldOrigin offset itself for those.
+        // routeEdges compares centers to chip rects in client coords, so
+        // translate the engine's heap-local centers before publishing.
+        // Edge polylines stay in world coords; EdgeLayer applies the
+        // worldOrigin offset when consuming them.
         const containerRect = containerRef.current?.getBoundingClientRect() ?? null;
         const clientCenters = new Map<string, { x: number; y: number }>();
         if (containerRect) {
@@ -149,8 +129,7 @@ export function HeapGraph() {
       })
       .catch((err) => {
         if (cancelled) return;
-        // Log and leave existing positions in place; better to keep stale
-        // layout than crash the visualisation.
+        // Leave existing positions in place — stale layout beats a crash.
         console.error('[HeapGraph] layout failed:', err);
       });
 

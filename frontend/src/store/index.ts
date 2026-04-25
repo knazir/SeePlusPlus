@@ -134,11 +134,9 @@ export interface AppState {
   completePendingWrite: (name: string | null) => Promise<void>;
   /** Fetch a workspace by slug and seed the editor. Called on app mount. */
   loadFromSlug: (slug: string) => Promise<void>;
-  /** Clear toast-only state (writeStatus + writeError). Does NOT touch the
-   *  share modal — those are separate concerns and shared dismissal caused
-   *  one to clobber the other. */
+  /** Clears toast state (writeStatus + writeError) only. */
   dismissWriteFeedback: () => void;
-  /** Close the share-link modal (clears shareUrl + the modal slot only). */
+  /** Closes the share-link modal (shareUrl + modal slot) only. */
   dismissShareModal: () => void;
   /** PATCH a workspace's name (from the /workspaces list). */
   renameWorkspace: (slug: string, name: string | null) => Promise<void>;
@@ -262,12 +260,11 @@ export type ModalKind =
 /** Reason context drives sign-in modal's title/copy. */
 export type SignInReason = 'save' | 'share' | 'generic';
 
-/** What the name-prompt modal is meant to do once the user submits a name.
- *  Share goes through `createAndOpenShareModal()` directly (no name prompt),
- *  so it intentionally has no `WriteIntent` variant. */
+/** What the name-prompt modal does on submit. Share has its own flow
+ *  (no name prompt) so it isn't represented here. */
 export type WriteIntent =
   | { kind: 'save-new' }   // create a new owned workspace from current code
-  | { kind: 'fork' };      // create new from current /w/:slug (not yours)
+  | { kind: 'fork' };      // create new from a /w/:slug the user doesn't own
 
 export interface LoadedWorkspace {
   slug: string;
@@ -415,10 +412,9 @@ export const useAppStore = create<AppState>((set, get) => ({
         });
         return;
       }
-      // Compile-failure traces arrive as a single ExecutionPoint with
-      // event: "uncaughtException" and an empty stack/heap. Hoist them into
-      // the error + buildOutput channels so VizPane renders the build-failed
-      // empty state and ConsolePane renders the raw gcc diagnostic.
+      // Compile failures arrive as a single uncaughtException point.
+      // Hoist them out of the trace channel so the build-failed UI
+      // surfaces the gcc diagnostic instead of rendering an empty step.
       const firstStep = parsed.data.trace[0];
       const isBuildFailure =
         parsed.data.trace.length === 1 &&
@@ -435,12 +431,9 @@ export const useAppStore = create<AppState>((set, get) => ({
         });
         return;
       }
-      // If the user kept typing while the run was in flight, get().code is no
-      // longer sentCode. Store the trace so the user sees what came back, but
-      // null out lastRunCode so useIsStale is unambiguously true — the trace
-      // we just received is for an older revision than what's now in the
-      // editor, and the stale banner needs to fire regardless of whether the
-      // user happened to type back to a coincidentally-matching prior value.
+      // If the editor changed during the run, null out lastRunCode so
+      // useIsStale fires unambiguously instead of comparing against a
+      // value the user may have typed back to.
       const codeUnchanged = get().code === sentCode;
       set({
         trace: parsed.data,
@@ -450,10 +443,8 @@ export const useAppStore = create<AppState>((set, get) => ({
         running: false,
       });
     } catch (err) {
-      // A failed run (compile error, docker failure, schema mismatch) invalidates
-      // the old visualization — keeping the stale trace around would mislead
-      // users into thinking their edit is reflected. Clear it so VizPane drops
-      // into its build-error empty state.
+      // A failed run invalidates the previous trace — keeping it would
+      // mislead users into thinking their edit is reflected.
       set({
         trace: null,
         lastRunCode: null,
@@ -642,10 +633,10 @@ export const useAppStore = create<AppState>((set, get) => ({
     set({ writeStatus: 'idle', writeError: null }),
   dismissShareModal: () => {
     const cur = get();
+    // Only clear `modal` if it's still the share modal — don't yank a
+    // different modal that opened after.
     set({
       shareUrl: null,
-      // Only clear `modal` if it's currently the share modal. Don't yank an
-      // unrelated modal (e.g., name-prompt) that happened to open after.
       modal: cur.modal === 'share-link' ? null : cur.modal,
     });
   },

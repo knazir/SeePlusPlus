@@ -1,17 +1,6 @@
-// Layout-time hints, published by HeapGraph after each layout pass and
-// consumed by EdgeLayer for stable / pre-routed edge geometry.
-//
-// Two pieces of data:
-//   - centers: per-card center coords. Stable across FLIP (computed at
-//     layout time, not interpolated DOM rects). EdgeLayer uses these for
-//     side-selection decisions.
-//   - edges: per-edge routed polylines from layout-aware engines (ELK).
-//     When present, EdgeLayer prefers them over its geometry-based
-//     routing.
-//
-// Why a ref-backed context (not state): we don't want a re-render every
-// time the layout publishes — EdgeLayer has its own MutationObserver +
-// rAF scheduler that recomputes when the DOM moves.
+// Layout-time hints, published by HeapGraph and consumed by EdgeLayer.
+// Ref-backed (not state) because EdgeLayer has its own scheduler and
+// publishes shouldn't trigger React re-renders.
 import {
   createContext,
   useContext,
@@ -22,14 +11,13 @@ import {
 import type { RoutedLayoutEdge } from './layout';
 
 export interface LayoutHints {
-  /** Per-card center coordinates from the most recent layout. */
+  /** Card centers in client coords. */
   centers: Map<string, { x: number; y: number }>;
-  /** ELK-routed edge polylines, keyed by `${source}->${target}`. Empty
-   *  when the active engine doesn't route edges (dagre). */
+  /** Engine-routed edge polylines (in world coords), keyed by
+   *  `${source}->${target}`. Empty when the engine doesn't route edges. */
   edges: Map<string, RoutedLayoutEdge>;
-  /** Top-left of the heap-graph container in document coordinates. ELK
-   *  emits polyline points in world (layout-local) coords; EdgeLayer
-   *  needs an offset to convert into client coords for SVG rendering. */
+  /** Heap-graph container top-left in document coords. Used to translate
+   *  edge polyline points (which are in world coords) into client coords. */
   worldOrigin: { x: number; y: number } | null;
 }
 

@@ -1,43 +1,15 @@
-// Pure routing pass for pointer arrows. Takes DOM-measured chip + target
-// rectangles and decides:
+// Pure pointer-arrow routing. Takes measured chip + target rects and
+// returns each edge's anchor sides plus endpoint coordinates. No DOM.
+// EdgeLayer wraps the measurement and rendering around it.
 //
-//   (A) which side of the source CHIP each arrow exits — left or right —
-//       based on geometry, not field names. The chip stays the visible
-//       source of the arrow ("which field owns this pointer is obvious")
-//       but we pick the side closer to the target so the arrow doesn't
-//       sweep all the way across the source card to reach a target on the
-//       opposite side.
-//
-//   (B) per-(target, target-side) port distribution: when N arrows arrive
-//       at the same target on the same side, distribute their endpoints
-//       along that side's extent so they don't pile up at a single point.
-//
-//   (C) edge bundling between card pairs is realised through the same
-//       distribution: arrows that share both endpoints (same source card,
-//       same target, same target side) get spread along the target side
-//       instead of stacking.
-//
-//   (D) layout-aware port selection: when a `layoutCenters` map is
-//       provided (filled by `layoutHeap`), side selection uses the
-//       layout's stable card centers rather than DOM rects. That keeps
-//       the chosen sides constant across FLIP animations — only the
-//       coordinates interpolate, not the routing decision.
-//
-//   (1) vertical routing: target side is 4-way (left/right/top/bottom).
-//       When source and target are roughly column-aligned, the arrow
-//       enters the target's TOP or BOTTOM edge instead of forcing a
-//       horizontal entry, which avoids the "sweep around the target's
-//       width" pattern for stacked heap structures (linked lists).
-//
-//   (2) obstacle-aware side selection: every (sourceSide × targetSide)
-//       combination is scored against the layout's other card rectangles.
-//       A path that crosses other cards costs more; the lowest-scoring
-//       combination is picked. Falls back to the natural choice when no
-//       alternative is meaningfully better.
-//
-// Pure module: takes data in, returns data out. No DOM access. Easily
-// unit-tested. EdgeLayer.tsx wraps the DOM-measurement step and renders
-// the resulting paths.
+// Decisions made here, in order:
+//   - Source side (chip.left or chip.right) and target side (any of the
+//     four) chosen by geometry. Optional `layoutCenters` keep side
+//     decisions stable across FLIP animations.
+//   - Endpoint distribution along the target side when multiple edges
+//     converge on the same (target, side) pair.
+//   - Obstacle-aware fallback: every side combo is scored against the
+//     other card rects; the lowest-scoring combo wins.
 
 export type Side = 'left' | 'right' | 'top' | 'bottom';
 
@@ -174,8 +146,7 @@ function segmentIntersectsRect(
   return t0 <= t1;
 }
 
-/** Natural source side: the chip side facing the target. Ties default to
- *  'right' (the chip's natural exit direction in the current rendering). */
+/** Chip side facing the target. Ties default to right. */
 function naturalSourceSide(
   sourceCenterX: number,
   targetCenterX: number,
@@ -184,13 +155,9 @@ function naturalSourceSide(
   return targetCenterX < sourceCenterX ? 'left' : 'right';
 }
 
-/** Natural target side: pick whichever of the target's four sides is on
- *  the dominant axis of the (target → source) vector. Horizontal-dominant
- *  vectors enter through left/right; vertical-dominant through top/bottom.
- *  This is what gives clean tree-edge routing for vertically stacked
- *  cards. Uses caller-provided "stable" centers (layout positions when
- *  available) so the decision doesn't flip mid-FLIP just because a rect
- *  interpolated past the threshold. */
+/** Target side on the dominant axis of (target → source). Callers should
+ *  pass layout-stable centers when available so the decision doesn't flip
+ *  during animations as rects interpolate past the threshold. */
 function naturalTargetSide(
   sourceCenter: { x: number; y: number },
   targetCenter: { x: number; y: number },
@@ -203,17 +170,10 @@ function naturalTargetSide(
   return dy < 0 ? 'top' : 'bottom';
 }
 
-/** Score for a candidate (sourceSide, targetSide) pair, lower is better:
- *
- *   crosses * 100 + naturalDistance
- *
- * Obstacle crossings always dominate. Among paths with the same number of
- * crossings, "naturalDistance" (number of sides that don't match the
- * natural choice) breaks ties so absent obstacles we always pick the
- * direction-aligned pair. We deliberately don't include path length —
- * a curved bezier doesn't follow a straight line, and natural-side
- * preference already encodes "go toward where the target sits."
- */
+/** Score a (sourceSide, targetSide) pair: `crosses * 100 + naturalDistance`,
+ *  lower is better. Obstacle crossings dominate; natural-side preference
+ *  breaks ties. Length is excluded — a curved bezier doesn't follow a
+ *  straight line, and the natural-side bonus already encodes direction. */
 function scoreSides(
   sample: EdgeSample,
   sourceSide: 'left' | 'right',
@@ -242,13 +202,10 @@ export function routeEdges(
 ): RoutedEdge[] {
   const obstacles = options.obstacles ?? [];
 
-  // Pass 1: anchor selection (A) + (1) vertical-side + (2) obstacle-aware.
   const initial: InternalEdge[] = samples.map((s) => {
-    // "Stable" source/target points used for direction (= which side is
-    // closer / dominant axis). Prefer layout-time card centers when
-    // available so decisions don't flip mid-FLIP just because a DOM rect
-    // interpolated past a threshold. Fall back to DOM card center, and
-    // ultimately the chip's own center for stack chips with no card.
+    // Prefer layout-time centers so direction decisions stay stable while
+    // DOM rects interpolate during FLIP. Fall back to card center, then
+    // chip center for stack chips with no enclosing card.
     const layoutSrc =
       s.sourceAddr !== null ? options.layoutCenters?.get(s.sourceAddr) : undefined;
     const layoutTgt = options.layoutCenters?.get(s.target);
@@ -269,20 +226,13 @@ export function routeEdges(
     const naturalSrc = naturalSourceSide(stableSrc.x, stableTgt.x);
     const naturalTgt = naturalTargetSide(stableSrc, stableTgt);
 
-    // Obstacle-aware selection: score every (source × target) combo and
-    // pick the lowest. The natural-side bonus in `scoreSides` keeps the
-    // natural pair winning when no alternative is meaningfully better.
     const excludeIds = new Set<string>();
     if (s.sourceAddr !== null) excludeIds.add(s.sourceAddr);
     excludeIds.add(s.target);
 
-    // Stack chips are pinned to chip.right. The address value sits in the
-    // rightmost column of the stack-frame row, and the heap is always to
-    // the right of the stack pane — leaving from chip.left and doubling
-    // back is far more visually confusing than crossing another stack
-    // pointer en route. Heap chips keep the adaptive choice because
-    // heap-to-heap edges legitimately need either side depending on
-    // which way the target sits relative to the source card.
+    // Stack chips are pinned to chip.right because the heap is always
+    // to the right of the stack pane — letting obstacle scoring choose
+    // chip.left would put the arrow's origin off-axis from the address.
     const sourceSidesToTry: Array<'left' | 'right'> = s.sourceCard
       ? SOURCE_SIDES
       : ['right'];
@@ -322,12 +272,8 @@ export function routeEdges(
     };
   });
 
-  // Pass 2: per-(target, targetSide) port distribution (B + C).
-  //
-  // When multiple arrows arrive at the same target on the same side,
-  // spread them along the target's vertical extent (left/right entries)
-  // or horizontal extent (top/bottom entries). Prevents pile-up at a
-  // single anchor point.
+  // Spread arrows that converge on the same (target, side) so they don't
+  // pile up at a single anchor point.
   const targetGroups = new Map<string, InternalEdge[]>();
   for (const e of initial) {
     const key = `${e.target}::${e.targetSide}`;
@@ -343,7 +289,7 @@ export function routeEdges(
     const tgt = group[0]!.targetEl;
     const side = group[0]!.targetSide;
     if (side === 'left' || side === 'right') {
-      // Sort by source y so within-cluster crossings are minimised.
+      // Sort by source y to minimise within-cluster crossings.
       group.sort((a, b) => a.y1 - b.y1);
       const margin = Math.min(8, tgt.height / 4);
       const yMin = tgt.top + margin;
@@ -353,7 +299,6 @@ export function routeEdges(
         group[i]!.y2 = yMin + t * (yMax - yMin);
       }
     } else {
-      // Top/bottom side: distribute across the target's HORIZONTAL extent.
       group.sort((a, b) => a.x1 - b.x1);
       const margin = Math.min(8, tgt.width / 4);
       const xMin = tgt.left + margin;

@@ -16,10 +16,9 @@ afterEach(() => {
 });
 
 describe('AdminPage — server-denied 403 collapses to neutral empty state', () => {
-  // Regression: a forged me.isAdmin=true (e.g. via DevTools) renders the
-  // panel until the first fetch lands. The first fetch must hit a real 403
-  // and flip the page into the SAME neutral empty state we show signed-out
-  // visitors — no admin table, no leaked error body.
+  // A forged me.isAdmin=true must lose to the first server response.
+  // The 403 path lands in the same neutral state as signed-out users
+  // and never surfaces the server body.
   it('renders the unified empty state when fetchAdminFlags returns 403', async () => {
     const fetchSpy = vi.spyOn(global, 'fetch').mockResolvedValue(
       new Response('forbidden — admin only', { status: 403 }),

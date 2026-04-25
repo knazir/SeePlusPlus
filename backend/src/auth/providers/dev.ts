@@ -20,11 +20,8 @@ export class DevAuthProvider implements AuthProvider {
     }
 
     async exchangeCodeForProfile(): Promise<ProviderProfile> {
-        // Belt-and-braces: even though providers/index.ts triple-gates
-        // registration, refuse to mint a dev profile if NODE_ENV is anything
-        // other than "development". Protects against a future code path that
-        // imports + registers this provider directly without going through
-        // the gate.
+        // Defence-in-depth in addition to the registration gate in
+        // providers/index.ts.
         if (process.env.NODE_ENV !== "development") {
             throw new Error(
                 "DevAuthProvider invoked outside development — refusing",

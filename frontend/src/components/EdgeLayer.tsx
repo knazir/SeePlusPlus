@@ -13,40 +13,28 @@ import {
 } from '../viz/routeEdges';
 
 interface RenderEdge extends RoutedEdge {
-  /** When the active layout engine pre-routes edges (ELK), this carries
-   *  the engine's polyline in SVG-container-relative coordinates. The
-   *  renderer uses it directly instead of building a bezier. Absent for
-   *  dagre, which doesn't route edges. */
+  /** Engine-routed polyline in SVG-container-relative coords. Present when
+   *  the active layout engine pre-routes edges; absent otherwise. */
   polyline?: ReadonlyArray<{ x: number; y: number }>;
 }
 
 interface Props {
-  /** The element whose descendants carry the [data-ptr-target] / [data-heap-addr] attributes. */
+  /** Container whose descendants carry the [data-ptr-target] / [data-heap-addr] attributes. */
   containerRef: RefObject<HTMLElement | null>;
-  /**
-   * Optional element whose interior bounds clip the heap. If provided,
-   * edges whose source or target lives inside this element and sits
-   * outside its visible rect (e.g. panned offscreen) are dropped — we'd
-   * rather show no arrow than an arrow pointing into blank space.
-   */
+  /** Optional clipping element. Edges whose anchor point falls outside
+   *  this element's visible rect (e.g. panned offscreen) are dropped. */
   clipRef?: RefObject<HTMLElement | null>;
 }
 
 /**
- * Absolute SVG overlay that draws a curved arrow from every [data-ptr-target]
- * span to its matching [data-heap-addr] container. Targets equal to the
- * sentinel "null" are skipped.
+ * Absolute SVG overlay that draws an arrow from every [data-ptr-target]
+ * to its matching [data-heap-addr]. Targets equal to "null" are skipped.
  *
- * Geometry is DOM-dependent, so this is a layout-effect side-channel, not a
- * render-time computation. Triggers: ResizeObserver (container), MutationObserver
- * (descendant changes), step/trace change (via deps). For the FLIP window
- * after a step change we run a short rAF loop so edges follow the animating
- * nodes frame-by-frame — getBoundingClientRect reflects the animating
- * transform, so this Just Works.
- *
- * The actual side selection + port distribution logic lives in
- * `viz/routeEdges.ts` (pure, unit-tested). EdgeLayer is the DOM-measurement
- * + render shell around it.
+ * Geometry is DOM-dependent, so the work runs in a layout effect with a
+ * ResizeObserver + MutationObserver to recompute on changes, plus a short
+ * rAF follow during the FLIP window so edges track animating nodes
+ * frame-by-frame. Side-selection and port-distribution logic lives in
+ * `viz/routeEdges.ts`; EdgeLayer is the DOM-measurement + render shell.
  */
 export function EdgeLayer({ containerRef, clipRef }: Props) {
   const [edges, setEdges] = useState<RenderEdge[]>([]);
@@ -70,8 +58,7 @@ export function EdgeLayer({ containerRef, clipRef }: Props) {
         ),
       );
 
-    // Single-frame recompute — used by the ResizeObserver / MutationObserver
-    // subscriptions. Coalesces multiple signals into one rAF.
+    // Coalesce ResizeObserver/MutationObserver signals into one rAF.
     const schedule = () => {
       if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
       rafRef.current = requestAnimationFrame(() => {
@@ -80,8 +67,7 @@ export function EdgeLayer({ containerRef, clipRef }: Props) {
       });
     };
 
-    // Continuous follow during the FLIP window. Runs for FLIP_DURATION +
-    // a small buffer so edges catch the tail end of the eased animation.
+    // Track FLIP-animating nodes for the duration of the animation.
     let following = true;
     const followStart = performance.now();
     const follow = () => {
@@ -95,14 +81,10 @@ export function EdgeLayer({ containerRef, clipRef }: Props) {
 
     const ro = new ResizeObserver(schedule);
     ro.observe(container);
-    // Narrow the attribute filter to the attributes that actually change
-    // edge geometry (style for left/top from HeapGraph, and the data
-    // attributes that select source/target elements). Without the filter,
-    // every hover toggle of `data-highlighted` / `data-orphan` re-fires
-    // computeEdges + setEdges + a full re-render, which then writes
-    // data-highlighted on a path and re-fires the observer — a feedback
-    // loop coalesced by rAF but still wasteful and visibly costly on
-    // larger heaps.
+    // Limit observation to attributes that actually change edge geometry.
+    // Hover state and orphan flags are written as data attributes on the
+    // observed nodes; an unfiltered subtree observer would treat those as
+    // geometry changes and rebuild every edge per mouse-move.
     const mo = new MutationObserver(schedule);
     mo.observe(container, {
       childList: true,
@@ -185,13 +167,8 @@ function pointInRect(x: number, y: number, r: DOMRect): boolean {
   return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom;
 }
 
-/**
- * Catmull-Rom-to-cubic-Bezier smoothing through a polyline. Each input
- * point is preserved exactly (the path visits them in order); the corners
- * between segments are rounded off. Boundary tangents are zero (we
- * duplicate endpoints) so the path enters and leaves the first/last
- * waypoint cleanly without overshoot.
- */
+/** Catmull-Rom → cubic Bezier smoothing. Visits every waypoint; rounds
+ *  the corners. Endpoints are duplicated to zero out boundary tangents. */
 function smoothPolyline(pts: ReadonlyArray<{ x: number; y: number }>): string {
   let d = `M ${pts[0]!.x},${pts[0]!.y}`;
   for (let i = 0; i < pts.length - 1; i++) {
@@ -208,27 +185,20 @@ function smoothPolyline(pts: ReadonlyArray<{ x: number; y: number }>): string {
   return d;
 }
 
-/**
- * Build an address → element lookup map from a single tree walk, with the
- * priority order: heap block > visible stack local > stack frame containing
- * the address. Lower-priority entries don't overwrite higher-priority ones.
- * Replaces three querySelector calls per pointer (was O(N×3 walks)) with
- * one walk per render cycle.
- */
+/** Address → element lookup with priority: heap block > visible stack
+ *  local > stack frame containing the address. */
 function buildTargetMap(container: HTMLElement): Map<string, HTMLElement> {
   const map = new Map<string, HTMLElement>();
-  // Pass 1: heap blocks (highest priority).
   for (const el of container.querySelectorAll<HTMLElement>('[data-heap-addr]')) {
     const k = el.getAttribute('data-heap-addr');
     if (k && !map.has(k)) map.set(k, el);
   }
-  // Pass 2: stack locals — only fill in addresses we don't already have.
   for (const el of container.querySelectorAll<HTMLElement>('[data-stack-addr]')) {
     const k = el.getAttribute('data-stack-addr');
     if (k && !map.has(k)) map.set(k, el);
   }
-  // Pass 3: collapsed stack frames containing the target. data-stack-contains
-  // is a space-separated list, so we expand each value to its constituents.
+  // data-stack-contains is a space-separated list of addresses contained
+  // by a collapsed stack frame.
   for (const el of container.querySelectorAll<HTMLElement>('[data-stack-contains]')) {
     const list = el.getAttribute('data-stack-contains');
     if (!list) continue;
@@ -271,11 +241,9 @@ function computeEdges(
   const layoutEdges = hints?.edges;
   const worldOrigin = hints?.worldOrigin;
 
-  // Phase 1: collect EdgeSamples from the DOM. Pure measurement only — no
-  // routing decisions here, that's routeEdges' job. We keep the source/
-  // target HTMLElements alongside the samples so the post-routing clip
-  // pass can ask DOM "is this inside the clip container?" without
-  // muddying the pure module's input shape.
+  // Collect samples from the DOM. We keep the source and target elements
+  // alongside the measured rects so the clipping pass below can do
+  // contains() checks without having to re-query.
   const enriched: SampleWithEls[] = [];
   for (let i = 0; i < ptrs.length; i++) {
     const p = ptrs[i]!;
@@ -301,9 +269,8 @@ function computeEdges(
     });
   }
 
-  // Collect obstacle rects: every heap card and stack frame the routing
-  // pass should avoid crossing. Per-edge filtering of source/target is
-  // handled inside routeEdges via the id field, so we pass the full set.
+  // Obstacles for routing: every heap card and stack frame. routeEdges
+  // filters out the source's and target's own rects via the id field.
   const obstacles: CardRect[] = [];
   for (const el of container.querySelectorAll<HTMLElement>('[data-heap-addr]')) {
     const id = el.getAttribute('data-heap-addr');
@@ -316,23 +283,15 @@ function computeEdges(
     obstacles.push({ id, ...toMeasured(el.getBoundingClientRect()) });
   }
 
-  // Phase 2: pure routing pass — chip-side / target-side / port distribution
-  // / obstacle-aware fallback.
   const routed = routeEdges(
     enriched.map((e) => e.sample),
     { layoutCenters, obstacles },
   );
 
-  // Phase 3: clipping + container-relative coordinate translation. Clipping
-  // happens against the FINAL routed anchor points so off-pan edges drop
-  // even though part of the card may still be visible.
-  //
-  // ELK enrichment: when the active layout engine routes edges (ELK fills
-  // `layoutEdges`), we attach the engine's polyline to each edge so the
-  // renderer can draw it directly instead of synthesizing a bezier. The
-  // chip remains visibly the source — we prepend the chip's anchor as the
-  // first polyline point so the path starts AT the chip, then follows
-  // ELK's routed channels through the canvas.
+  // Clip against final routed anchor points (so off-pan edges drop even
+  // when part of the card is still visible) and attach engine-routed
+  // polylines from the layout when present, prepended with the chip
+  // anchor so the path still visibly originates at the chip.
   const out: RenderEdge[] = [];
   for (let idx = 0; idx < routed.length; idx++) {
     const r = routed[idx]!;
@@ -346,21 +305,18 @@ function computeEdges(
     if (layoutEdges && worldOrigin && sample.sourceAddr !== null) {
       const elk = layoutEdges.get(`${sample.sourceAddr}->${sample.target}`);
       if (elk) {
-        // ELK's points are in world coords (heap-graph-local, top-left
-        // origin). Convert to SVG-container-relative.
+        // Engine points are in heap-local world coords; convert to
+        // SVG-container-relative.
         const dx = worldOrigin.x - cRect.left;
         const dy = worldOrigin.y - cRect.top;
         const elkPath = elk.points.map((p) => ({ x: p.x + dx, y: p.y + dy }));
-        // Sanity-check: the polyline's last point should land somewhere
-        // inside the target's current bounding rect. If it doesn't, the
-        // hints are stale (mid-step transition before the new layout has
-        // published) and we drop them — geometry routing draws a
-        // correct-but-plain bezier in the meantime.
+        // Drop polylines whose last point doesn't land inside the
+        // current target rect — happens when hints lag a step change.
         const last = elkPath[elkPath.length - 1]!;
         const tgtClient = sample.targetEl;
         const lastClientX = last.x + cRect.left;
         const lastClientY = last.y + cRect.top;
-        const TOL = 8; // small margin for rounding / engine off-by-ones
+        const TOL = 8;
         const inside =
           lastClientX >= tgtClient.left - TOL &&
           lastClientX <= tgtClient.right + TOL &&
@@ -399,16 +355,9 @@ function edgePath(
   },
   routing: PointerRouting,
 ): string {
-  // ELK-routed polylines feed into the curved branch — but ELK with
-  // `edgeRouting: POLYLINE` returns straight segments, so rendering them
-  // verbatim looks like straight lines under "curved." We use ELK's
-  // polyline as routing waypoints and smooth them into a curve:
-  //   - 2-point polylines (no engine bend) fall through to the geometry
-  //     curved-bezier — that knows about chip/target sides and produces
-  //     a proper bend even between vertically aligned endpoints.
-  //   - 3+ point polylines (ELK actually bent around something) get a
-  //     Catmull-Rom-to-cubic-Bezier smoothing that visits each waypoint
-  //     while rounding off the corners.
+  // Engine polylines arrive as straight segments. Smooth 3+ point paths
+  // through their bend points; 2-point polylines fall through to the
+  // geometry bezier so straight-segment edges still render as curves.
   if (routing === 'curved' && e.polyline && e.polyline.length >= 3) {
     return smoothPolyline(e.polyline);
   }
@@ -416,11 +365,8 @@ function edgePath(
     return `M ${e.x1},${e.y1} L ${e.x2},${e.y2}`;
   }
   if (routing === 'orthogonal') {
-    // Path shape depends on the target side. Horizontal entries (left/right)
-    // bend through a midX; vertical entries (top/bottom) need a different
-    // shape — the chip exits horizontally first so the path doesn't graze
-    // through the source card, then drops/rises vertically to align with
-    // the target column, then enters from above/below.
+    // For top/bottom entries the path exits horizontally before bending
+    // vertically; horizontal entries bend through a midX.
     if (e.targetSide === 'top' || e.targetSide === 'bottom') {
       const horizOff = e.sourceSide === 'right' ? 24 : -24;
       const cornerX = e.x1 + horizOff;
@@ -430,15 +376,9 @@ function edgePath(
     const midX = e.x1 + (e.x2 - e.x1) / 2;
     return `M ${e.x1},${e.y1} L ${midX},${e.y1} L ${midX},${e.y2} L ${e.x2},${e.y2}`;
   }
-  // Curved bezier. Control handles pull outward from the chosen side on
-  // each endpoint:
-  //   sourceSide=right ⇒ c1 to the right of source
-  //   sourceSide=left  ⇒ c1 to the left of source
-  //   targetSide=left  ⇒ c2 to the left of target  (horizontal approach)
-  //   targetSide=right ⇒ c2 to the right of target (horizontal approach)
-  //   targetSide=top   ⇒ c2 above target          (vertical approach)
-  //   targetSide=bottom⇒ c2 below target          (vertical approach)
-  // Source side is always horizontal because chips are horizontal pills.
+  // Cubic bezier. Source handle is always horizontal (chip is a pill);
+  // target handle pulls outward from the chosen side so the curve enters
+  // from the right direction.
   const dx = Math.max(24, Math.abs(e.x2 - e.x1) * 0.5);
   const dy = Math.max(24, Math.abs(e.y2 - e.y1) * 0.5);
   const c1x = e.sourceSide === 'right' ? e.x1 + dx : e.x1 - dx;

@@ -42,9 +42,6 @@ export class WorkspaceError extends Error {
   }
 }
 
-// Threw out 8 near-identical 6-line "if (!res.ok) { body = await res.text…
-// throw new WorkspaceError(res.status, body || `${verb} ${url} failed`); }"
-// blocks. Rule of three was met twice over.
 async function ensureOkWorkspace(res: Response, label: string): Promise<Response> {
   if (res.ok) return res;
   const body = await res.text().catch(() => '');

@@ -3,15 +3,10 @@ import { useAppStore } from '../store';
 import { useAnyModalOpen } from '../components/Modal';
 
 /**
- * Global keyboard shortcuts for trace navigation. Attaches to window; skips
- * when focus is inside the code editor or any text input so the user can type
- * arrow keys and spaces without triggering scrubbing. ⌘↵ / Ctrl↵ re-runs;
- * EditorPane has its own copy for when the editor IS focused.
- *
- * Globally suppressed while any modal is open — Space/Arrow keys in a
- * confirm dialog should activate buttons / move focus, not scrub the
- * timeline; ⌘K should not stack a second Examples modal on top of the
- * existing one.
+ * Global keyboard shortcuts for trace navigation. Attaches to window;
+ * skipped when focus is inside the editor / any input so typing isn't
+ * captured. Suppressed entirely while any modal is open. ⌘↵/Ctrl↵
+ * re-runs (EditorPane has its own copy for when CM is focused).
  */
 export function useGlobalShortcuts() {
   const stepForward = useAppStore((s) => s.stepForward);
@@ -25,7 +20,7 @@ export function useGlobalShortcuts() {
     const onKey = (e: KeyboardEvent) => {
       if (anyModalOpen) return;
 
-      // ⌘K opens Examples even from inside the editor — that's the point of it.
+      // ⌘K opens Examples from anywhere, including inside the editor.
       if ((e.metaKey || e.ctrlKey) && (e.key === 'k' || e.key === 'K')) {
         e.preventDefault();
         openModal('examples');
@@ -68,7 +63,6 @@ function shouldIgnore(target: EventTarget | null): boolean {
   const tag = target.tagName;
   if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return true;
   if (target.isContentEditable) return true;
-  // CodeMirror's editable surface uses contenteditable; belt-and-suspenders.
   if (target.closest('.cm-editor')) return true;
   return false;
 }

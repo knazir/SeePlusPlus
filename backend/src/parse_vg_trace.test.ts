@@ -20,12 +20,8 @@ function ep(line: number, funcName: string, stack: Frame[]): any {
 }
 
 describe("finalizeTrace — pass 5 (skip extraneous step after return)", () => {
-  // Regression test for the frame_id/frameId typo bug. Before the fix, pass 5
-  // compared `.frame_id` (snake_case) against frames emitted with `frameId`
-  // (camelCase), which made the comparison `undefined === undefined === true`
-  // and silently weakened the optimization to "delete next step whenever
-  // line+funcName match". A "return from f(); call g() on the same source
-  // line" sequence — which is legitimate, not extraneous — was being eaten.
+  // The frameId guard exists so a "return from f(); call g() on the same
+  // line" sequence — legitimate, not extraneous — is preserved.
   it("does NOT delete a step when the post-return frame is a *different* frame on the same line", () => {
     const points = [
       // main(line=10) calls f()
@@ -55,11 +51,9 @@ describe("finalizeTrace — pass 5 (skip extraneous step after return)", () => {
     expect(lines).toEqual(["main:10", "f:20", "main:10", "g:30"]);
   });
 
-  // Counter-example: the case the optimization is meant to delete — when the
-  // post-return step lands at the same line in the same caller frame as a
-  // genuinely extraneous follow-up. frameIds match and funcNames match across
-  // cur and nxt, so pass 5 should delete cur. Locks in the optimization
-  // behavior so a future "fix" doesn't accidentally disable it.
+  // Locks in the actual optimisation: when the post-return step lands at
+  // the same caller frame and line as a genuinely extraneous follow-up,
+  // it should be dropped.
   it("DOES delete the extraneous post-return step when caller frame + line match and funcNames coincide", () => {
     // main(line=5) calls helper f(line=8); on return we land back at line 5
     // in main, and the follow-up step is also in main. The middle "main:5"
@@ -85,11 +79,8 @@ describe("finalizeTrace — pass 5 (skip extraneous step after return)", () => {
     expect(sequence).not.toContain("stepLine:main:5");
   });
 
-  // Discriminating regression test for the frame_id/frameId typo. Builds the
-  // post-return shape such that line + funcName guards both pass, but
-  // curTop.frameId !== prevCaller.frameId. With the typo (`.frame_id`), both
-  // sides are `undefined === undefined === true` and cur is wrongly deleted.
-  // With the fix, the frame mismatch correctly preserves cur.
+  // Discriminating case: line + funcName guards both pass, but the
+  // top frames differ. The frameId guard must preserve cur.
   it("does NOT delete cur when curTop and prevCaller are different frames at the same line", () => {
     // Post-return shape with a frame swap: prev's caller frame had id 0xA,
     // but cur's top frame has id 0xB at the same line. (Synthetic — bypasses

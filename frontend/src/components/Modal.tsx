@@ -25,12 +25,9 @@ const FOCUSABLE_SELECTOR = [
   '[tabindex]:not([tabindex="-1"])',
 ].join(', ');
 
-// Registry of open modals, in LIFO order. Used so:
-//   (1) only the top-of-stack modal handles Esc — without this, two stacked
-//       modals would both respond and the underlying one would close while
-//       the visible one stayed open;
-//   (2) global keyboard shortcuts (Space/Arrow/Cmd+K) can detect that a
-//       modal is open and step out of the way.
+// LIFO stack of open modals. Used to scope Esc to the topmost modal and
+// to let global keyboard shortcuts step out of the way while any modal
+// is open.
 type ModalCloser = () => void;
 const stack: ModalCloser[] = [];
 const subscribers = new Set<() => void>();
@@ -47,8 +44,7 @@ function popModal(close: ModalCloser) {
   notify();
 }
 
-/** Returns true if any modal is currently mounted. Subscribes the calling
- *  hook to changes so it re-runs when the stack flips empty/non-empty. */
+/** True while any modal is mounted. Re-renders the caller on transitions. */
 export function useAnyModalOpen(): boolean {
   const [open, setOpen] = useState(stack.length > 0);
   useEffect(() => {
@@ -62,22 +58,18 @@ export function useAnyModalOpen(): boolean {
   return open;
 }
 
-/** Simple overlay + centered card, rendered through a portal so the modal
- *  isn't trapped by `transform`/`overflow:hidden` on an ancestor. Click-
- *  outside + Esc close. Esc only fires for the top-of-stack modal. Traps
- *  focus inside the card while open and restores focus to the previously-
- *  focused element when closed. Uses `aria-labelledby` against the visible
- *  heading so screen readers don't double-announce the title. */
+/** Overlay + centered card rendered through a portal (so it escapes any
+ *  transformed/overflow:hidden ancestor). Click-outside + Esc close, with
+ *  Esc scoped to the topmost modal. Traps focus while open and restores
+ *  it on close. Labelled by the visible heading via aria-labelledby. */
 export function Modal({ title, onClose, children, 'data-testid': testid, size = 'md' }: Props) {
   const cardRef = useRef<HTMLDivElement | null>(null);
   const titleId = useId();
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
 
-  // Register this modal in the stack on mount so Esc + other-modal-checks
-  // know about it. The same `closer` reference is used both for stack
-  // identity (top-of-stack check) and for the Esc handler so the stack-top
-  // comparison lines up.
+  // The same closer reference is used for both the stack identity and the
+  // Esc handler so the top-of-stack comparison lines up.
   const closerRef = useRef<ModalCloser | null>(null);
   if (closerRef.current === null) {
     closerRef.current = () => onCloseRef.current();
@@ -88,9 +80,7 @@ export function Modal({ title, onClose, children, 'data-testid': testid, size = 
     return () => popModal(closer);
   }, []);
 
-  // Esc handler: only fires on the top-of-stack modal. Without this guard,
-  // two stacked modals both call onClose on Esc and the underlying one
-  // closes while the user expected only the visible one to.
+  // Only the top-of-stack modal handles Esc.
   useEffect(() => {
     const closer = closerRef.current!;
     const onKey = (e: KeyboardEvent) => {
@@ -103,10 +93,7 @@ export function Modal({ title, onClose, children, 'data-testid': testid, size = 
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 
-  // Focus management: on mount, move focus to the first focusable element
-  // inside the card (falling back to the card itself). On unmount, restore
-  // focus to whatever was focused before the modal opened — so dismissing
-  // doesn't dump the user back at <body>, mid-keyboard-flow.
+  // Move focus into the card on mount, restore on unmount.
   useEffect(() => {
     const previouslyFocused = document.activeElement as HTMLElement | null;
     const card = cardRef.current;
@@ -176,8 +163,7 @@ export function Modal({ title, onClose, children, 'data-testid': testid, size = 
     </div>
   );
 
-  // Portal to <body> so the modal escapes any transformed/overflow-hidden
-  // ancestor. SSR-safe guard: createPortal needs a DOM target.
+  // SSR guard — createPortal requires a DOM target.
   if (typeof document === 'undefined') return overlay;
   return createPortal(overlay, document.body);
 }

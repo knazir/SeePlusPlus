@@ -95,10 +95,8 @@ describe('useAppStore — workspace + execution', () => {
   });
 
   it('run() leaves lastRunCode null when the user types between dispatch and resolution', async () => {
-    // Race between run-in-flight and user editing. The resolved trace IS for
-    // sentCode, but the editor has moved on. useIsStale must fire true so the
-    // stale banner shows — even if the user happened to type back to a value
-    // that coincidentally matches some prior lastRunCode.
+    // The resolved trace is for sentCode but the editor has moved on;
+    // useIsStale must fire regardless of what the user typed.
     let release: (r: Response) => void = () => {};
     const pending = new Promise<Response>((resolve) => {
       release = resolve;

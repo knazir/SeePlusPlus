@@ -1,10 +1,6 @@
-// Admin panel: table of feature flags with inline toggles. Intentionally
-// minimal — add / toggle / delete / reload, nothing else. If a second kind
-// of admin surface lands (user management, audit log), make this a subpage.
-//
-// Route-gated: /admin returns a 403-ish "not found" for non-admins. We
-// render the same empty state for "signed out" and "signed in but not
-// admin" so we don't advertise the existence of the panel to passers-by.
+// Admin panel: feature-flag table with inline toggles. Renders the same
+// neutral empty state for signed-out users, signed-in-but-not-admin, and
+// any 401/403/404 from the admin API — no admin existence is leaked.
 import { useEffect, useState } from 'react';
 import { useAppStore } from '../store';
 import {
@@ -17,11 +13,9 @@ import {
 } from '../api/client';
 import { Modal } from './Modal';
 
-// Server is the source of truth: classify any 401/403/404 from an admin
-// endpoint as "not available," matching the unauthenticated empty state
-// exactly. A forged `me.isAdmin = true` in DevTools would still hit a real
-// 403 on the first fetch and land here. Other errors map to a neutral
-// generic message — the raw server body is never surfaced to UI.
+// Server-issued 401/403/404 collapse to the neutral "not available"
+// state. Other errors map to a generic message; raw server bodies are
+// never surfaced.
 function classifyAdminError(err: unknown): { forbidden: boolean; message: string } {
   if (err instanceof AdminApiError && (err.status === 401 || err.status === 403 || err.status === 404)) {
     return { forbidden: true, message: '' };
@@ -40,8 +34,6 @@ export function AdminPage() {
   const [loading, setLoading] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<AdminFlag | null>(null);
-  // Server-said-no overrides the client-side `me.isAdmin` check, so a forged
-  // store value collapses to the same neutral empty state on first fetch.
   const [serverDeniedAccess, setServerDeniedAccess] = useState(false);
 
   const reload = () => {
@@ -64,7 +56,6 @@ export function AdminPage() {
     reload();
   }, [authChecked, me?.isAdmin]);
 
-  // Lock render if we don't know yet whether the user is an admin.
   if (!authChecked) {
     return (
       <main className="flex min-h-0 flex-1 items-center justify-center p-8">
@@ -73,9 +64,6 @@ export function AdminPage() {
     );
   }
 
-  // Unified empty state — signed-out, signed-in-but-not-admin, or "the
-  // server told us no" all land here. We don't leak "you're just not an
-  // admin" publicly.
   if (!me?.isAdmin || serverDeniedAccess) {
     return (
       <main

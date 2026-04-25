@@ -1,15 +1,7 @@
-// Dagre-backed layout engine. The legacy implementation that v2 has shipped
-// with — fast, sync internally, no edge routing.
-//
-// `acyclicer: 'greedy'` is essential — heap graphs regularly contain cycles
-// (doubly-linked lists, back-pointers, circular refs). Dagre's greedy
-// feedback-arc-set pass reverses a minimal set of edges so the graph can
-// be laid out as a DAG, then unreverses them, so cyclic pointers render
-// instead of throwing.
-//
-// Disconnected components (multiple unrelated heap structures at the same
-// step) lay out independently and dagre packs them into a single bounding
-// box — matches legacy behavior out of the box.
+// Dagre-backed layout. Sync internally; doesn't route edges. The greedy
+// acyclicer is required because heap graphs regularly contain cycles
+// (doubly-linked lists, back-pointers); without it the layout would
+// throw on those structures.
 import dagre from '@dagrejs/dagre';
 import { collectPointers } from '../reachability';
 import {

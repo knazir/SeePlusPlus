@@ -152,7 +152,6 @@ function processRecord(allExecutionPoints: ExecutionPoint[], lines: string[]): b
 
 // - Remove frames with 0x0 FP or ??? function
 // - Remove duplicates, identify call/return, skip pre-main, etc.
-// Exported for unit tests.
 //------------------------------------------------------------------------------
 export function finalizeTrace(
     allExecutionPoints: ExecutionPoint[],
