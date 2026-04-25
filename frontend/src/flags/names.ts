@@ -10,6 +10,10 @@
 export const FLAGS = {
   /** Gates the in-product tutor panel + breadcrumb + topbar button. */
   TUTOR_PANEL: 'tutor-panel',
+  /** Shows the v2-cutover banner above the topbar. Defaults true so the
+   *  banner shows without admin action at cutover; flip to false in the
+   *  admin panel to retire it. */
+  BANNER_V2_CUTOVER: 'banner-v2-cutover',
 } as const;
 
 export type FlagName = (typeof FLAGS)[keyof typeof FLAGS];
