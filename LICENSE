@@ -19,13 +19,3 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
-----
-
-The `code-runner/SPP-Valgrind/` submodule is a derivative of GNU Valgrind and
-is licensed under the GNU General Public License (GPL). See
-`code-runner/SPP-Valgrind/COPYING` for that license. The MIT license above
-applies to all other code in this repository — the See++ application itself,
-its build / deployment infrastructure, and the wrappers in
-`code-runner/local/` and `code-runner/lambda/` that invoke Valgrind as an
-external process.
