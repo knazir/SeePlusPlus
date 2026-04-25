@@ -212,15 +212,16 @@ function computeEdges(container: HTMLElement, clip: HTMLElement | null): Edge[] 
     const kind = p.getAttribute('data-ptr-kind') === 'ref' ? 'ref' : 'pointer';
     const s = p.getBoundingClientRect();
     const t = targetEl.getBoundingClientRect();
-    // Source → its right edge horizontally; target → the nearer vertical
-    // edge. For stack targets (which sit to the left of the heap) this
-    // means arrows point left-to-right when the source is a heap field
-    // and right-to-left when the source is also on the stack. The math
-    // works out identically using the visually-nearer target x.
-    const srcCenterX = s.left + s.width / 2;
-    const tgtCenterX = t.left + t.width / 2;
-    const targetX = srcCenterX < tgtCenterX ? t.left : t.right;
-    const sourceX = srcCenterX < tgtCenterX ? s.right : s.left;
+    // Always exit the chip's right edge (where the address value visibly
+    // ends) and enter the target's left edge. The previous "pick the nearer
+    // side" heuristic broke down for heap-to-heap arrows: a heap pointer
+    // chip's left edge sits INSIDE its enclosing card, so leftward exits
+    // were drawn over the card's own value/next rows. The bezier control
+    // points (c1 right of source, c2 left of target) keep the curve readable
+    // even when the target sits below-left of the source — the arrow sweeps
+    // out and around rather than through the source card body.
+    const sourceX = s.right;
+    const targetX = t.left;
     const sourceY = s.top + s.height / 2;
     const targetY = t.top + t.height / 2;
     // Clip: drop edges whose source or target point has been panned out of
