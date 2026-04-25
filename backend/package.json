@@ -24,6 +24,7 @@
     "express": "^4.21.2",
     "express-rate-limit": "^8.4.0",
     "express-session": "^1.19.0",
+    "helmet": "^8.1.0",
     "nanoid": "^5.1.9",
     "pg": "^8.20.0"
   },

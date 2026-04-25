@@ -2,6 +2,8 @@
 import cors from "cors";
 import crypto from "crypto";
 import express, { Express, Request, Response } from "express";
+import rateLimit from "express-rate-limit";
+import helmet from "helmet";
 
 import { closeDb, getPool, initDb } from "./db";
 import { registerProviders } from "./auth/providers";
@@ -35,25 +37,61 @@ const USER_CODE_FILE_PREFIX = process.env.USER_CODE_FILE_PREFIX || "main";
 // envs; trusting the proxy lets express-session's `secure` cookie decision
 // honor X-Forwarded-Proto.
 app.set("trust proxy", 1);
-app.use(express.json());
 
-const ALLOWED_ORIGIN_REGEX = new RegExp(process.env.ALLOWED_ORIGIN_REGEX || "");
+// Defense-in-depth headers. We don't render HTML from the API, so CSP would
+// be redundant, but the cheap defaults (X-Content-Type-Options, Referrer-
+// Policy, X-Frame-Options, etc.) are a free win. crossOriginResourcePolicy
+// is left at the default ("same-origin") because the API is only called
+// same-origin via the nginx proxy.
+app.use(helmet());
+
+// Cap request bodies on the JSON parser. /api/run accepts user source code
+// and the rest of the routes accept small JSON; 128KB is well above any
+// legitimate program we care to support and keeps oversize bodies from
+// reaching the runner.
+app.use(express.json({ limit: "128kb" }));
+
+const ALLOWED_ORIGIN_REGEX_RAW = process.env.ALLOWED_ORIGIN_REGEX;
+const ALLOWED_ORIGIN_REGEX = ALLOWED_ORIGIN_REGEX_RAW
+    ? new RegExp(ALLOWED_ORIGIN_REGEX_RAW)
+    : null;
+// Localhost reflection for dev when ALLOWED_ORIGIN_REGEX is unset. Reflecting
+// arbitrary origins with credentials:true is a foot-gun even on localhost — a
+// page in another tab can issue credentialed requests at the dev backend.
+const LOCALHOST_RE = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/;
 app.use(cors({
     origin: (origin, callback) => {
-        if (process.env.NODE_ENV !== "development") {
-            if (!origin || ALLOWED_ORIGIN_REGEX.test(origin)) {
-                callback(null, true);
-            } else {
-                callback(new Error(`CORS error: origin ${origin} not allowed`));
-            }
-        } else {
-            callback(null, true); // Allow all origins in development
+        if (!origin) {
+            // Same-origin / curl / server-to-server — let through.
+            callback(null, true);
+            return;
         }
+        if (ALLOWED_ORIGIN_REGEX && ALLOWED_ORIGIN_REGEX.test(origin)) {
+            callback(null, true);
+            return;
+        }
+        if (process.env.NODE_ENV === "development" && LOCALHOST_RE.test(origin)) {
+            callback(null, true);
+            return;
+        }
+        callback(new Error(`CORS error: origin ${origin} not allowed`));
     },
     methods: ["GET", "POST", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true
 }));
+
+// Rate-limit the runner. /api/run is the only endpoint that consumes real
+// resources (Docker container or Lambda invocation) and is unauthenticated;
+// the SHA-256 dedupe in deployed envs only helps for byte-identical code.
+// Workspaces already has its own limiter inside the router.
+const runRateLimit = rateLimit({
+    windowMs: 60_000,
+    max: 10,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: "rate limit exceeded — try again in a minute" },
+});
 
 // Sessions + OAuth providers are registered after initDb() in start() below
 // so the pool exists before connect-pg-simple tries to use it.
@@ -70,7 +108,7 @@ app.get("/api", (req: Request, res: Response) => {
 // Spins up a docker container to compile and run the provided C++ code under
 // Valgrind and return a trace.
 //------------------------------------------------------------------------------
-app.post("/api/run", async (req: Request, res: Response) => {
+app.post("/api/run", runRateLimit, async (req: Request, res: Response) => {
     const userCode: string | undefined = req.body.code;
     let preprocessedUserCode: string | undefined = userCode;
     if (userCode) {
