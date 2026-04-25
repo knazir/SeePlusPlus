@@ -109,16 +109,18 @@ Ordered from highest to lowest priority.
 
 
 ## License
-See++ is open source software, licensed under the GNU General Public License v2.0 (GPL-2.0).
+The See++ application — frontend, backend, infrastructure, and docs — is licensed under the MIT License. See [LICENSE](./LICENSE).
+
+The `code-runner/SPP-Valgrind/` submodule is a derivative of GNU Valgrind and remains under the GPL. See [`code-runner/SPP-Valgrind/COPYING`](./code-runner/SPP-Valgrind/COPYING) for that license.
+
+Earlier versions of this project carried a single GPL-2.0 license inherited from its dependence on Valgrind. After a 2025–2026 rewrite the See++ application no longer contains Valgrind code (it invokes the Valgrind binary as an external process), so we've split the licensing: MIT for everything we wrote, GPL for the Valgrind derivative.
 
 The name "See++" and the associated logo are separate from the code license.
-You’re welcome to use them to refer to the project, but not for commercial purposes or in a way that suggests endorsement or affiliation.
-
-For more details, see [LICENSE](./LICENSE) and [TRADEMARK](./TRADEMARK).
+You're welcome to use them to refer to the project, but not for commercial purposes or in a way that suggests endorsement or affiliation. See [TRADEMARK](./TRADEMARK).
 
 
 ## Acknowledgements
-This project is based on the modifications made by [@pgbovine](https://github.com/pgbovine) to Valgrind to trace C++ program execution. These modifications and the work on top of them can be found in our linked repo [SPP-Valgrind](https://github.com/knazir/SPP-Valgrind). This project is licensed under GPL-2.0 as a derivative work.
+This project is built on top of [@pgbovine](https://github.com/pgbovine)'s modifications to Valgrind for tracing C++ program execution. Those modifications and the work on top of them live in [SPP-Valgrind](https://github.com/knazir/SPP-Valgrind), which remains GPL-licensed.
 
 
 ## Maintainers
