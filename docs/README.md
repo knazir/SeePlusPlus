@@ -53,6 +53,24 @@ See++ is a web-based tool that helps students, educators, and developers underst
 - Verification and testing procedures
 - Troubleshooting deployment issues
 
+---
+
+### [OAuth Setup Runbook](./oauth-setup.md)
+**Wire Google OAuth for sign-in (local + deployed)**
+
+- Google Cloud Console project + client ID
+- Required redirect URIs per environment
+- Environment variables and Copilot secrets
+
+---
+
+### [Feature Flags](./feature-flags.md)
+**Backend-driven feature flag system**
+
+- Flag table + admin panel
+- Server-side `isEnabled()` and frontend `useFlag()`
+- Auto-create on first read
+
 ## Quick Navigation
 
 ### For New Contributors
@@ -74,8 +92,8 @@ See++ is a web-based tool that helps students, educators, and developers underst
 
 ```
 SeePlusPlus/
-├── frontend-legacy/          # React frontend (currently functional)
-├── frontend/                 # New frontend (TypeScript, in development)
+├── frontend/                 # React 19 + Vite + Tailwind + Zustand frontend (default)
+├── frontend-legacy/          # Original 2018 frontend, kept for reference
 ├── backend/                  # Node.js/TypeScript API server
 ├── code-runner/              # Isolated C++ execution environment
 ├── copilot/                  # AWS infrastructure as code
@@ -84,7 +102,9 @@ SeePlusPlus/
 │   ├── architecture.md      # System design overview
 │   ├── infrastructure.md    # AWS infrastructure guide
 │   ├── development.md       # Local development guide
-│   └── deployment.md        # AWS deployment guide
+│   ├── deployment.md        # AWS deployment guide
+│   ├── feature-flags.md     # Feature-flag system
+│   └── oauth-setup.md       # Google OAuth setup runbook
 └── localdev.sh              # Local development script
 ```
 
@@ -92,8 +112,8 @@ SeePlusPlus/
 
 | Component | Technology | Purpose |
 |-----------|------------|---------|
-| **Frontend (Legacy)** | React 16.x, CodeMirror, Konva.js | Interactive code editor and visualization |
-| **Frontend (New)** | React 19.x, Monaco Editor, TypeScript | Modern interactive interface |
+| **Frontend** | React 19, Vite, Tailwind, Zustand, CodeMirror 6 | Interactive code editor and visualization |
+| **Frontend (Legacy)** | React 16, CodeMirror 5, Konva.js | Original 2018 frontend, reference only |
 | **Backend** | Node.js, TypeScript, Express | API server and orchestration |
 | **Code Runner** | Docker, Modified Valgrind | Isolated C++ execution and tracing |
 | **Infrastructure** | AWS (ECS, S3, ECR), Copilot | Scalable cloud deployment |
@@ -105,8 +125,10 @@ SeePlusPlus/
 ```bash
 git clone https://github.com/knazir/SeePlusPlus.git
 cd SeePlusPlus
-./localdev.sh
-# Navigate to http://localhost:8000
+./localdev.sh up
+# Navigate to http://localhost:4000   (frontend)
+# Backend is at http://localhost:3000/api
+# (Legacy frontend, when enabled, is on http://localhost:8000)
 ```
 
 ### For Understanding the System
