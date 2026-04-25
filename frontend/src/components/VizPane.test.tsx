@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { VizPane } from './VizPane';
-import { HoverProvider } from '../viz/hoverContext';
+import { HoverProvider } from '../viz/HoverProvider';
 import { useAppStore } from '../store';
 import { LL_TRACE } from '../trace/fixtures';
 

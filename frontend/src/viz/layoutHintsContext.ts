@@ -1,13 +1,7 @@
 // Layout-time hints, published by HeapGraph and consumed by EdgeLayer.
 // Ref-backed (not state) because EdgeLayer has its own scheduler and
 // publishes shouldn't trigger React re-renders.
-import {
-  createContext,
-  useContext,
-  useRef,
-  type ReactNode,
-  type MutableRefObject,
-} from 'react';
+import { createContext, useContext, type MutableRefObject } from 'react';
 import type { RoutedLayoutEdge } from './layoutHeap';
 
 export interface LayoutHints {
@@ -21,18 +15,14 @@ export interface LayoutHints {
   worldOrigin: { x: number; y: number } | null;
 }
 
-const EMPTY: LayoutHints = {
+export const EMPTY_HINTS: LayoutHints = {
   centers: new Map(),
   edges: new Map(),
   worldOrigin: null,
 };
 
-const LayoutHintsCtx = createContext<MutableRefObject<LayoutHints> | null>(null);
-
-export function LayoutHintsProvider({ children }: { children: ReactNode }) {
-  const ref = useRef<LayoutHints>(EMPTY);
-  return <LayoutHintsCtx.Provider value={ref}>{children}</LayoutHintsCtx.Provider>;
-}
+export const LayoutHintsCtx =
+  createContext<MutableRefObject<LayoutHints> | null>(null);
 
 /** Producer side: HeapGraph calls this after each layoutHeap() pass. */
 export function usePublishLayoutHints(): (hints: LayoutHints) => void {

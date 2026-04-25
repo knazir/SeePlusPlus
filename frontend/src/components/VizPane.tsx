@@ -4,7 +4,7 @@ import { StackFrames } from './StackFrames';
 import { HeapGraph } from './HeapGraph';
 import { HeapViewport, type HeapViewportHandle } from './HeapViewport';
 import { EdgeLayer } from './EdgeLayer';
-import { LayoutHintsProvider } from '../viz/layoutHintsContext';
+import { LayoutHintsProvider } from '../viz/LayoutHintsProvider';
 import { kbd } from '../platform/kbd';
 
 export function VizPane() {

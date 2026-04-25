@@ -33,7 +33,6 @@ export function MyWorkspaces() {
   useEffect(() => {
     if (!authChecked || !me) return;
     reload();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authChecked, me]);
 
   const handleRename = async (slug: string, name: string | null) => {
