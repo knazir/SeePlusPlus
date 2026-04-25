@@ -276,10 +276,21 @@ export function routeEdges(
     if (s.sourceAddr !== null) excludeIds.add(s.sourceAddr);
     excludeIds.add(s.target);
 
+    // Stack chips are pinned to chip.right. The address value sits in the
+    // rightmost column of the stack-frame row, and the heap is always to
+    // the right of the stack pane — leaving from chip.left and doubling
+    // back is far more visually confusing than crossing another stack
+    // pointer en route. Heap chips keep the adaptive choice because
+    // heap-to-heap edges legitimately need either side depending on
+    // which way the target sits relative to the source card.
+    const sourceSidesToTry: Array<'left' | 'right'> = s.sourceCard
+      ? SOURCE_SIDES
+      : ['right'];
+
     let bestSrc: 'left' | 'right' = naturalSrc;
     let bestTgt: Side = naturalTgt;
     let bestScore = Infinity;
-    for (const src of SOURCE_SIDES) {
+    for (const src of sourceSidesToTry) {
       for (const tgt of TARGET_SIDES) {
         const score = scoreSides(
           s,

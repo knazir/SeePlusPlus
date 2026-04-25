@@ -1,20 +1,29 @@
-import { useLayoutEffect, useMemo, useRef } from 'react';
-import { useAppStore, useCurrentStep } from '../store';
+import { useEffect, useMemo, useRef } from 'react';
+import { useAppStore, useCurrentStep, useFlag } from '../store';
 import { HeapNode } from './HeapNode';
 import { captureRects, playEnter, playFlip } from '../anim/flip';
 import { orphanAddrs } from '../viz/reachability';
-import { layoutHeap, type NodeSize } from '../viz/layoutHeap';
+import {
+  getLayoutEngine,
+  type EngineName,
+  type NodeSize,
+  type RoutedLayoutEdge,
+} from '../viz/layout';
 import { usePublishLayoutHints } from '../viz/layoutHintsContext';
+import { FLAGS } from '../flags/names';
 
 /**
- * Heap graph renderer. Uses @dagrejs/dagre (rankdir TB, acyclicer: greedy)
- * to lay out every heap block per step, applying `position: absolute;
- * left/top` imperatively in a layout effect so the measure→place→paint
- * sequence is invisible to the user.
+ * Heap graph renderer. Measures every heap card, runs the configured
+ * layout engine (dagre by default; ELK behind the LAYOUT_ENGINE_ELK flag),
+ * applies `position: absolute; left/top` imperatively, and runs FLIP for
+ * step-to-step continuity.
  *
- * Positioning uses `left/top` so FLIP — which animates `transform` — stays
- * orthogonal and smoothly carries cards between step layouts. Enter
- * animations still apply to the inner article.
+ * Layout is async (the engine interface is `Promise<LayoutResult>` —
+ * dagre resolves immediately, ELK runs in a Web Worker). The first frame
+ * after a step change still has cards at their previous-step positions
+ * via inline style, so async resolve doesn't show a flash of unpositioned
+ * cards. FLIP captures `prev` rects in the same effect run, before
+ * applying new positions, so animation continues to work.
  */
 
 /** Find the animation target inside a heap node's outer wrapper. */
@@ -27,6 +36,8 @@ export function HeapGraph() {
   const stepIndex = useAppStore((s) => s.stepIndex);
   const heapDensity = useAppStore((s) => s.heapDensity);
   const trace = useAppStore((s) => s.trace);
+  const elkOn = useFlag(FLAGS.LAYOUT_ENGINE_ELK, false);
+  const engineName: EngineName = elkOn ? 'elk' : 'dagre';
 
   const elsRef = useRef<Map<string, HTMLElement>>(new Map());
   const prevRectsRef = useRef<Map<string, DOMRect>>(new Map());
@@ -41,7 +52,7 @@ export function HeapGraph() {
     [step],
   );
 
-  useLayoutEffect(() => {
+  useEffect(() => {
     if (!step) {
       prevRectsRef.current = new Map();
       prevAddrsRef.current = new Set();
@@ -50,56 +61,103 @@ export function HeapGraph() {
 
     // Trace identity changed: clear the FLIP state. Valgrind reuses
     // allocator addresses across runs, so without this the first render of
-    // a new trace would FLIP-animate cards "from" stale prior-run positions
-    // (because prevRectsRef still has those rects keyed by addr). The
-    // existing `if (!step)` branch only resets on null step; trace-flips
-    // mid-step keep step truthy.
+    // a new trace would FLIP-animate cards "from" stale prior-run positions.
     if (prevTraceRef.current !== trace) {
       prevRectsRef.current = new Map();
       prevAddrsRef.current = new Set();
       prevTraceRef.current = trace;
     }
 
-    // Measure every mounted card, compute a dagre layout, then apply
-    // top-left positions imperatively. Doing this in a layout effect keeps
-    // the two-pass measure-then-place dance invisible — the browser only
-    // paints the final positioned state.
+    // Measure every mounted card BEFORE awaiting layout — this captures
+    // current sizes for the engine and the "from" rects for FLIP.
     const sizes = new Map<string, NodeSize>();
     for (const [addr, el] of elsRef.current) {
       const r = el.getBoundingClientRect();
       sizes.set(addr, { w: r.width, h: r.height });
     }
-    const { positions, centers, width, height } = layoutHeap(entries, sizes, { density: heapDensity });
-    // Publish layout-time card centers for EdgeLayer's port-hint pass —
-    // gives stable side selection across FLIP animations.
-    publishLayoutHints(centers);
-    for (const [addr, el] of elsRef.current) {
-      const p = positions.get(addr);
-      if (!p) {
-        el.style.position = '';
-        el.style.left = '';
-        el.style.top = '';
-        continue;
-      }
-      el.style.position = 'absolute';
-      el.style.left = `${p.x}px`;
-      el.style.top = `${p.y}px`;
-    }
-    if (containerRef.current) {
-      containerRef.current.style.width = `${width}px`;
-      containerRef.current.style.height = `${height}px`;
-    }
+    const fromRects = captureRects(elsRef.current);
 
-    playFlip(prevRectsRef.current, elsRef.current);
+    // We deliberately do NOT clear the previous layout's hints here.
+    // Doing so caused a visible curved↔straight flicker on every step
+    // change: between this synchronous render and ELK's async resolve,
+    // EdgeLayer would fall back to geometry-routed beziers, then snap
+    // back to ELK polylines a frame later. EdgeLayer's per-edge
+    // endpoint sanity check handles individual stale polylines (drops
+    // any whose last point doesn't land inside the target's current
+    // rect), so leaving the previous hints in place during the async
+    // window is the right tradeoff.
 
-    for (const [addr, el] of elsRef.current) {
-      if (prevAddrsRef.current.has(addr)) continue;
-      playEnter(innerOf(el));
-    }
+    // Cancel-on-unmount or on dependency change: if the layout resolves
+    // after we've moved on, ignore its result.
+    let cancelled = false;
+    const engine = getLayoutEngine(engineName);
+    void engine
+      .layout({ entries, sizes, density: heapDensity })
+      .then((result) => {
+        if (cancelled) return;
 
-    prevRectsRef.current = captureRects(elsRef.current);
-    prevAddrsRef.current = new Set(elsRef.current.keys());
-  }, [stepIndex, step, entries, heapDensity, trace]);
+        // Publish layout-time hints for EdgeLayer to consume. The engine
+        // emits centers in HEAP-LOCAL coords (origin = heap container's
+        // top-left); routeEdges compares them against the chip's CLIENT-
+        // coord center, so we translate centers into client coords before
+        // publishing. ELK-routed edge polylines stay in world coords —
+        // EdgeLayer applies the worldOrigin offset itself for those.
+        const containerRect = containerRef.current?.getBoundingClientRect() ?? null;
+        const clientCenters = new Map<string, { x: number; y: number }>();
+        if (containerRect) {
+          for (const [addr, c] of result.centers) {
+            clientCenters.set(addr, {
+              x: c.x + containerRect.left,
+              y: c.y + containerRect.top,
+            });
+          }
+        }
+        publishLayoutHints({
+          centers: clientCenters,
+          edges: result.edges ?? new Map<string, RoutedLayoutEdge>(),
+          worldOrigin: containerRect
+            ? { x: containerRect.left, y: containerRect.top }
+            : null,
+        });
+
+        for (const [addr, el] of elsRef.current) {
+          const p = result.positions.get(addr);
+          if (!p) {
+            el.style.position = '';
+            el.style.left = '';
+            el.style.top = '';
+            continue;
+          }
+          el.style.position = 'absolute';
+          el.style.left = `${p.x}px`;
+          el.style.top = `${p.y}px`;
+        }
+        if (containerRef.current) {
+          containerRef.current.style.width = `${result.width}px`;
+          containerRef.current.style.height = `${result.height}px`;
+        }
+
+        playFlip(fromRects, elsRef.current);
+
+        for (const [addr, el] of elsRef.current) {
+          if (prevAddrsRef.current.has(addr)) continue;
+          playEnter(innerOf(el));
+        }
+
+        prevRectsRef.current = captureRects(elsRef.current);
+        prevAddrsRef.current = new Set(elsRef.current.keys());
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        // Log and leave existing positions in place; better to keep stale
+        // layout than crash the visualisation.
+        console.error('[HeapGraph] layout failed:', err);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [stepIndex, step, entries, heapDensity, trace, engineName, publishLayoutHints]);
 
   if (!step) return null;
   if (entries.length === 0) {
