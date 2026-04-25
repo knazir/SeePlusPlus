@@ -152,8 +152,9 @@ function processRecord(allExecutionPoints: ExecutionPoint[], lines: string[]): b
 
 // - Remove frames with 0x0 FP or ??? function
 // - Remove duplicates, identify call/return, skip pre-main, etc.
+// Exported for unit tests.
 //------------------------------------------------------------------------------
-function finalizeTrace(
+export function finalizeTrace(
     allExecutionPoints: ExecutionPoint[],
     endOfTraceErrorMessage?: string,
     shiftStdout?: number
@@ -273,7 +274,7 @@ function finalizeTrace(
           const curTop = cur.stackToRender[cur.stackToRender.length - 1];
           if (curTop &&
               prevCaller &&
-              curTop.frame_id === prevCaller.frame_id &&
+              curTop.frameId === prevCaller.frameId &&
               curTop.line === prevCaller.line &&
               cur.funcName === nxt.funcName) {
               cur.toDelete = true;
