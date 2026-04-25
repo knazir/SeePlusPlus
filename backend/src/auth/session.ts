@@ -38,9 +38,13 @@ export function buildSessionMiddleware(pool: Pool): RequestHandler | null {
         createTableIfMissing: false,
     });
 
-    // trust proxy is set on the Express app in index.ts so `secure` cookies
-    // work behind nginx / the ALB. Locally we stay on http, so secure: auto
-    // downgrades automatically.
+    // In production, force secure cookies — relying on `secure: "auto"` here
+    // is fragile against any deploy that mishandles X-Forwarded-Proto (e.g.,
+    // an ALB health-checking on HTTP, a reverse proxy forgetting the header).
+    // The cost of an explicit boolean is zero; the cost of a session cookie
+    // ever leaving on plaintext is high. trust proxy is set on the Express
+    // app in index.ts.
+    const isProd = process.env.NODE_ENV === "production";
     return session({
         name: "spp.sid",
         secret,
@@ -51,7 +55,7 @@ export function buildSessionMiddleware(pool: Pool): RequestHandler | null {
         cookie: {
             httpOnly: true,
             sameSite: "lax",
-            secure: "auto",
+            secure: isProd,
             maxAge: ONE_WEEK_MS,
         },
     });
