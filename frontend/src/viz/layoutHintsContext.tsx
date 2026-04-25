@@ -8,7 +8,7 @@ import {
   type ReactNode,
   type MutableRefObject,
 } from 'react';
-import type { RoutedLayoutEdge } from './layout';
+import type { RoutedLayoutEdge } from './layoutHeap';
 
 export interface LayoutHints {
   /** Card centers in client coords. */
