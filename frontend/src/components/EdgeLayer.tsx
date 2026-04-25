@@ -2,7 +2,7 @@ import { useLayoutEffect, useRef, useState, type RefObject } from 'react';
 import { useAppStore, type PointerRouting } from '../store';
 import { FLIP_DURATION, FLIP_FOLLOW_MARGIN } from '../anim/flip';
 import { useHover } from '../viz/hoverContext';
-import { useLayoutHints } from '../viz/layoutHintsContext';
+import { useLayoutHints, type LayoutHints } from '../viz/layoutHintsContext';
 import {
   routeEdges,
   type CardRect,
@@ -13,7 +13,11 @@ import {
 } from '../viz/routeEdges';
 
 interface RenderEdge extends RoutedEdge {
-  // Coordinates relative to the SVG container (cRect-relative).
+  /** When the active layout engine pre-routes edges (ELK), this carries
+   *  the engine's polyline in SVG-container-relative coordinates. The
+   *  renderer uses it directly instead of building a bezier. Absent for
+   *  dagre, which doesn't route edges. */
+  polyline?: ReadonlyArray<{ x: number; y: number }>;
 }
 
 interface Props {
@@ -62,7 +66,7 @@ export function EdgeLayer({ containerRef, clipRef }: Props) {
         computeEdges(
           container,
           clipRef?.current ?? null,
-          layoutHintsRef?.current.centers,
+          layoutHintsRef?.current ?? null,
         ),
       );
 
@@ -182,6 +186,29 @@ function pointInRect(x: number, y: number, r: DOMRect): boolean {
 }
 
 /**
+ * Catmull-Rom-to-cubic-Bezier smoothing through a polyline. Each input
+ * point is preserved exactly (the path visits them in order); the corners
+ * between segments are rounded off. Boundary tangents are zero (we
+ * duplicate endpoints) so the path enters and leaves the first/last
+ * waypoint cleanly without overshoot.
+ */
+function smoothPolyline(pts: ReadonlyArray<{ x: number; y: number }>): string {
+  let d = `M ${pts[0]!.x},${pts[0]!.y}`;
+  for (let i = 0; i < pts.length - 1; i++) {
+    const p0 = pts[i - 1] ?? pts[i]!;
+    const p1 = pts[i]!;
+    const p2 = pts[i + 1]!;
+    const p3 = pts[i + 2] ?? pts[i + 1]!;
+    const c1x = p1.x + (p2.x - p0.x) / 6;
+    const c1y = p1.y + (p2.y - p0.y) / 6;
+    const c2x = p2.x - (p3.x - p1.x) / 6;
+    const c2y = p2.y - (p3.y - p1.y) / 6;
+    d += ` C ${c1x},${c1y} ${c2x},${c2y} ${p2.x},${p2.y}`;
+  }
+  return d;
+}
+
+/**
  * Build an address → element lookup map from a single tree walk, with the
  * priority order: heap block > visible stack local > stack frame containing
  * the address. Lower-priority entries don't overwrite higher-priority ones.
@@ -232,7 +259,7 @@ interface SampleWithEls {
 function computeEdges(
   container: HTMLElement,
   clip: HTMLElement | null,
-  layoutCenters: ReadonlyMap<string, { x: number; y: number }> | undefined,
+  hints: LayoutHints | null,
 ): RenderEdge[] {
   const cRect = container.getBoundingClientRect();
   const clipRect = clip?.getBoundingClientRect() ?? null;
@@ -240,6 +267,9 @@ function computeEdges(
     container.querySelectorAll<HTMLElement>('[data-ptr-target]'),
   );
   const targetMap = buildTargetMap(container);
+  const layoutCenters = hints?.centers;
+  const layoutEdges = hints?.edges;
+  const worldOrigin = hints?.worldOrigin;
 
   // Phase 1: collect EdgeSamples from the DOM. Pure measurement only — no
   // routing decisions here, that's routeEdges' job. We keep the source/
@@ -296,46 +326,138 @@ function computeEdges(
   // Phase 3: clipping + container-relative coordinate translation. Clipping
   // happens against the FINAL routed anchor points so off-pan edges drop
   // even though part of the card may still be visible.
+  //
+  // ELK enrichment: when the active layout engine routes edges (ELK fills
+  // `layoutEdges`), we attach the engine's polyline to each edge so the
+  // renderer can draw it directly instead of synthesizing a bezier. The
+  // chip remains visibly the source — we prepend the chip's anchor as the
+  // first polyline point so the path starts AT the chip, then follows
+  // ELK's routed channels through the canvas.
   const out: RenderEdge[] = [];
   for (let idx = 0; idx < routed.length; idx++) {
     const r = routed[idx]!;
-    const { sourceEl, targetEl } = enriched[idx]!;
+    const { sourceEl, targetEl, sample } = enriched[idx]!;
     if (clip && clipRect) {
       if (clip.contains(sourceEl) && !pointInRect(r.x1, r.y1, clipRect)) continue;
       if (clip.contains(targetEl) && !pointInRect(r.x2, r.y2, clipRect)) continue;
     }
+
+    let polyline: ReadonlyArray<{ x: number; y: number }> | undefined;
+    if (layoutEdges && worldOrigin && sample.sourceAddr !== null) {
+      const elk = layoutEdges.get(`${sample.sourceAddr}->${sample.target}`);
+      if (elk) {
+        // ELK's points are in world coords (heap-graph-local, top-left
+        // origin). Convert to SVG-container-relative.
+        const dx = worldOrigin.x - cRect.left;
+        const dy = worldOrigin.y - cRect.top;
+        const elkPath = elk.points.map((p) => ({ x: p.x + dx, y: p.y + dy }));
+        // Sanity-check: the polyline's last point should land somewhere
+        // inside the target's current bounding rect. If it doesn't, the
+        // hints are stale (mid-step transition before the new layout has
+        // published) and we drop them — geometry routing draws a
+        // correct-but-plain bezier in the meantime.
+        const last = elkPath[elkPath.length - 1]!;
+        const tgtClient = sample.targetEl;
+        const lastClientX = last.x + cRect.left;
+        const lastClientY = last.y + cRect.top;
+        const TOL = 8; // small margin for rounding / engine off-by-ones
+        const inside =
+          lastClientX >= tgtClient.left - TOL &&
+          lastClientX <= tgtClient.right + TOL &&
+          lastClientY >= tgtClient.top - TOL &&
+          lastClientY <= tgtClient.bottom + TOL;
+        if (inside) {
+          polyline = [
+            { x: r.x1 - cRect.left, y: r.y1 - cRect.top },
+            ...elkPath.slice(1),
+          ];
+        }
+      }
+    }
+
     out.push({
       ...r,
       x1: r.x1 - cRect.left,
       y1: r.y1 - cRect.top,
       x2: r.x2 - cRect.left,
       y2: r.y2 - cRect.top,
+      polyline,
     });
   }
   return out;
 }
 
 function edgePath(
-  e: { x1: number; y1: number; x2: number; y2: number; sourceSide: Side; targetSide: Side },
+  e: {
+    x1: number;
+    y1: number;
+    x2: number;
+    y2: number;
+    sourceSide: Side;
+    targetSide: Side;
+    polyline?: ReadonlyArray<{ x: number; y: number }>;
+  },
   routing: PointerRouting,
 ): string {
+  // ELK-routed polylines feed into the curved branch — but ELK with
+  // `edgeRouting: POLYLINE` returns straight segments, so rendering them
+  // verbatim looks like straight lines under "curved." We use ELK's
+  // polyline as routing waypoints and smooth them into a curve:
+  //   - 2-point polylines (no engine bend) fall through to the geometry
+  //     curved-bezier — that knows about chip/target sides and produces
+  //     a proper bend even between vertically aligned endpoints.
+  //   - 3+ point polylines (ELK actually bent around something) get a
+  //     Catmull-Rom-to-cubic-Bezier smoothing that visits each waypoint
+  //     while rounding off the corners.
+  if (routing === 'curved' && e.polyline && e.polyline.length >= 3) {
+    return smoothPolyline(e.polyline);
+  }
   if (routing === 'straight') {
     return `M ${e.x1},${e.y1} L ${e.x2},${e.y2}`;
   }
   if (routing === 'orthogonal') {
-    // Two right-angle bends through a midpoint. The midpoint x is biased
-    // toward the chosen exit/entry sides so the corners face outward
-    // instead of folding back through the source/target rects.
+    // Path shape depends on the target side. Horizontal entries (left/right)
+    // bend through a midX; vertical entries (top/bottom) need a different
+    // shape — the chip exits horizontally first so the path doesn't graze
+    // through the source card, then drops/rises vertically to align with
+    // the target column, then enters from above/below.
+    if (e.targetSide === 'top' || e.targetSide === 'bottom') {
+      const horizOff = e.sourceSide === 'right' ? 24 : -24;
+      const cornerX = e.x1 + horizOff;
+      const midY = (e.y1 + e.y2) / 2;
+      return `M ${e.x1},${e.y1} L ${cornerX},${e.y1} L ${cornerX},${midY} L ${e.x2},${midY} L ${e.x2},${e.y2}`;
+    }
     const midX = e.x1 + (e.x2 - e.x1) / 2;
     return `M ${e.x1},${e.y1} L ${midX},${e.y1} L ${midX},${e.y2} L ${e.x2},${e.y2}`;
   }
-  // Bezier control points pull outward from the chosen side on each end:
-  //   sourceSide=right ⇒ c1 to the right of source (curve flows right out)
-  //   sourceSide=left  ⇒ c1 to the left of source (curve flows left out)
-  //   targetSide=left  ⇒ c2 to the left of target (approach from outside L)
-  //   targetSide=right ⇒ c2 to the right of target (approach from outside R)
+  // Curved bezier. Control handles pull outward from the chosen side on
+  // each endpoint:
+  //   sourceSide=right ⇒ c1 to the right of source
+  //   sourceSide=left  ⇒ c1 to the left of source
+  //   targetSide=left  ⇒ c2 to the left of target  (horizontal approach)
+  //   targetSide=right ⇒ c2 to the right of target (horizontal approach)
+  //   targetSide=top   ⇒ c2 above target          (vertical approach)
+  //   targetSide=bottom⇒ c2 below target          (vertical approach)
+  // Source side is always horizontal because chips are horizontal pills.
   const dx = Math.max(24, Math.abs(e.x2 - e.x1) * 0.5);
+  const dy = Math.max(24, Math.abs(e.y2 - e.y1) * 0.5);
   const c1x = e.sourceSide === 'right' ? e.x1 + dx : e.x1 - dx;
-  const c2x = e.targetSide === 'left' ? e.x2 - dx : e.x2 + dx;
-  return `M ${e.x1},${e.y1} C ${c1x},${e.y1} ${c2x},${e.y2} ${e.x2},${e.y2}`;
+  const c1y = e.y1;
+  let c2x = e.x2;
+  let c2y = e.y2;
+  switch (e.targetSide) {
+    case 'left':
+      c2x = e.x2 - dx;
+      break;
+    case 'right':
+      c2x = e.x2 + dx;
+      break;
+    case 'top':
+      c2y = e.y2 - dy;
+      break;
+    case 'bottom':
+      c2y = e.y2 + dy;
+      break;
+  }
+  return `M ${e.x1},${e.y1} C ${c1x},${c1y} ${c2x},${c2y} ${e.x2},${e.y2}`;
 }

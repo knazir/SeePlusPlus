@@ -167,6 +167,31 @@ describe('routeEdges — (2): obstacle-aware side selection', () => {
     expect(out!.targetSide).toBe('top');
   });
 
+  it('pins stack chips (no source card) to chip.right even when an obstacle would prefer chip.left', () => {
+    // Stack chip on the left, heap target on the right, several obstacle
+    // cards arranged so chip.left has fewer crossings. The pinning rule
+    // overrides obstacle scoring for stack chips because doubling back
+    // looks worse than the cross.
+    const obstacles: CardRect[] = [
+      // A wall of obstacles directly between the chip and the target —
+      // any path from chip.right runs through them.
+      card('0xWALL1', 200, 100, 50, 200),
+      card('0xWALL2', 260, 100, 50, 200),
+      card('0xWALL3', 320, 100, 50, 200),
+      card('0xT', 500, 150, 100, 80),
+    ];
+    const e = sample({
+      key: 'stk-pinned',
+      target: '0xT',
+      sourceAddr: null, // stack chip — no enclosing card
+      sourceCard: null,
+      chip: rect(100, 180, 50, 16),
+      targetEl: rect(500, 150, 100, 80),
+    });
+    const [out] = routeEdges([e], { obstacles });
+    expect(out!.sourceSide).toBe('right');
+  });
+
   it("does not treat the source's own card or the target's card as obstacles", () => {
     const obstacles: CardRect[] = [
       // Source card and target card included — should be filtered out by

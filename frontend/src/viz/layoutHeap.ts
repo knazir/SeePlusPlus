@@ -1,124 +1,43 @@
-// Heap layout via @dagrejs/dagre. Turns (heap entries + measured card sizes)
-// into (addr → {x, y}) top-left coordinates for absolute positioning.
-//
-// `acyclicer: 'greedy'` is essential — heap graphs regularly contain cycles
-// (doubly-linked lists, back-pointers, circular refs). Dagre's greedy
-// feedback-arc-set pass reverses a minimal set of edges so the graph can be
-// laid out as a DAG, then unreverses them, so cyclic pointers render
-// instead of throwing.
-//
-// Disconnected components (multiple unrelated heap structures at the same
-// step) lay out independently and dagre packs them into a single bounding
-// box — matches legacy behavior out of the box.
-import dagre from '@dagrejs/dagre';
-import { collectPointers } from './reachability';
+// Public layout API. Delegates to the engine selected via the
+// `layout-engine-elk` feature flag in HeapGraph. Kept as a thin
+// re-export so existing imports of `layoutHeap` types stay valid;
+// new code can import directly from `./layout`.
 
-export interface NodeSize {
-  w: number;
-  h: number;
-}
+export {
+  getLayoutEngine,
+  type EngineName,
+  type LayoutEngine,
+  type LayoutInput,
+  type LayoutResult,
+  type NodePosition,
+  type NodeSize,
+  type HeapDensity,
+  type RoutedLayoutEdge,
+} from './layout';
 
-export interface NodePosition {
-  /** Top-left x of the node in world coordinates, in pixels. */
-  x: number;
-  /** Top-left y of the node in world coordinates, in pixels. */
-  y: number;
-}
+import { getLayoutEngine } from './layout';
+import type { HeapDensity, LayoutResult, NodeSize } from './layout';
 
-export interface HeapLayout {
-  positions: Map<string, NodePosition>;
-  /** Per-node center positions (x, y) in world coordinates. Stable across
-   *  FLIP animations because it's computed at layout time, not from the
-   *  interpolating DOM rects. Edge routing uses these as port hints so
-   *  side selection doesn't flicker mid-animation. */
-  centers: Map<string, { x: number; y: number }>;
-  /** Bounding box of all positioned nodes (including their sizes). */
-  width: number;
-  height: number;
-}
-
-/** User-facing heap spacing preset; maps to dagre's nodesep/ranksep. */
-export type HeapDensity = 'dense' | 'normal' | 'airy';
-
-const DENSITY_SPACING: Record<HeapDensity, { nodesep: number; ranksep: number }> = {
-  dense: { nodesep: 12, ranksep: 16 },
-  normal: { nodesep: 24, ranksep: 32 },
-  airy: { nodesep: 40, ranksep: 56 },
-};
+export interface HeapLayout extends LayoutResult {}
 
 export interface LayoutHeapOptions {
   /** Spacing preset. Defaults to 'normal'. */
   density?: HeapDensity;
+  /** Engine to use. Defaults to 'dagre' — HeapGraph picks this from the
+   *  feature flag. */
+  engine?: 'dagre' | 'elk';
 }
 
 /**
- * Compute a top-to-bottom layered layout for a set of heap entries.
- *
- * @param entries  Ordered [addr, block] pairs currently on the heap.
- * @param sizes    Measured (width, height) per heap addr. Missing entries are
- *                 skipped — the caller is responsible for rendering cards
- *                 once so they can be measured before calling this.
+ * Compute a layout for a set of heap entries. Async — both engines
+ * resolve through the same `Promise<LayoutResult>` interface (dagre
+ * resolves synchronously, ELK runs in a Web Worker).
  */
 export function layoutHeap(
   entries: ReadonlyArray<readonly [string, unknown]>,
   sizes: ReadonlyMap<string, NodeSize>,
   opts: LayoutHeapOptions = {},
-): HeapLayout {
-  const positions = new Map<string, NodePosition>();
-  const centers = new Map<string, { x: number; y: number }>();
-  if (entries.length === 0) return { positions, centers, width: 0, height: 0 };
-
-  const { nodesep, ranksep } = DENSITY_SPACING[opts.density ?? 'normal'];
-
-  const g = new dagre.graphlib.Graph({ directed: true, multigraph: false, compound: false });
-  g.setGraph({
-    rankdir: 'TB',
-    nodesep,
-    ranksep,
-    marginx: 8,
-    marginy: 8,
-    acyclicer: 'greedy',
-  });
-  g.setDefaultEdgeLabel(() => ({}));
-
-  const addrs = new Set<string>();
-  for (const [addr] of entries) addrs.add(addr);
-
-  for (const [addr] of entries) {
-    const size = sizes.get(addr);
-    if (!size) continue;
-    g.setNode(addr, { width: size.w, height: size.h });
-  }
-
-  for (const [addr, block] of entries) {
-    if (!sizes.has(addr)) continue;
-    const targets = new Set<string>();
-    collectPointers(block, targets);
-    for (const target of targets) {
-      if (target === addr) continue; // no self-loops — dagre tolerates but they look ugly
-      if (!addrs.has(target)) continue;
-      if (!sizes.has(target)) continue;
-      g.setEdge(addr, target);
-    }
-  }
-
-  dagre.layout(g);
-
-  let maxRight = 0;
-  let maxBottom = 0;
-  for (const addr of g.nodes()) {
-    const n = g.node(addr);
-    if (!n) continue;
-    // Dagre gives node centers; convert to top-left for absolute positioning,
-    // and also keep the centers themselves for edge routing (stable port
-    // hints across FLIP).
-    const x = n.x - n.width / 2;
-    const y = n.y - n.height / 2;
-    positions.set(addr, { x, y });
-    centers.set(addr, { x: n.x, y: n.y });
-    maxRight = Math.max(maxRight, x + n.width);
-    maxBottom = Math.max(maxBottom, y + n.height);
-  }
-
-  return { positions, centers, width: maxRight, height: maxBottom };
+): Promise<LayoutResult> {
+  const engine = getLayoutEngine(opts.engine ?? 'dagre');
+  return engine.layout({ entries, sizes, density: opts.density ?? 'normal' });
 }
