@@ -1,23 +1,16 @@
 import { useEffect, useMemo, useRef } from 'react';
-import { useAppStore, useCurrentStep, useFlag } from '../store';
+import { useAppStore, useCurrentStep } from '../store';
 import { HeapNode } from './HeapNode';
 import { captureRects, playEnter, playFlip } from '../anim/flip';
 import { orphanAddrs } from '../viz/reachability';
-import {
-  getLayoutEngine,
-  type EngineName,
-  type NodeSize,
-  type RoutedLayoutEdge,
-} from '../viz/layout';
+import { layoutHeap, type NodeSize } from '../viz/layoutHeap';
 import { usePublishLayoutHints } from '../viz/layoutHintsContext';
-import { FLAGS } from '../flags/names';
 
 /**
- * Heap graph renderer. Measures every heap card, runs the configured
- * layout engine, applies positions imperatively, and runs FLIP for
- * step-to-step continuity. Engine selection is flag-controlled; the
- * engine interface is async, so cards keep their previous positions
- * (via inline style) until the new layout resolves.
+ * Heap graph renderer. Measures every heap card, runs the layout, applies
+ * positions imperatively, and runs FLIP for step-to-step continuity. The
+ * layout is async, so cards keep their previous positions (via inline
+ * style) until the new layout resolves.
  */
 
 /** Find the animation target inside a heap node's outer wrapper. */
@@ -30,8 +23,6 @@ export function HeapGraph() {
   const stepIndex = useAppStore((s) => s.stepIndex);
   const heapDensity = useAppStore((s) => s.heapDensity);
   const trace = useAppStore((s) => s.trace);
-  const elkOn = useFlag(FLAGS.LAYOUT_ENGINE_ELK, false);
-  const engineName: EngineName = elkOn ? 'elk' : 'dagre';
 
   const elsRef = useRef<Map<string, HTMLElement>>(new Map());
   const prevRectsRef = useRef<Map<string, DOMRect>>(new Map());
@@ -72,9 +63,7 @@ export function HeapGraph() {
 
     // Cancel resolutions that arrive after the deps have changed.
     let cancelled = false;
-    const engine = getLayoutEngine(engineName);
-    void engine
-      .layout({ entries, sizes, density: heapDensity })
+    void layoutHeap(entries, sizes, { density: heapDensity })
       .then((result) => {
         if (cancelled) return;
 
@@ -94,7 +83,7 @@ export function HeapGraph() {
         }
         publishLayoutHints({
           centers: clientCenters,
-          edges: result.edges ?? new Map<string, RoutedLayoutEdge>(),
+          edges: result.edges,
           worldOrigin: containerRect
             ? { x: containerRect.left, y: containerRect.top }
             : null,
@@ -136,7 +125,7 @@ export function HeapGraph() {
     return () => {
       cancelled = true;
     };
-  }, [stepIndex, step, entries, heapDensity, trace, engineName, publishLayoutHints]);
+  }, [stepIndex, step, entries, heapDensity, trace, publishLayoutHints]);
 
   if (!step) return null;
   if (entries.length === 0) {

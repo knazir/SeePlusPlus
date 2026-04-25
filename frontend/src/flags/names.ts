@@ -10,8 +10,6 @@
 export const FLAGS = {
   /** Gates the in-product tutor panel + breadcrumb + topbar button. */
   TUTOR_PANEL: 'tutor-panel',
-  /** Selects ELK as the heap layout engine instead of dagre. */
-  LAYOUT_ENGINE_ELK: 'layout-engine-elk',
 } as const;
 
 export type FlagName = (typeof FLAGS)[keyof typeof FLAGS];
