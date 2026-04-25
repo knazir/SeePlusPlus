@@ -8,6 +8,7 @@
 import { useEffect, useState } from 'react';
 import { useAppStore } from '../store';
 import {
+  AdminApiError,
   deleteAdminFlag,
   fetchAdminFlags,
   reloadAdminFlags,
@@ -15,6 +16,18 @@ import {
   type AdminFlag,
 } from '../api/client';
 import { Modal } from './Modal';
+
+// Server is the source of truth: classify any 401/403/404 from an admin
+// endpoint as "not available," matching the unauthenticated empty state
+// exactly. A forged `me.isAdmin = true` in DevTools would still hit a real
+// 403 on the first fetch and land here. Other errors map to a neutral
+// generic message — the raw server body is never surfaced to UI.
+function classifyAdminError(err: unknown): { forbidden: boolean; message: string } {
+  if (err instanceof AdminApiError && (err.status === 401 || err.status === 403 || err.status === 404)) {
+    return { forbidden: true, message: '' };
+  }
+  return { forbidden: false, message: 'Could not load flags. Please try again.' };
+}
 
 export function AdminPage() {
   const me = useAppStore((s) => s.me);
@@ -27,6 +40,9 @@ export function AdminPage() {
   const [loading, setLoading] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<AdminFlag | null>(null);
+  // Server-said-no overrides the client-side `me.isAdmin` check, so a forged
+  // store value collapses to the same neutral empty state on first fetch.
+  const [serverDeniedAccess, setServerDeniedAccess] = useState(false);
 
   const reload = () => {
     setLoading(true);
@@ -35,7 +51,11 @@ export function AdminPage() {
         setFlags(f);
         setError(null);
       })
-      .catch((err: Error) => setError(err.message))
+      .catch((err: unknown) => {
+        const { forbidden, message } = classifyAdminError(err);
+        if (forbidden) setServerDeniedAccess(true);
+        else setError(message);
+      })
       .finally(() => setLoading(false));
   };
 
@@ -53,9 +73,10 @@ export function AdminPage() {
     );
   }
 
-  // Unified empty state — signed-out or signed-in-but-not-admin both
-  // land here. We don't leak "you're just not an admin" publicly.
-  if (!me?.isAdmin) {
+  // Unified empty state — signed-out, signed-in-but-not-admin, or "the
+  // server told us no" all land here. We don't leak "you're just not an
+  // admin" publicly.
+  if (!me?.isAdmin || serverDeniedAccess) {
     return (
       <main
         className="flex min-h-0 flex-1 flex-col items-center justify-center p-8"
@@ -83,6 +104,12 @@ export function AdminPage() {
     );
   }
 
+  const handleAction = (err: unknown) => {
+    const { forbidden, message } = classifyAdminError(err);
+    if (forbidden) setServerDeniedAccess(true);
+    else setError(message);
+  };
+
   const handleToggle = async (flag: AdminFlag, next: boolean) => {
     // Optimistic — revert on error.
     setFlags((prev) =>
@@ -93,7 +120,7 @@ export function AdminPage() {
       // Refresh the public flags cache so the rest of the app sees the change.
       void loadFlagsStore();
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      handleAction(err);
       setFlags((prev) =>
         prev ? prev.map((f) => (f.name === flag.name ? { ...f, enabled: !next } : f)) : prev,
       );
@@ -101,16 +128,24 @@ export function AdminPage() {
   };
 
   const handleDelete = async (name: string) => {
-    await deleteAdminFlag(name);
-    setPendingDelete(null);
-    setFlags((prev) => (prev ? prev.filter((f) => f.name !== name) : prev));
-    void loadFlagsStore();
+    try {
+      await deleteAdminFlag(name);
+      setPendingDelete(null);
+      setFlags((prev) => (prev ? prev.filter((f) => f.name !== name) : prev));
+      void loadFlagsStore();
+    } catch (err) {
+      handleAction(err);
+    }
   };
 
   const handleReload = async () => {
-    await reloadAdminFlags();
-    reload();
-    void loadFlagsStore();
+    try {
+      await reloadAdminFlags();
+      reload();
+      void loadFlagsStore();
+    } catch (err) {
+      handleAction(err);
+    }
   };
 
   return (

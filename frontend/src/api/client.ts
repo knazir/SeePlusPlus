@@ -51,10 +51,19 @@ async function ensureOkWorkspace(res: Response, label: string): Promise<Response
   throw new WorkspaceError(res.status, body || `${label} failed (${res.status})`);
 }
 
+export class AdminApiError extends Error {
+  readonly status: number;
+  constructor(status: number, message: string) {
+    super(message);
+    this.name = 'AdminApiError';
+    this.status = status;
+  }
+}
+
 async function ensureOkAdmin(res: Response, label: string): Promise<Response> {
   if (res.ok) return res;
   const body = await res.text().catch(() => '');
-  throw new Error(body || `${label} failed (${res.status})`);
+  throw new AdminApiError(res.status, body || `${label} failed (${res.status})`);
 }
 
 export interface Workspace {

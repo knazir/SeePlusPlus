@@ -63,7 +63,7 @@ export function SettingsMenu() {
         type="button"
         aria-label="Settings"
         title="Settings"
-        aria-haspopup="menu"
+        aria-haspopup="dialog"
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
         data-testid="settings-toggle"
@@ -72,8 +72,13 @@ export function SettingsMenu() {
         <span aria-hidden>⚙</span>
       </button>
       {open && (
+        // Not role="menu": menu semantics imply arrow-key navigation between
+        // menuitems, which we don't provide. This is a popover containing
+        // three independent radio groups, so semantically it's a dialog with
+        // groups inside; AT will read each radio group on its own.
         <div
-          role="menu"
+          role="dialog"
+          aria-label="Settings"
           data-testid="settings-menu"
           className="absolute right-0 top-[calc(100%+4px)] z-20 w-64 rounded-[4px] border border-line bg-bg-1 p-3 shadow-[0_8px_24px_rgba(0,0,0,0.35)]"
         >
@@ -145,7 +150,7 @@ function Section<V extends string>({
           return (
             <button
               key={opt.value}
-              role="menuitemradio"
+              role="radio"
               aria-checked={active}
               onClick={() => onSelect(opt.value)}
               data-testid={`${testIdPrefix}-${opt.value}`}
