@@ -10,7 +10,7 @@
   },
   "keywords": [],
   "author": "knazir",
-  "license": "ISC",
+  "license": "MIT",
   "description": "Backend for See++",
   "dependencies": {
     "@aws-sdk/client-ecs": "^3.600.0",
