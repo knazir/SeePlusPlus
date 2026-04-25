@@ -1,4 +1,4 @@
-# See++ — AI assistant context
+# See++ Agent Context
 
 Context notes for AI coding assistants (Claude Code, Cursor, etc.). A
 human reader can safely ignore this file.
