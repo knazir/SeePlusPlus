@@ -18,7 +18,7 @@ import { useGlobalShortcuts } from './hooks/useGlobalShortcuts';
 import { useMediaQuery } from './hooks/useMediaQuery';
 import { useTheme } from './theme/useTheme';
 import { DEFAULT_EDITOR_FRACTION, useAppStore } from './store';
-import { HoverProvider } from './viz/hoverContext';
+import { HoverProvider } from './viz/HoverProvider';
 
 /**
  * Per-pane pixel minimums protect the layout from degenerate states when

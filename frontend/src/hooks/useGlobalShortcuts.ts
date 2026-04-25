@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useAppStore } from '../store';
-import { useAnyModalOpen } from '../components/Modal';
+import { useAnyModalOpen } from '../components/modalStack';
 
 /**
  * Global keyboard shortcuts for trace navigation. Attaches to window;

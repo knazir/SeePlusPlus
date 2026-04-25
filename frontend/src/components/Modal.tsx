@@ -1,5 +1,11 @@
-import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useId, useRef, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
+import {
+  isTopOfStack,
+  popModal,
+  pushModal,
+  type ModalCloser,
+} from './modalStack';
 
 interface Props {
   title: string;
@@ -24,39 +30,6 @@ const FOCUSABLE_SELECTOR = [
   'textarea:not([disabled])',
   '[tabindex]:not([tabindex="-1"])',
 ].join(', ');
-
-// LIFO stack of open modals. Used to scope Esc to the topmost modal and
-// to let global keyboard shortcuts step out of the way while any modal
-// is open.
-type ModalCloser = () => void;
-const stack: ModalCloser[] = [];
-const subscribers = new Set<() => void>();
-function notify() {
-  for (const s of subscribers) s();
-}
-function pushModal(close: ModalCloser) {
-  stack.push(close);
-  notify();
-}
-function popModal(close: ModalCloser) {
-  const i = stack.lastIndexOf(close);
-  if (i >= 0) stack.splice(i, 1);
-  notify();
-}
-
-/** True while any modal is mounted. Re-renders the caller on transitions. */
-export function useAnyModalOpen(): boolean {
-  const [open, setOpen] = useState(stack.length > 0);
-  useEffect(() => {
-    const update = () => setOpen(stack.length > 0);
-    subscribers.add(update);
-    update();
-    return () => {
-      subscribers.delete(update);
-    };
-  }, []);
-  return open;
-}
 
 /** Overlay + centered card rendered through a portal (so it escapes any
  *  transformed/overflow:hidden ancestor). Click-outside + Esc close, with
@@ -85,7 +58,7 @@ export function Modal({ title, onClose, children, 'data-testid': testid, size = 
     const closer = closerRef.current!;
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return;
-      if (stack[stack.length - 1] !== closer) return;
+      if (!isTopOfStack(closer)) return;
       e.preventDefault();
       onCloseRef.current();
     };
