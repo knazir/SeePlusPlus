@@ -74,7 +74,9 @@ int main() {
 using namespace std;
 
 int factorial(int n) {
-    if (n <= 1) return 1;
+    if (n <= 1) {
+        return 1;
+    }
     return n * factorial(n - 1);
 }
 
@@ -144,9 +146,14 @@ struct Node {
 };
 
 Node* insert(Node* root, int v) {
-    if (!root) return new Node{v, nullptr, nullptr};
-    if (v < root->v) root->l = insert(root->l, v);
-    else root->r = insert(root->r, v);
+    if (!root) {
+        return new Node{v, nullptr, nullptr};
+    }
+    if (v < root->v) {
+        root->l = insert(root->l, v);
+    } else {
+        root->r = insert(root->r, v);
+    }
     return root;
 }
 
@@ -176,9 +183,13 @@ int main() {
     cout << "dynamic array" << endl;
     int n = 4;
     int* a = new int[n];
-    for (int i = 0; i < n; i++) a[i] = i * i;
+    for (int i = 0; i < n; i++) {
+        a[i] = i * i;
+    }
     int sum = 0;
-    for (int i = 0; i < n; i++) sum += a[i];
+    for (int i = 0; i < n; i++) {
+        sum += a[i];
+    }
     delete[] a;
     return sum;
 }
