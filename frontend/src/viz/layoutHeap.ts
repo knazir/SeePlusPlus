@@ -27,6 +27,11 @@ export interface NodePosition {
 
 export interface HeapLayout {
   positions: Map<string, NodePosition>;
+  /** Per-node center positions (x, y) in world coordinates. Stable across
+   *  FLIP animations because it's computed at layout time, not from the
+   *  interpolating DOM rects. Edge routing uses these as port hints so
+   *  side selection doesn't flicker mid-animation. */
+  centers: Map<string, { x: number; y: number }>;
   /** Bounding box of all positioned nodes (including their sizes). */
   width: number;
   height: number;
@@ -60,7 +65,8 @@ export function layoutHeap(
   opts: LayoutHeapOptions = {},
 ): HeapLayout {
   const positions = new Map<string, NodePosition>();
-  if (entries.length === 0) return { positions, width: 0, height: 0 };
+  const centers = new Map<string, { x: number; y: number }>();
+  if (entries.length === 0) return { positions, centers, width: 0, height: 0 };
 
   const { nodesep, ranksep } = DENSITY_SPACING[opts.density ?? 'normal'];
 
@@ -103,13 +109,16 @@ export function layoutHeap(
   for (const addr of g.nodes()) {
     const n = g.node(addr);
     if (!n) continue;
-    // Dagre gives node centers; convert to top-left.
+    // Dagre gives node centers; convert to top-left for absolute positioning,
+    // and also keep the centers themselves for edge routing (stable port
+    // hints across FLIP).
     const x = n.x - n.width / 2;
     const y = n.y - n.height / 2;
     positions.set(addr, { x, y });
+    centers.set(addr, { x: n.x, y: n.y });
     maxRight = Math.max(maxRight, x + n.width);
     maxBottom = Math.max(maxBottom, y + n.height);
   }
 
-  return { positions, width: maxRight, height: maxBottom };
+  return { positions, centers, width: maxRight, height: maxBottom };
 }

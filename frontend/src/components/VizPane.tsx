@@ -4,6 +4,7 @@ import { StackFrames } from './StackFrames';
 import { HeapGraph } from './HeapGraph';
 import { HeapViewport, type HeapViewportHandle } from './HeapViewport';
 import { EdgeLayer } from './EdgeLayer';
+import { LayoutHintsProvider } from '../viz/layoutHintsContext';
 import { kbd } from '../platform/kbd';
 
 export function VizPane() {
@@ -104,7 +105,11 @@ export function VizPane() {
             running…
           </p>
         ) : trace ? (
-          <>
+          // LayoutHintsProvider lets HeapGraph publish layout-time card
+          // centers and EdgeLayer read them for stable side-selection
+          // across FLIP animations. Scoped to the trace branch so the
+          // ref resets cleanly between trace identities.
+          <LayoutHintsProvider>
             <div
               className="grid h-full min-h-0 w-full"
               style={{ gridTemplateColumns: '240px 1fr' }}
@@ -123,7 +128,7 @@ export function VizPane() {
               </div>
             </div>
             <EdgeLayer containerRef={vizBodyRef} clipRef={heapViewportElRef} />
-          </>
+          </LayoutHintsProvider>
         ) : buildFailed ? (
           <div className="flex h-full w-full items-center justify-center">
             <p className="font-mono text-xs text-ink-3" data-testid="viz-empty-error">
