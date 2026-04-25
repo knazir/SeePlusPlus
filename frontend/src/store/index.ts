@@ -24,6 +24,7 @@ import {
   resolvePreference,
   type ThemePreference,
 } from '../theme/theme';
+import { track } from '../analytics';
 
 // SPP-Valgrind's stack walker primes late — the backend now synthesizes a
 // main() frame when a record arrives with stack: [], so priming cout calls
@@ -321,6 +322,7 @@ async function createAndOpenShareModal(): Promise<void> {
   const { loaded, code } = useAppStore.getState();
   // Already loaded from a slug → reuse it rather than creating a duplicate.
   if (loaded && loaded.loadedCode === code) {
+    track('workspace_shared', { slug: loaded.slug, reused: true });
     useAppStore.setState({
       shareUrl: `${window.location.origin}/w/${loaded.slug}`,
       modal: 'share-link',
@@ -331,6 +333,7 @@ async function createAndOpenShareModal(): Promise<void> {
   try {
     const { slug } = await createWorkspace(code, loaded?.name ?? null);
     window.history.replaceState(null, '', `/w/${slug}`);
+    track('workspace_shared', { slug, reused: false });
     useAppStore.setState({
       loaded: {
         slug,
@@ -383,6 +386,20 @@ function friendlyRunErrorMessage(err: unknown): string {
   return String(err);
 }
 
+/** Coarse bucket for run_failed analytics — server status if available,
+ *  otherwise a network/unknown fallback. Never surfaces user content. */
+function classifyRunFailure(err: unknown): string {
+  if (err instanceof RunError) {
+    if (err.status === 429) return 'rate_limit';
+    if (err.status === 413) return 'payload_too_large';
+    if (err.status >= 500) return 'server_error';
+    if (err.status >= 400) return 'client_error';
+    return `http_${err.status}`;
+  }
+  if (err instanceof TypeError) return 'network_error';
+  return 'unknown';
+}
+
 export const useAppStore = create<AppState>((set, get) => ({
   code: DEFAULT_PROGRAM,
   setCode: (code) => set({ code }),
@@ -396,11 +413,14 @@ export const useAppStore = create<AppState>((set, get) => ({
   run: async (fetchFn) => {
     if (get().running) return;
     const sentCode = get().code;
+    track('run_clicked');
+    const startedAt = performance.now();
     set({ running: true, error: null, buildOutput: null });
     try {
       const raw = await runCode(sentCode, fetchFn);
       const parsed = ProgramTraceSchema.safeParse(raw);
       if (!parsed.success) {
+        track('run_failed', { reason: 'shape_drift' });
         set({
           trace: null,
           lastRunCode: null,
@@ -420,6 +440,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         parsed.data.trace.length === 1 &&
         firstStep?.event === 'uncaughtException';
       if (isBuildFailure) {
+        track('run_failed', { reason: 'compile_error' });
         set({
           trace: null,
           lastRunCode: null,
@@ -435,6 +456,12 @@ export const useAppStore = create<AppState>((set, get) => ({
       // useIsStale fires unambiguously instead of comparing against a
       // value the user may have typed back to.
       const codeUnchanged = get().code === sentCode;
+      const lastEvent = parsed.data.trace[parsed.data.trace.length - 1]?.event;
+      track('run_succeeded', {
+        duration_ms: Math.round(performance.now() - startedAt),
+        step_count: parsed.data.trace.length,
+        truncated: lastEvent === 'instruction_limit_reached',
+      });
       set({
         trace: parsed.data,
         lastRunCode: codeUnchanged ? sentCode : null,
@@ -445,6 +472,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     } catch (err) {
       // A failed run invalidates the previous trace — keeping it would
       // mislead users into thinking their edit is reflected.
+      track('run_failed', { reason: classifyRunFailure(err) });
       set({
         trace: null,
         lastRunCode: null,
