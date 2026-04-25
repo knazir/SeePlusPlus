@@ -5,6 +5,7 @@ import { useHover } from '../viz/hoverContext';
 import { useLayoutHints } from '../viz/layoutHintsContext';
 import {
   routeEdges,
+  type CardRect,
   type EdgeSample,
   type MeasuredRect,
   type RoutedEdge,
@@ -270,10 +271,26 @@ function computeEdges(
     });
   }
 
-  // Phase 2: pure routing pass — chip-side / target-side / port distribution.
+  // Collect obstacle rects: every heap card and stack frame the routing
+  // pass should avoid crossing. Per-edge filtering of source/target is
+  // handled inside routeEdges via the id field, so we pass the full set.
+  const obstacles: CardRect[] = [];
+  for (const el of container.querySelectorAll<HTMLElement>('[data-heap-addr]')) {
+    const id = el.getAttribute('data-heap-addr');
+    if (!id) continue;
+    obstacles.push({ id, ...toMeasured(el.getBoundingClientRect()) });
+  }
+  for (const el of container.querySelectorAll<HTMLElement>('[data-stack-frame-id]')) {
+    const id = el.getAttribute('data-stack-frame-id');
+    if (!id) continue;
+    obstacles.push({ id, ...toMeasured(el.getBoundingClientRect()) });
+  }
+
+  // Phase 2: pure routing pass — chip-side / target-side / port distribution
+  // / obstacle-aware fallback.
   const routed = routeEdges(
     enriched.map((e) => e.sample),
-    { layoutCenters },
+    { layoutCenters, obstacles },
   );
 
   // Phase 3: clipping + container-relative coordinate translation. Clipping
