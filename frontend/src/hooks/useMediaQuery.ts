@@ -17,8 +17,17 @@ export function useMediaQuery(query: string): boolean {
     const mql = window.matchMedia(query);
     const onChange = () => setMatches(mql.matches);
     onChange();
-    mql.addEventListener('change', onChange);
-    return () => mql.removeEventListener('change', onChange);
+    // Older Safari only supports addListener; modern browsers have addEventListener.
+    if ('addEventListener' in mql) {
+      mql.addEventListener('change', onChange);
+      return () => mql.removeEventListener('change', onChange);
+    }
+    const legacyMql = mql as MediaQueryList & {
+      addListener: (fn: (e: MediaQueryListEvent) => void) => void;
+      removeListener: (fn: (e: MediaQueryListEvent) => void) => void;
+    };
+    legacyMql.addListener(onChange);
+    return () => legacyMql.removeListener(onChange);
   }, [query]);
 
   return matches;

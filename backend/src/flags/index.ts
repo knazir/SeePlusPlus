@@ -27,12 +27,20 @@ let cache = new Map<string, FlagRow>();
 /** Names we've seen a miss for, so we only auto-create + log once. */
 const autoCreated = new Set<string>();
 
+// node-postgres returns TIMESTAMPTZ as a string by default; some configs
+// (custom type parsers) hand back a Date. Accept either.
+function toIsoString(value: unknown): string {
+    if (value instanceof Date) return value.toISOString();
+    if (typeof value === "string") return new Date(value).toISOString();
+    throw new Error(`unexpected timestamp value: ${String(value)}`);
+}
+
 function mapRow(row: Record<string, unknown>): FlagRow {
     return {
         name: row.name as string,
         enabled: Boolean(row.enabled),
         description: (row.description as string | null) ?? null,
-        updatedAt: (row.updated_at as Date).toISOString(),
+        updatedAt: toIsoString(row.updated_at),
         updatedBy: (row.updated_by as string | null) ?? null,
     };
 }
