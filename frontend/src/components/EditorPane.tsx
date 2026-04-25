@@ -88,18 +88,10 @@ const sppHighlight = HighlightStyle.define([
 export function EditorPane() {
   const code = useAppStore((s) => s.code);
   const setCode = useAppStore((s) => s.setCode);
-  const run = useAppStore((s) => s.run);
   const jumpToNextOccurrence = useAppStore((s) => s.jumpToNextOccurrence);
   const step = useCurrentStep();
   const stale = useIsStale();
   const viewRef = useRef<EditorView | null>(null);
-
-  // Stable ref so we can bind Mod-Enter in the CM keymap once (extensions
-  // are memoised) but still dispatch the latest `run` action when fired.
-  const runRef = useRef(run);
-  useEffect(() => {
-    runRef.current = run;
-  }, [run]);
 
   const extensions = useMemo(
     () => [
@@ -118,13 +110,16 @@ export function EditorPane() {
       // Mod-Enter runs the trace. @uiw/react-codemirror's basicSetup binds
       // Mod-Enter to insertBlankLine by default — Prec.highest pulls our
       // binding ahead of it so we get the run() action instead of a blank
-      // line being inserted. indentWithTab keeps its normal precedence.
+      // line being inserted. Zustand actions are stable references, so we
+      // can read it from the store at the moment of dispatch — no ref
+      // forwarding indirection needed. indentWithTab keeps its normal
+      // precedence.
       Prec.highest(
         keymap.of([
           {
             key: 'Mod-Enter',
             run: () => {
-              void runRef.current();
+              void useAppStore.getState().run();
               return true;
             },
           },

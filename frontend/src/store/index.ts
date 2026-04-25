@@ -134,8 +134,12 @@ export interface AppState {
   completePendingWrite: (name: string | null) => Promise<void>;
   /** Fetch a workspace by slug and seed the editor. Called on app mount. */
   loadFromSlug: (slug: string) => Promise<void>;
-  /** Close the share modal + clear the last write status. */
+  /** Clear toast-only state (writeStatus + writeError). Does NOT touch the
+   *  share modal — those are separate concerns and shared dismissal caused
+   *  one to clobber the other. */
   dismissWriteFeedback: () => void;
+  /** Close the share-link modal (clears shareUrl + the modal slot only). */
+  dismissShareModal: () => void;
   /** PATCH a workspace's name (from the /workspaces list). */
   renameWorkspace: (slug: string, name: string | null) => Promise<void>;
   /** DELETE a workspace. */
@@ -635,7 +639,16 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   dismissWriteFeedback: () =>
-    set({ writeStatus: 'idle', writeError: null, shareUrl: null, modal: null }),
+    set({ writeStatus: 'idle', writeError: null }),
+  dismissShareModal: () => {
+    const cur = get();
+    set({
+      shareUrl: null,
+      // Only clear `modal` if it's currently the share modal. Don't yank an
+      // unrelated modal (e.g., name-prompt) that happened to open after.
+      modal: cur.modal === 'share-link' ? null : cur.modal,
+    });
+  },
 
   renameWorkspace: async (slug, name) => {
     await renameWorkspaceApi(slug, name);
