@@ -23,7 +23,7 @@ See++ is a tool for visualizing and debugging C++ code aimed at helping students
 
 <a href="https://seepluspl.us">
   <p align="center">
-    <img src="docs/img/demos/linked_list_example.png" alt="Linked List Visualization"/>
+    <img src="docs/img/demos/bst_example.png" alt="Binary Search Tree Visualization"/>
   </p>
 </a>
 
