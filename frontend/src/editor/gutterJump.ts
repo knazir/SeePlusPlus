@@ -13,7 +13,7 @@ export function gutterJump(onJump: (line: number) => void) {
       // focus from the timeline and start swallowing Arrow-key scrubs into
       // CM's caret. preventDefault on mousedown stops the focus transfer
       // at its source; the subsequent click still fires normally.
-      mousedown(_view, _line, event: MouseEvent) {
+      mousedown(_view, _line, event) {
         event.preventDefault();
         return false; // don't claim handled — let click keep flowing
       },

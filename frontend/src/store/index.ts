@@ -258,11 +258,12 @@ export type ModalKind =
 /** Reason context drives sign-in modal's title/copy. */
 export type SignInReason = 'save' | 'share' | 'generic';
 
-/** What the name-prompt modal is meant to do once the user submits a name. */
+/** What the name-prompt modal is meant to do once the user submits a name.
+ *  Share goes through `createAndOpenShareModal()` directly (no name prompt),
+ *  so it intentionally has no `WriteIntent` variant. */
 export type WriteIntent =
   | { kind: 'save-new' }   // create a new owned workspace from current code
-  | { kind: 'fork' }       // create new from current /w/:slug (not yours)
-  | { kind: 'share' };     // anonymous or owned — POST + show share modal
+  | { kind: 'fork' };      // create new from current /w/:slug (not yours)
 
 export interface LoadedWorkspace {
   slug: string;
@@ -430,9 +431,16 @@ export const useAppStore = create<AppState>((set, get) => ({
         });
         return;
       }
+      // If the user kept typing while the run was in flight, get().code is no
+      // longer sentCode. Store the trace so the user sees what came back, but
+      // null out lastRunCode so useIsStale is unambiguously true — the trace
+      // we just received is for an older revision than what's now in the
+      // editor, and the stale banner needs to fire regardless of whether the
+      // user happened to type back to a coincidentally-matching prior value.
+      const codeUnchanged = get().code === sentCode;
       set({
         trace: parsed.data,
-        lastRunCode: sentCode,
+        lastRunCode: codeUnchanged ? sentCode : null,
         stepIndex: 0,
         playing: false,
         running: false,
@@ -586,30 +594,14 @@ export const useAppStore = create<AppState>((set, get) => ({
     if (!intent) return;
     set({ pendingWriteIntent: null, modal: null, writeStatus: 'writing', writeError: null });
     try {
-      if (intent.kind === 'save-new' || intent.kind === 'fork') {
-        const { code } = get();
-        const { slug } = await createWorkspace(code, name);
-        window.history.replaceState(null, '', `/w/${slug}`);
-        set({
-          loaded: { slug, name, ownerMe: true, loadedCode: code },
-          writeStatus: 'saved',
-        });
-      } else if (intent.kind === 'share') {
-        const { code } = get();
-        const { slug } = await createWorkspace(code, name);
-        window.history.replaceState(null, '', `/w/${slug}`);
-        set({
-          loaded: {
-            slug,
-            name,
-            ownerMe: Boolean(get().me),
-            loadedCode: code,
-          },
-          shareUrl: `${window.location.origin}/w/${slug}`,
-          writeStatus: 'idle',
-          modal: 'share-link',
-        });
-      }
+      // Both save-new and fork are "create from current code, attribute to me."
+      const { code } = get();
+      const { slug } = await createWorkspace(code, name);
+      window.history.replaceState(null, '', `/w/${slug}`);
+      set({
+        loaded: { slug, name, ownerMe: true, loadedCode: code },
+        writeStatus: 'saved',
+      });
     } catch (err) {
       set({ writeStatus: 'error', writeError: writeErrorMessage(err) });
     }
