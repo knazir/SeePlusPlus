@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { TopBar } from './components/TopBar';
+import { CutoverBanner } from './components/CutoverBanner';
 import { EditorPane } from './components/EditorPane';
 import { VizPane } from './components/VizPane';
 import { ConsolePane } from './components/ConsolePane';
@@ -108,6 +109,7 @@ export function App() {
     return (
       <HoverProvider>
         <div className="flex h-screen flex-col bg-bg-0 text-ink-0" data-testid="app-root">
+          <CutoverBanner />
           <TopBar />
           {route.kind === 'workspaces' ? <MyWorkspaces /> : <AdminPage />}
           {modal === 'examples' && <ExamplesModal />}
@@ -123,6 +125,7 @@ export function App() {
   return (
     <HoverProvider>
       <div className="flex h-screen flex-col bg-bg-0 text-ink-0" data-testid="app-root">
+        <CutoverBanner />
         <TopBar />
         <main ref={mainRef} className="flex min-h-0 flex-1 flex-col">
           <div
