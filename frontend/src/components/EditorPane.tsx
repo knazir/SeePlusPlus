@@ -88,6 +88,7 @@ const sppHighlight = HighlightStyle.define([
 export function EditorPane() {
   const code = useAppStore((s) => s.code);
   const setCode = useAppStore((s) => s.setCode);
+  const running = useAppStore((s) => s.running);
   const jumpToNextOccurrence = useAppStore((s) => s.jumpToNextOccurrence);
   const step = useCurrentStep();
   const stale = useIsStale();
@@ -137,6 +138,20 @@ export function EditorPane() {
     if (!view) return;
     view.dispatch({ effects: setTraceLine.of(step?.line ?? null) });
   }, [step]);
+
+  // When a run starts, blow focus off the editor so global Arrow / Space
+  // shortcuts engage immediately (they're suppressed inside .cm-editor by
+  // useGlobalShortcuts.shouldIgnore). Without this the user has to click
+  // somewhere outside the editor before scrubbing works — defeats the
+  // muscle-memory of "Run, then arrow through the trace."
+  useEffect(() => {
+    if (!running) return;
+    const view = viewRef.current;
+    const active = document.activeElement as HTMLElement | null;
+    if (view && active && view.dom.contains(active)) {
+      active.blur();
+    }
+  }, [running]);
 
   return (
     <section
