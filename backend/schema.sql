@@ -2,6 +2,11 @@
 -- When a second schema change lands that can't be expressed with IF NOT
 -- EXISTS (e.g. a DROP, a rename, a data backfill), graduate to a real
 -- migration tool. Until then, this file is the whole schema.
+
+-- gen_random_uuid() is in core from PG 13+, but pgcrypto provides it on
+-- older builds and is harmless on newer ones. Cheap belt-and-braces.
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
 CREATE TABLE IF NOT EXISTS workspaces (
     id          UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
     slug        TEXT        NOT NULL UNIQUE,

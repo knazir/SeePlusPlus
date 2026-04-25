@@ -1,6 +1,6 @@
 # frontend/
 
-The v2 SPA. React 19 + Vite + Tailwind v4 + Zustand. CodeMirror 6 in the
+The v2 SPA. React 18 + Vite + Tailwind v4 + Zustand. CodeMirror 6 in the
 editor pane. Talks to `backend/` via the same-origin `/api/*` proxy
 (nginx in prod, Vite dev proxy locally).
 

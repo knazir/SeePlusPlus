@@ -92,7 +92,7 @@ See++ is a web-based tool that helps students, educators, and developers underst
 
 ```
 SeePlusPlus/
-├── frontend/                 # React 19 + Vite + Tailwind + Zustand frontend (default)
+├── frontend/                 # React 18 + Vite + Tailwind + Zustand frontend (default)
 ├── frontend-legacy/          # Original 2018 frontend, kept for reference
 ├── backend/                  # Node.js/TypeScript API server
 ├── code-runner/              # Isolated C++ execution environment
@@ -112,7 +112,7 @@ SeePlusPlus/
 
 | Component | Technology | Purpose |
 |-----------|------------|---------|
-| **Frontend** | React 19, Vite, Tailwind, Zustand, CodeMirror 6 | Interactive code editor and visualization |
+| **Frontend** | React 18, Vite, Tailwind, Zustand, CodeMirror 6 | Interactive code editor and visualization |
 | **Frontend (Legacy)** | React 16, CodeMirror 5, Konva.js | Original 2018 frontend, reference only |
 | **Backend** | Node.js, TypeScript, Express | API server and orchestration |
 | **Code Runner** | Docker, Modified Valgrind | Isolated C++ execution and tracing |
