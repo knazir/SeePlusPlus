@@ -4,6 +4,7 @@ import { HeapNode } from './HeapNode';
 import { captureRects, playEnter, playFlip } from '../anim/flip';
 import { orphanAddrs } from '../viz/reachability';
 import { layoutHeap, type NodeSize } from '../viz/layoutHeap';
+import { usePublishLayoutHints } from '../viz/layoutHintsContext';
 
 /**
  * Heap graph renderer. Uses @dagrejs/dagre (rankdir TB, acyclicer: greedy)
@@ -32,6 +33,7 @@ export function HeapGraph() {
   const prevAddrsRef = useRef<Set<string>>(new Set());
   const prevTraceRef = useRef<typeof trace>(trace);
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const publishLayoutHints = usePublishLayoutHints();
 
   const orphans = useMemo(() => (step ? orphanAddrs(step) : new Set<string>()), [step]);
   const entries = useMemo(
@@ -67,7 +69,10 @@ export function HeapGraph() {
       const r = el.getBoundingClientRect();
       sizes.set(addr, { w: r.width, h: r.height });
     }
-    const { positions, width, height } = layoutHeap(entries, sizes, { density: heapDensity });
+    const { positions, centers, width, height } = layoutHeap(entries, sizes, { density: heapDensity });
+    // Publish layout-time card centers for EdgeLayer's port-hint pass —
+    // gives stable side selection across FLIP animations.
+    publishLayoutHints(centers);
     for (const [addr, el] of elsRef.current) {
       const p = positions.get(addr);
       if (!p) {

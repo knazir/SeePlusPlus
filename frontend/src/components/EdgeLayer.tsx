@@ -2,21 +2,17 @@ import { useLayoutEffect, useRef, useState, type RefObject } from 'react';
 import { useAppStore, type PointerRouting } from '../store';
 import { FLIP_DURATION, FLIP_FOLLOW_MARGIN } from '../anim/flip';
 import { useHover } from '../viz/hoverContext';
+import { useLayoutHints } from '../viz/layoutHintsContext';
+import {
+  routeEdges,
+  type EdgeSample,
+  type MeasuredRect,
+  type RoutedEdge,
+  type Side,
+} from '../viz/routeEdges';
 
-type EdgeKind = 'pointer' | 'ref';
-
-interface Edge {
-  key: string;
-  kind: EdgeKind;
-  target: string;
-  x1: number;
-  y1: number;
-  x2: number;
-  y2: number;
-  /** Which side of the target the arrow enters — drives the bezier handle
-   *  on the target end so the curve approaches cleanly from outside the
-   *  target card rather than overshooting it. */
-  targetSide: 'left' | 'right';
+interface RenderEdge extends RoutedEdge {
+  // Coordinates relative to the SVG container (cRect-relative).
 }
 
 interface Props {
@@ -42,18 +38,32 @@ interface Props {
  * after a step change we run a short rAF loop so edges follow the animating
  * nodes frame-by-frame — getBoundingClientRect reflects the animating
  * transform, so this Just Works.
+ *
+ * The actual side selection + port distribution logic lives in
+ * `viz/routeEdges.ts` (pure, unit-tested). EdgeLayer is the DOM-measurement
+ * + render shell around it.
  */
 export function EdgeLayer({ containerRef, clipRef }: Props) {
-  const [edges, setEdges] = useState<Edge[]>([]);
+  const [edges, setEdges] = useState<RenderEdge[]>([]);
   const rafRef = useRef<number | null>(null);
   const stepIndex = useAppStore((s) => s.stepIndex);
   const trace = useAppStore((s) => s.trace);
   const routing = useAppStore((s) => s.pointerRouting);
   const { hoveredAddr, setHoveredAddr } = useHover();
+  const layoutHintsRef = useLayoutHints();
 
   useLayoutEffect(() => {
     const container = containerRef.current;
     if (!container) return;
+
+    const recompute = () =>
+      setEdges(
+        computeEdges(
+          container,
+          clipRef?.current ?? null,
+          layoutHintsRef?.current.centers,
+        ),
+      );
 
     // Single-frame recompute — used by the ResizeObserver / MutationObserver
     // subscriptions. Coalesces multiple signals into one rAF.
@@ -61,7 +71,7 @@ export function EdgeLayer({ containerRef, clipRef }: Props) {
       if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
       rafRef.current = requestAnimationFrame(() => {
         rafRef.current = null;
-        setEdges(computeEdges(container, clipRef?.current ?? null));
+        recompute();
       });
     };
 
@@ -71,7 +81,7 @@ export function EdgeLayer({ containerRef, clipRef }: Props) {
     const followStart = performance.now();
     const follow = () => {
       if (!following) return;
-      setEdges(computeEdges(container, clipRef?.current ?? null));
+      recompute();
       if (performance.now() - followStart < FLIP_DURATION + FLIP_FOLLOW_MARGIN) {
         rafRef.current = requestAnimationFrame(follow);
       }
@@ -112,7 +122,7 @@ export function EdgeLayer({ containerRef, clipRef }: Props) {
         rafRef.current = null;
       }
     };
-  }, [containerRef, clipRef, stepIndex, trace]);
+  }, [containerRef, clipRef, stepIndex, trace, layoutHintsRef]);
 
   return (
     <svg
@@ -201,75 +211,114 @@ function buildTargetMap(container: HTMLElement): Map<string, HTMLElement> {
   return map;
 }
 
-function computeEdges(container: HTMLElement, clip: HTMLElement | null): Edge[] {
+function toMeasured(r: DOMRect): MeasuredRect {
+  return {
+    left: r.left,
+    right: r.right,
+    top: r.top,
+    bottom: r.bottom,
+    width: r.width,
+    height: r.height,
+  };
+}
+
+interface SampleWithEls {
+  sample: EdgeSample;
+  sourceEl: HTMLElement;
+  targetEl: HTMLElement;
+}
+
+function computeEdges(
+  container: HTMLElement,
+  clip: HTMLElement | null,
+  layoutCenters: ReadonlyMap<string, { x: number; y: number }> | undefined,
+): RenderEdge[] {
   const cRect = container.getBoundingClientRect();
   const clipRect = clip?.getBoundingClientRect() ?? null;
-  const ptrs = Array.from(container.querySelectorAll<HTMLElement>('[data-ptr-target]'));
+  const ptrs = Array.from(
+    container.querySelectorAll<HTMLElement>('[data-ptr-target]'),
+  );
   const targetMap = buildTargetMap(container);
-  const out: Edge[] = [];
+
+  // Phase 1: collect EdgeSamples from the DOM. Pure measurement only — no
+  // routing decisions here, that's routeEdges' job. We keep the source/
+  // target HTMLElements alongside the samples so the post-routing clip
+  // pass can ask DOM "is this inside the clip container?" without
+  // muddying the pure module's input shape.
+  const enriched: SampleWithEls[] = [];
   for (let i = 0; i < ptrs.length; i++) {
     const p = ptrs[i]!;
     const target = p.getAttribute('data-ptr-target');
     if (!target || target === 'null') continue;
     const targetEl = targetMap.get(target);
     if (!targetEl) continue;
-    const kind = p.getAttribute('data-ptr-kind') === 'ref' ? 'ref' : 'pointer';
-    const s = p.getBoundingClientRect();
-    const t = targetEl.getBoundingClientRect();
-    // Source always exits the chip's right edge (where the address value
-    // visibly ends — anchoring on the chip's left would leave from inside
-    // the enclosing heap card, drawing over its own rows). Target picks
-    // whichever side is closer to that exit point, so trees / DAGs whose
-    // children fan out on both sides of the parent don't all force-cross
-    // the canvas.
-    const sourceX = s.right;
-    const tgtCenterX = t.left + t.width / 2;
-    const targetSide: 'left' | 'right' = sourceX < tgtCenterX ? 'left' : 'right';
-    const targetX = targetSide === 'left' ? t.left : t.right;
-    const sourceY = s.top + s.height / 2;
-    const targetY = t.top + t.height / 2;
-    // Clip: drop edges whose source or target point has been panned out of
-    // the heap viewport. Endpoints outside the clip container (e.g. stack
-    // chips) aren't clipped because they never pan. We check the ANCHOR
-    // POINT itself, not the enclosing rect, so a card with its left edge
-    // clipped (anchor = target's left side) correctly drops the arrow
-    // even though part of the card is still visible.
+    const kind: EdgeSample['kind'] = p.getAttribute('data-ptr-kind') === 'ref' ? 'ref' : 'pointer';
+    const sourceCardEl = p.closest<HTMLElement>('[data-heap-addr]');
+    const sourceAddr = sourceCardEl?.getAttribute('data-heap-addr') ?? null;
+    enriched.push({
+      sourceEl: p,
+      targetEl,
+      sample: {
+        key: `${i}:${target}`,
+        kind,
+        target,
+        sourceAddr,
+        chip: toMeasured(p.getBoundingClientRect()),
+        sourceCard: sourceCardEl ? toMeasured(sourceCardEl.getBoundingClientRect()) : null,
+        targetEl: toMeasured(targetEl.getBoundingClientRect()),
+      },
+    });
+  }
+
+  // Phase 2: pure routing pass — chip-side / target-side / port distribution.
+  const routed = routeEdges(
+    enriched.map((e) => e.sample),
+    { layoutCenters },
+  );
+
+  // Phase 3: clipping + container-relative coordinate translation. Clipping
+  // happens against the FINAL routed anchor points so off-pan edges drop
+  // even though part of the card may still be visible.
+  const out: RenderEdge[] = [];
+  for (let idx = 0; idx < routed.length; idx++) {
+    const r = routed[idx]!;
+    const { sourceEl, targetEl } = enriched[idx]!;
     if (clip && clipRect) {
-      if (clip.contains(p) && !pointInRect(sourceX, sourceY, clipRect)) continue;
-      if (clip.contains(targetEl) && !pointInRect(targetX, targetY, clipRect)) continue;
+      if (clip.contains(sourceEl) && !pointInRect(r.x1, r.y1, clipRect)) continue;
+      if (clip.contains(targetEl) && !pointInRect(r.x2, r.y2, clipRect)) continue;
     }
     out.push({
-      key: `${i}:${target}`,
-      kind,
-      target,
-      x1: sourceX - cRect.left,
-      y1: sourceY - cRect.top,
-      x2: targetX - cRect.left,
-      y2: targetY - cRect.top,
-      targetSide,
+      ...r,
+      x1: r.x1 - cRect.left,
+      y1: r.y1 - cRect.top,
+      x2: r.x2 - cRect.left,
+      y2: r.y2 - cRect.top,
     });
   }
   return out;
 }
 
-function edgePath(e: Edge, routing: PointerRouting): string {
+function edgePath(
+  e: { x1: number; y1: number; x2: number; y2: number; sourceSide: Side; targetSide: Side },
+  routing: PointerRouting,
+): string {
   if (routing === 'straight') {
     return `M ${e.x1},${e.y1} L ${e.x2},${e.y2}`;
   }
   if (routing === 'orthogonal') {
-    // Two right-angle bends through a midpoint. If the endpoints are close in
-    // y we bias the bend horizontally to keep the path readable.
+    // Two right-angle bends through a midpoint. The midpoint x is biased
+    // toward the chosen exit/entry sides so the corners face outward
+    // instead of folding back through the source/target rects.
     const midX = e.x1 + (e.x2 - e.x1) / 2;
     return `M ${e.x1},${e.y1} L ${midX},${e.y1} L ${midX},${e.y2} L ${e.x2},${e.y2}`;
   }
+  // Bezier control points pull outward from the chosen side on each end:
+  //   sourceSide=right ⇒ c1 to the right of source (curve flows right out)
+  //   sourceSide=left  ⇒ c1 to the left of source (curve flows left out)
+  //   targetSide=left  ⇒ c2 to the left of target (approach from outside L)
+  //   targetSide=right ⇒ c2 to the right of target (approach from outside R)
   const dx = Math.max(24, Math.abs(e.x2 - e.x1) * 0.5);
-  // Source handle always pulls right out of the chip (where the arrow exits
-  // — see computeEdges). Target handle pulls from outside the target's
-  // chosen side: from the LEFT for a left-side entry (standard L-to-R flow)
-  // or from the RIGHT for a right-side entry (target sits below-left of
-  // source, arrow sweeps around back into the target's near edge).
-  const c1x = e.x1 + dx;
+  const c1x = e.sourceSide === 'right' ? e.x1 + dx : e.x1 - dx;
   const c2x = e.targetSide === 'left' ? e.x2 - dx : e.x2 + dx;
   return `M ${e.x1},${e.y1} C ${c1x},${e.y1} ${c2x},${e.y2} ${e.x2},${e.y2}`;
 }
-
