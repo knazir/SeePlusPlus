@@ -13,6 +13,10 @@ interface Edge {
   y1: number;
   x2: number;
   y2: number;
+  /** Which side of the target the arrow enters — drives the bezier handle
+   *  on the target end so the curve approaches cleanly from outside the
+   *  target card rather than overshooting it. */
+  targetSide: 'left' | 'right';
 }
 
 interface Props {
@@ -212,16 +216,16 @@ function computeEdges(container: HTMLElement, clip: HTMLElement | null): Edge[] 
     const kind = p.getAttribute('data-ptr-kind') === 'ref' ? 'ref' : 'pointer';
     const s = p.getBoundingClientRect();
     const t = targetEl.getBoundingClientRect();
-    // Always exit the chip's right edge (where the address value visibly
-    // ends) and enter the target's left edge. The previous "pick the nearer
-    // side" heuristic broke down for heap-to-heap arrows: a heap pointer
-    // chip's left edge sits INSIDE its enclosing card, so leftward exits
-    // were drawn over the card's own value/next rows. The bezier control
-    // points (c1 right of source, c2 left of target) keep the curve readable
-    // even when the target sits below-left of the source — the arrow sweeps
-    // out and around rather than through the source card body.
+    // Source always exits the chip's right edge (where the address value
+    // visibly ends — anchoring on the chip's left would leave from inside
+    // the enclosing heap card, drawing over its own rows). Target picks
+    // whichever side is closer to that exit point, so trees / DAGs whose
+    // children fan out on both sides of the parent don't all force-cross
+    // the canvas.
     const sourceX = s.right;
-    const targetX = t.left;
+    const tgtCenterX = t.left + t.width / 2;
+    const targetSide: 'left' | 'right' = sourceX < tgtCenterX ? 'left' : 'right';
+    const targetX = targetSide === 'left' ? t.left : t.right;
     const sourceY = s.top + s.height / 2;
     const targetY = t.top + t.height / 2;
     // Clip: drop edges whose source or target point has been panned out of
@@ -242,6 +246,7 @@ function computeEdges(container: HTMLElement, clip: HTMLElement | null): Edge[] 
       y1: sourceY - cRect.top,
       x2: targetX - cRect.left,
       y2: targetY - cRect.top,
+      targetSide,
     });
   }
   return out;
@@ -258,8 +263,13 @@ function edgePath(e: Edge, routing: PointerRouting): string {
     return `M ${e.x1},${e.y1} L ${midX},${e.y1} L ${midX},${e.y2} L ${e.x2},${e.y2}`;
   }
   const dx = Math.max(24, Math.abs(e.x2 - e.x1) * 0.5);
+  // Source handle always pulls right out of the chip (where the arrow exits
+  // — see computeEdges). Target handle pulls from outside the target's
+  // chosen side: from the LEFT for a left-side entry (standard L-to-R flow)
+  // or from the RIGHT for a right-side entry (target sits below-left of
+  // source, arrow sweeps around back into the target's near edge).
   const c1x = e.x1 + dx;
-  const c2x = e.x2 - dx;
+  const c2x = e.targetSide === 'left' ? e.x2 - dx : e.x2 + dx;
   return `M ${e.x1},${e.y1} C ${c1x},${e.y1} ${c2x},${e.y2} ${e.x2},${e.y2}`;
 }
 
