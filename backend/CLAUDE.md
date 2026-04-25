@@ -33,14 +33,6 @@ string is `DATABASE_URL`; defaults to `postgres://spp:spp@postgres:5432/seepp_ma
 when unset. Schema is applied on boot from `backend/schema.sql` — no
 migration tool yet.
 
-## Known quirk — SPP-Valgrind stack walker priming
-
-SPP-Valgrind only starts walking the user-code stack after a libstdc++ entry
-point runs. If `main()` contains no stdlib calls, early trace records arrive
-with `stack: []`. `processJsonObject` in `parse_vg_trace.ts` synthesizes a
-single `main()` frame in that case so the records aren't dropped. Revert
-that block if SPP-Valgrind is patched upstream.
-
 ## Don't
 
 - Don't invent a parallel trace type. Extend `ProgramTrace` and mirror the

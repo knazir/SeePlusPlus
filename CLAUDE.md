@@ -22,13 +22,11 @@ human reader can safely ignore this file.
 
 ## Trace contract
 
-The trace shape is defined by SPP-Valgrind's output format.
-`backend/src/parse_vg_trace.ts` translates Valgrind stdout into a
-`ProgramTrace` JSON object. The frontend validates incoming traces with a
-Zod schema at `frontend/src/trace/schema.ts`; if backend and frontend drift,
-the schema catches it at runtime rather than crashing deep in the render
-tree. No shared schema package — ADR at the time landed on keeping the two
-sides decoupled.
+`backend/src/parse_vg_trace.ts` translates Valgrind stdout into the
+`ProgramTrace` JSON the frontend consumes. The frontend revalidates with a
+Zod schema at `frontend/src/trace/schema.ts` — drift surfaces at the
+boundary, not deep in the render tree. The two sides are deliberately
+decoupled (no shared package).
 
 ## Running locally
 
