@@ -58,6 +58,7 @@ variables:
   ALLOWED_ORIGIN_REGEX: '^https?:\/\/(?:[\w-]+\.)*?(seepluspl\.us)$'
   AWS_REGION: us-west-2
   EXEC_MODE: lambda
+  NODE_ENV: production           # Triggers Secure cookies in auth/session.ts; the dev provider stays gated off.
   PORT: 3000
 
 # Environment-specific overrides.
@@ -77,6 +78,7 @@ environments:
     secrets:
       GOOGLE_CLIENT_SECRET: /copilot/spp/test/secrets/GOOGLE_CLIENT_SECRET
       SESSION_SECRET: /copilot/spp/test/secrets/SESSION_SECRET
+      ADMIN_EMAILS: /copilot/spp/test/secrets/ADMIN_EMAILS
   prod:
     variables:
       LAMBDA_FUNCTION_NAME: spp-trace-executor-prod
@@ -84,3 +86,4 @@ environments:
     secrets:
       GOOGLE_CLIENT_SECRET: /copilot/spp/prod/secrets/GOOGLE_CLIENT_SECRET
       SESSION_SECRET: /copilot/spp/prod/secrets/SESSION_SECRET
+      ADMIN_EMAILS: /copilot/spp/prod/secrets/ADMIN_EMAILS

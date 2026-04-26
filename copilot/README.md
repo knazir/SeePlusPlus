@@ -72,6 +72,7 @@ prefix automatically.
 |---|---|
 | `GOOGLE_CLIENT_SECRET` | From the Google Cloud Console. Rotate via the same `copilot secret init` command. |
 | `SESSION_SECRET` | Per-environment random hex — generate with `openssl rand -hex 32`. Rotation invalidates every active session. |
+| `ADMIN_EMAILS` | Comma-separated emails granted `is_admin` at sign-in. Stored as a secret to keep operator emails out of the public repo, not because the value is sensitive on its own. |
 
 The `GOOGLE_CLIENT_ID` is not sensitive and lives directly in
 `backend/manifest.yml` as a per-env `variables:` entry.
@@ -85,6 +86,7 @@ rotation.
 ```bash
 copilot secret init --name GOOGLE_CLIENT_SECRET --values <env>=<value>
 copilot secret init --name SESSION_SECRET      --values <env>=$(openssl rand -hex 32)
+copilot secret init --name ADMIN_EMAILS        --values <env>=<comma-separated-emails>
 ```
 
 ### Inspect what's there
