@@ -15,6 +15,7 @@ services:
       - '${BACKEND_PORT:-3000}:3000'
     volumes:
       - ./backend:/app
+      - /app/node_modules
       - /tmp:/tmp
       - /var/run/docker.sock:/var/run/docker.sock
     environment:
