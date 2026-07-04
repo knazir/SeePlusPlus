@@ -34,7 +34,6 @@ const sppTheme = EditorView.theme(
     '.cm-content': {
       padding: '10px 0',
       minHeight: '100%',
-      backgroundColor: 'var(--color-bg-0)',
     },
     '.cm-gutters': {
       backgroundColor: 'var(--color-bg-0)',
@@ -65,8 +64,11 @@ const sppTheme = EditorView.theme(
     },
     '.cm-cursor': { borderLeftColor: 'var(--color-accent)' },
     '&.cm-focused': { outline: 'none' },
-    '&.cm-focused .cm-selectionBackground, ::selection': {
-      backgroundColor: 'var(--color-accent-soft)',
+    '.cm-selectionBackground, ::selection': {
+      backgroundColor: 'var(--color-accent-line)',
+    },
+    '&.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground': {
+      backgroundColor: 'var(--color-accent-line)',
     },
   },
   { dark: true },
@@ -176,6 +178,7 @@ export function EditorPane() {
         <CodeMirror
           value={code}
           onChange={setCode}
+          theme="none"
           onCreateEditor={(view) => {
             viewRef.current = view;
           }}
